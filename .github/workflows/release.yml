@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-linux:
     name: Build Linux ${{ matrix.arch }}
     runs-on: ubuntu-latest
 
@@ -34,11 +34,9 @@ jobs:
 
       - name: Package binary cleanly
         run: |
-          # Extract the fyne-cross tar.xz
           mkdir -p extract
           tar -xJf fyne-cross/dist/linux-${{ matrix.arch }}/*.tar.xz -C extract
 
-          # Find the binary (exclude shared libraries)
           BINARY=$(find extract -type f -executable | grep -v "\.so" | head -1)
           echo "Found binary at: $BINARY"
 
@@ -47,16 +45,12 @@ jobs:
             exit 1
           fi
 
-          # Create clean output
           mkdir -p dist
           cp "$BINARY" dist/browser-linux-${{ matrix.arch }}
           chmod +x dist/browser-linux-${{ matrix.arch }}
 
-          # Create simple zip with just the binary
           cd dist
           zip browser-linux-${{ matrix.arch }}.zip browser-linux-${{ matrix.arch }}
-
-          echo "Created: browser-linux-${{ matrix.arch }}.zip"
           ls -la
 
       - name: Upload artifact
@@ -65,9 +59,37 @@ jobs:
           name: browser-linux-${{ matrix.arch }}
           path: dist/browser-linux-${{ matrix.arch }}.zip
 
+  build-windows:
+    name: Build Windows amd64
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Install Fyne CLI
+        run: go install fyne.io/fyne/v2/cmd/fyne@latest
+
+      - name: Build for Windows
+        run: go build -o browser-windows-amd64.exe .
+
+      - name: Package as zip
+        run: Compress-Archive -Path browser-windows-amd64.exe -DestinationPath browser-windows-amd64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-windows-amd64
+          path: browser-windows-amd64.zip
+
   release:
     name: Create Release
-    needs: build
+    needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
 
     steps:
