@@ -32,11 +32,25 @@ jobs:
         run: |
           # Extract the fyne-cross tar.xz
           mkdir -p extract
+          echo "=== Contents of fyne-cross/dist/linux-amd64/ ==="
+          ls -la fyne-cross/dist/linux-amd64/
+
           tar -xJf fyne-cross/dist/linux-amd64/*.tar.xz -C extract
 
-          # Find the actual binary (it's buried in usr/local/bin/)
-          BINARY=$(find extract -type f -executable -name "Browser" | head -1)
+          echo "=== Full extracted tree ==="
+          find extract -type f
+
+          echo "=== All executable files ==="
+          find extract -type f -executable
+
+          # Find the binary (try multiple possible names)
+          BINARY=$(find extract -type f -executable | grep -v "\.so" | head -1)
           echo "Found binary at: $BINARY"
+
+          if [ -z "$BINARY" ]; then
+            echo "ERROR: No binary found!"
+            exit 1
+          fi
 
           # Create clean output
           mkdir -p dist
@@ -47,7 +61,7 @@ jobs:
           cd dist
           zip browser-linux-amd64.zip browser-linux-amd64
 
-          echo "Created: dist/browser-linux-amd64.zip"
+          echo "=== Final output ==="
           ls -la
 
       - name: Upload artifact
