@@ -28,14 +28,33 @@ jobs:
       - name: Build for Linux AMD64
         run: fyne-cross linux -arch amd64 -app-id com.browser.app
 
-      - name: List output (debug)
-        run: find fyne-cross -type f -name "*.tar.xz" -o -name "browser" -o -name "Browser" 2>/dev/null || true
+      - name: Package binary cleanly
+        run: |
+          # Extract the fyne-cross tar.xz
+          mkdir -p extract
+          tar -xJf fyne-cross/dist/linux-amd64/*.tar.xz -C extract
+
+          # Find the actual binary (it's buried in usr/local/bin/)
+          BINARY=$(find extract -type f -executable -name "Browser" | head -1)
+          echo "Found binary at: $BINARY"
+
+          # Create clean output
+          mkdir -p dist
+          cp "$BINARY" dist/browser-linux-amd64
+          chmod +x dist/browser-linux-amd64
+
+          # Create simple zip with just the binary
+          cd dist
+          zip browser-linux-amd64.zip browser-linux-amd64
+
+          echo "Created: dist/browser-linux-amd64.zip"
+          ls -la
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: browser-linux-amd64
-          path: fyne-cross/dist/linux-amd64/*.tar.xz
+          path: dist/browser-linux-amd64.zip
 
   release:
     name: Create Release
