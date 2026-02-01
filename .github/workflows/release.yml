@@ -10,8 +10,12 @@ permissions:
 
 jobs:
   build:
-    name: Build Linux AMD64
+    name: Build Linux ${{ matrix.arch }}
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
 
     steps:
       - name: Checkout code
@@ -25,25 +29,16 @@ jobs:
       - name: Install fyne-cross
         run: go install github.com/fyne-io/fyne-cross@latest
 
-      - name: Build for Linux AMD64
-        run: fyne-cross linux -arch amd64 -app-id com.browser.app
+      - name: Build for Linux ${{ matrix.arch }}
+        run: fyne-cross linux -arch ${{ matrix.arch }} -app-id com.browser.app
 
       - name: Package binary cleanly
         run: |
           # Extract the fyne-cross tar.xz
           mkdir -p extract
-          echo "=== Contents of fyne-cross/dist/linux-amd64/ ==="
-          ls -la fyne-cross/dist/linux-amd64/
+          tar -xJf fyne-cross/dist/linux-${{ matrix.arch }}/*.tar.xz -C extract
 
-          tar -xJf fyne-cross/dist/linux-amd64/*.tar.xz -C extract
-
-          echo "=== Full extracted tree ==="
-          find extract -type f
-
-          echo "=== All executable files ==="
-          find extract -type f -executable
-
-          # Find the binary (try multiple possible names)
+          # Find the binary (exclude shared libraries)
           BINARY=$(find extract -type f -executable | grep -v "\.so" | head -1)
           echo "Found binary at: $BINARY"
 
@@ -54,21 +49,21 @@ jobs:
 
           # Create clean output
           mkdir -p dist
-          cp "$BINARY" dist/browser-linux-amd64
-          chmod +x dist/browser-linux-amd64
+          cp "$BINARY" dist/browser-linux-${{ matrix.arch }}
+          chmod +x dist/browser-linux-${{ matrix.arch }}
 
           # Create simple zip with just the binary
           cd dist
-          zip browser-linux-amd64.zip browser-linux-amd64
+          zip browser-linux-${{ matrix.arch }}.zip browser-linux-${{ matrix.arch }}
 
-          echo "=== Final output ==="
+          echo "Created: browser-linux-${{ matrix.arch }}.zip"
           ls -la
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: browser-linux-amd64
-          path: dist/browser-linux-amd64.zip
+          name: browser-linux-${{ matrix.arch }}
+          path: dist/browser-linux-${{ matrix.arch }}.zip
 
   release:
     name: Create Release
@@ -82,7 +77,7 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: List artifacts (debug)
+      - name: List artifacts
         run: ls -la artifacts/
 
       - name: Create GitHub Release
