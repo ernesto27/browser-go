@@ -78,7 +78,7 @@ https://html.spec.whatwg.org/
 ---
 
 ## Known Issues
-- [ ] Whitespace between inline elements is missing (e.g., "Here is**bold**and" instead of "Here is **bold** and")
+- [x] Whitespace between inline elements is missing (e.g., "Here is**bold**and" instead of "Here is **bold** and")
   - Spaces between inline elements like `<strong>`, `<em>`, `<small>` are not rendering
   - Need to debug DOM parser to see if whitespace text nodes are preserved
 - [ ] `position: absolute` - text/color inside positioned elements not rendering

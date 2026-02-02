@@ -31,8 +31,15 @@ func WrapText(text string, fontSize float64, maxWidth float64) []string {
 		return []string{text}
 	}
 
+	startsWithSpace := strings.HasPrefix(text, " ") || strings.HasPrefix(text, "\t")
+	endsWithSpace := strings.HasSuffix(text, " ") || strings.HasSuffix(text, "\t")
+
 	words := strings.Fields(text)
 	if len(words) == 0 {
+		// Whitespace-only text nodes should still render a space.
+		if strings.TrimSpace(text) == "" && strings.ContainsAny(text, " \t") {
+			return []string{" "}
+		}
 		return []string{}
 	}
 
@@ -66,6 +73,15 @@ func WrapText(text string, fontSize float64, maxWidth float64) []string {
 	// Don't forget the last line
 	if currentLine.Len() > 0 {
 		lines = append(lines, currentLine.String())
+	}
+
+	if len(lines) > 0 {
+		if startsWithSpace {
+			lines[0] = " " + lines[0]
+		}
+		if endsWithSpace {
+			lines[len(lines)-1] = lines[len(lines)-1] + " "
+		}
 	}
 
 	return lines

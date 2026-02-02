@@ -214,7 +214,7 @@
 ---
 
 ## Known Issues
-- [ ] Whitespace between inline elements missing (e.g., `<strong>`, `<em>`)
+- [x] Whitespace between inline elements missing (e.g., `<strong>`, `<em>`)
 - [ ] Text inside `position: absolute` elements not rendering
 - [x] `<main>`, `<nav>`, `<section>`, `<article>`, `<aside>` added to blockElements map
 - [ ] No keyboard navigation between form elements (Tab key)
