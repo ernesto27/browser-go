@@ -20,6 +20,8 @@ https://html.spec.whatwg.org/
 [x] - <base> (WHATWG 4.2.3 compliance - element.href with URL resolution, element.children)
 [x] - <style> (WHATWG 4.2.6 compliance - disabled property)
 [x] - <body onbeforeunload> - Navigation warning event
+[x] - <hr> (WHATWG 4.4.2 compliance - thematic break)
+[x] - <pre> (WHATWG 4.4.3 compliance - whitespace preservation, tabs, multi-line in nested elements)
 
 ### HTMLBodyElement (WHATWG 4.3.1)
 - [ ] `document.body` setter - Allow setting body element

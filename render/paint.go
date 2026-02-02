@@ -421,6 +421,8 @@ func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand,
 		}
 
 		if currentStyle.Monospace && strings.Contains(text, "\n") {
+			// Expand tabs to spaces for proper alignment
+			text = dom.ExpandTabs(text, 8)
 			lines := strings.Split(text, "\n")
 			lineHeight := float64(currentStyle.Size) * 1.5
 			y := box.Rect.Y

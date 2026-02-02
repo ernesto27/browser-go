@@ -576,8 +576,14 @@ func computeInlineSize(box *LayoutBox, parentTag string) (float64, float64) {
 		case TextBox:
 			fontSize := getFontSize(tagForSize)
 			text := css.ApplyTextTransform(child.Text, box.Style.TextTransform)
-			w = MeasureText(text, fontSize)
-			h = getLineHeightFromStyle(box.Style, tagForSize)
+
+			// Check if inside a <pre> element for multi-line handling
+			if isInsidePre(box) && strings.Contains(child.Text, "\n") {
+				w, h = measurePreformattedText(child.Text, fontSize)
+			} else {
+				w = MeasureText(text, fontSize)
+				h = getLineHeightFromStyle(box.Style, tagForSize)
+			}
 		case InlineBox:
 			w, h = computeInlineSize(child, parentTag)
 		case ImageBox:
@@ -614,8 +620,16 @@ func layoutInlineChildren(box *LayoutBox, parentTag string) {
 		case TextBox:
 			fontSize := getFontSize(tagForSize)
 			text := css.ApplyTextTransform(child.Text, box.Style.TextTransform)
-			w := MeasureText(text, fontSize)
-			h := getLineHeightFromStyle(box.Style, tagForSize)
+
+			var w, h float64
+			// Check if inside a <pre> element for multi-line handling
+			if isInsidePre(box) && strings.Contains(child.Text, "\n") {
+				w, h = measurePreformattedText(child.Text, fontSize)
+			} else {
+				w = MeasureText(text, fontSize)
+				h = getLineHeightFromStyle(box.Style, tagForSize)
+			}
+
 			child.Rect.X = box.Rect.X + offsetX
 			child.Rect.Y = box.Rect.Y + baselineOffset
 			child.Rect.Width = w
@@ -923,6 +937,25 @@ func isInsidePre(box *LayoutBox) bool {
 		}
 	}
 	return false
+}
+
+// measurePreformattedText calculates width and height for multi-line text inside <pre>
+func measurePreformattedText(text string, fontSize float64) (width, height float64) {
+	// Expand tabs to spaces for proper alignment
+	text = dom.ExpandTabs(text, 8)
+	lines := strings.Split(text, "\n")
+	lineHeight := fontSize * 1.5
+
+	// Find widest line
+	maxWidth := 0.0
+	for _, line := range lines {
+		lw := MeasureText(line, fontSize)
+		if lw > maxWidth {
+			maxWidth = lw
+		}
+	}
+
+	return maxWidth, float64(len(lines)) * lineHeight
 }
 
 // getButtonText extracts text content from a button element

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Pre Element Compliance Test (WHATWG 4.4.3)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Pre Element Compliance Test (WHATWG 4.4.3)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Preformatted Text</h3>
+    <div class="test-box">
+        <pre id="pre1">This is preformatted text.
+It should preserve line breaks.
+    And indentation.</pre>
+    </div>
+    <p>Expected: 3 lines with preserved spacing and indentation</p>
+
+    <h3>Test 2: Leading Newline Stripping</h3>
+    <div class="test-box">
+        <pre id="pre2">
+First line (should be first, no blank line above)</pre>
+    </div>
+    <p>Expected: "First line..." should appear immediately, no blank line at top</p>
+
+    <h3>Test 3: Multiple Spaces Preserved</h3>
+    <div class="test-box">
+        <pre id="pre3">Word    with    multiple    spaces</pre>
+    </div>
+    <p>Expected: Multiple spaces between words should be visible</p>
+
+    <h3>Test 4: Tabs Preserved</h3>
+    <div class="test-box">
+        <pre id="pre4">Col1&#9;Col2&#9;Col3
+A&#9;B&#9;C</pre>
+    </div>
+    <p>Expected: Tab-aligned columns</p>
+
+    <h3>Test 5: Code Block (pre + code)</h3>
+    <div class="test-box">
+        <pre id="pre5"><code>function hello() {
+    console.log("Hello, World!");
+    return true;
+}</code></pre>
+    </div>
+    <p>Expected: Monospace code with indentation preserved</p>
+
+    <h3>Test 6: ASCII Art</h3>
+    <div class="test-box">
+        <pre id="pre6">  /\_/\
+ ( o.o )
+  > ^ <</pre>
+    </div>
+    <p>Expected: Cat face ASCII art properly aligned</p>
+
+    <h3>Test 7: Empty Lines Preserved</h3>
+    <div class="test-box">
+        <pre id="pre7">Line 1
+
+Line 3 (line 2 is empty)
+
+
+Line 6 (lines 4-5 are empty)</pre>
+    </div>
+    <p>Expected: Empty lines between text should be visible</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function assert(condition, message) {
+            const p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            const p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Test 1: Find pre element
+        var pre1 = document.getElementById('pre1');
+        assert(pre1 !== null, "Pre element found via getElementById");
+
+        // Test 2: tagName is PRE
+        if (pre1) {
+            assert(pre1.tagName === "PRE",
+                "tagName is 'PRE' (was: '" + pre1.tagName + "')");
+        }
+
+        // Test 3: textContent preserves whitespace
+        if (pre1) {
+            var content = pre1.textContent;
+            var hasNewlines = content.indexOf("\n") !== -1;
+            assert(hasNewlines,
+                "textContent preserves newlines");
+        }
+
+        // Test 4: textContent preserves multiple spaces
+        var pre3 = document.getElementById('pre3');
+        if (pre3) {
+            var content = pre3.textContent;
+            var hasMultipleSpaces = content.indexOf("    ") !== -1;
+            assert(hasMultipleSpaces,
+                "textContent preserves multiple spaces (was: '" + content + "')");
+        }
+
+        // Test 5: Leading newline stripping
+        var pre2 = document.getElementById('pre2');
+        if (pre2) {
+            var content = pre2.textContent;
+            var startsWithNewline = content.charAt(0) === "\n";
+            assert(!startsWithNewline,
+                "Leading newline after <pre> tag is stripped (first char: '" +
+                (content.charAt(0) === "\n" ? "\\n" : content.charAt(0)) + "')");
+        }
+
+        // Test 6: innerHTML works
+        if (pre1) {
+            var html = pre1.innerHTML;
+            assert(typeof html === 'string' && html.length > 0,
+                "innerHTML returns content (length: " + html.length + ")");
+        }
+
+        // Test 7: Check for code element inside pre
+        var pre5 = document.getElementById('pre5');
+        if (pre5 && pre5.children) {
+            var hasCodeChild = false;
+            for (var i = 0; i < pre5.children.length; i++) {
+                if (pre5.children[i].tagName === "CODE") {
+                    hasCodeChild = true;
+                    break;
+                }
+            }
+            assert(hasCodeChild, "Pre can contain code element as child");
+        } else {
+            assert(false, "Pre can contain code element as child (children not available)");
+        }
+
+        // Test 8: Newline count in multi-line pre
+        if (pre1) {
+            var content = pre1.textContent;
+            var newlineCount = (content.match(/\n/g) || []).length;
+            assert(newlineCount === 2,
+                "Multi-line pre has correct newline count (expected: 2, was: " + newlineCount + ")");
+        }
+
+        // Info about visual tests
+        info("Visual tests above should be verified manually");
+        info("Check: monospace font, preserved spacing, no leading blank in Test 2");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

@@ -257,3 +257,62 @@ func TestSetInnerText(t *testing.T) {
 		})
 	}
 }
+
+func TestExpandTabs(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		tabWidth int
+		expected string
+	}{
+		{
+			name:     "no tabs",
+			input:    "hello world",
+			tabWidth: 8,
+			expected: "hello world",
+		},
+		{
+			name:     "single tab at start",
+			input:    "\thello",
+			tabWidth: 8,
+			expected: "        hello",
+		},
+		{
+			name:     "tab after text",
+			input:    "Col1\tCol2",
+			tabWidth: 8,
+			expected: "Col1    Col2",
+		},
+		{
+			name:     "multiple tabs",
+			input:    "A\tB\tC",
+			tabWidth: 8,
+			expected: "A       B       C",
+		},
+		{
+			name:     "tab with newline resets column",
+			input:    "Col1\tCol2\nA\tB",
+			tabWidth: 8,
+			expected: "Col1    Col2\nA       B",
+		},
+		{
+			name:     "tab width 4",
+			input:    "A\tB",
+			tabWidth: 4,
+			expected: "A   B",
+		},
+		{
+			name:     "default tab width when 0",
+			input:    "\tx",
+			tabWidth: 0,
+			expected: "        x",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ExpandTabs(tt.input, tt.tabWidth)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

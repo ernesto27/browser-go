@@ -62,3 +62,38 @@ func (n *Node) innerTextRecursive(sb *strings.Builder, prevBlock bool) bool {
 
 	return lastWasBlock
 }
+
+// ExpandTabs replaces tab characters with spaces to align to tab stops.
+// Default tab width is 8 characters.
+func ExpandTabs(text string, tabWidth int) string {
+	if !strings.Contains(text, "\t") {
+		return text
+	}
+
+	if tabWidth <= 0 {
+		tabWidth = 8
+	}
+
+	var result strings.Builder
+	col := 0
+
+	for _, ch := range text {
+		switch ch {
+		case '\t':
+			// Calculate spaces needed to reach next tab stop
+			spaces := tabWidth - (col % tabWidth)
+			for i := 0; i < spaces; i++ {
+				result.WriteRune(' ')
+			}
+			col += spaces
+		case '\n':
+			result.WriteRune(ch)
+			col = 0
+		default:
+			result.WriteRune(ch)
+			col++
+		}
+	}
+
+	return result.String()
+}
