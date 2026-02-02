@@ -83,6 +83,10 @@ https://html.spec.whatwg.org/
   - Background colors and borders of positioned elements work
   - Text inside positioned elements is missing
   - Children of positioned elements are not being painted correctly
+- [ ] Margin collapsing not implemented
+  - Adjacent vertical margins should collapse (larger wins, not add up)
+  - Causes excessive spacing in nested block elements (e.g., `<p>` inside `<blockquote>`)
+  - CSS spec: https://www.w3.org/TR/CSS2/box.html#collapsing-margins
 
 ---
 

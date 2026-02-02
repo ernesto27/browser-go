@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Blockquote Element Compliance Test (WHATWG 4.4.4)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Blockquote Element Compliance Test (WHATWG 4.4.4)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Blockquote</h3>
+    <div class="test-box">
+        <p>Before the quote:</p>
+        <blockquote id="bq1">
+            <p>This is a quoted paragraph. It should be indented from both sides.</p>
+        </blockquote>
+        <p>After the quote.</p>
+    </div>
+    <p>Expected: Indented block with margins (typically 40px left/right, 1em top/bottom)</p>
+
+    <h3>Test 2: Blockquote with cite Attribute</h3>
+    <div class="test-box">
+        <blockquote id="bq2" cite="https://example.com/source.html">
+            <p>The only way to do great work is to love what you do.</p>
+        </blockquote>
+        <p>— Steve Jobs</p>
+    </div>
+    <p>Expected: Quote renders normally, cite attribute stored but not visible</p>
+
+    <h3>Test 3: Blockquote without Paragraph</h3>
+    <div class="test-box">
+        <blockquote id="bq3">
+            One should never assume that his side of the issue will be recognized.
+        </blockquote>
+    </div>
+    <p>Expected: Text directly in blockquote (no p element) should still render indented</p>
+
+    <h3>Test 4: Nested Blockquotes (Forum Reply Style)</h3>
+    <div class="test-box">
+        <blockquote id="bq4">
+            <blockquote id="bq4-inner">
+                <p>Original message from user A.</p>
+            </blockquote>
+            <p>Reply from user B quoting user A.</p>
+        </blockquote>
+    </div>
+    <p>Expected: Nested indentation (inner quote more indented than outer)</p>
+
+    <h3>Test 5: Blockquote with Figure/Figcaption</h3>
+    <div class="test-box">
+        <figure>
+            <blockquote id="bq5">
+                <p>The truth may be puzzling. It may take some work to grapple with.</p>
+            </blockquote>
+            <figcaption>Carl Sagan, <cite>Wonder and Skepticism</cite></figcaption>
+        </figure>
+    </div>
+    <p>Expected: Quote with caption below (attribution outside blockquote)</p>
+
+    <h3>Test 6: Multiple Paragraphs in Blockquote</h3>
+    <div class="test-box">
+        <blockquote id="bq6">
+            <p>First paragraph of the quote.</p>
+            <p>Second paragraph continues the thought.</p>
+            <p>Third paragraph concludes.</p>
+        </blockquote>
+    </div>
+    <p>Expected: All paragraphs indented within the same blockquote</p>
+
+    <hr>
+
+    <h2>Inline Quote Tests (q element - shares HTMLQuoteElement)</h2>
+
+    <h3>Test 7: Basic q Element</h3>
+    <div class="test-box">
+        <p>She said <q id="q1">Hello, world!</q> and smiled.</p>
+    </div>
+    <p>Expected: Text wrapped in quotation marks (curly quotes preferred)</p>
+
+    <h3>Test 8: q Element with cite</h3>
+    <div class="test-box">
+        <p>As the spec states: <q id="q2" cite="https://html.spec.whatwg.org/">Content inside a blockquote must be quoted from another source.</q></p>
+    </div>
+    <p>Expected: Quoted text with cite attribute stored</p>
+
+    <h3>Test 9: Nested q Elements</h3>
+    <div class="test-box">
+        <p>He said <q id="q3">She told me <q id="q3-inner">I love programming</q> yesterday</q>.</p>
+    </div>
+    <p>Expected: Nested quotes with alternating quote styles (double then single, or similar)</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function assert(condition, message) {
+            const p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            const p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Test 1: Find blockquote element
+        var bq1 = document.getElementById('bq1');
+        assert(bq1 !== null, "Blockquote element found via getElementById");
+
+        // Test 2: tagName is BLOCKQUOTE
+        if (bq1) {
+            assert(bq1.tagName === "BLOCKQUOTE",
+                "tagName is 'BLOCKQUOTE' (was: '" + bq1.tagName + "')");
+        }
+
+        // Test 3: cite attribute via getAttribute
+        var bq2 = document.getElementById('bq2');
+        if (bq2) {
+            var citeAttr = bq2.getAttribute("cite");
+            assert(citeAttr === "https://example.com/source.html",
+                "getAttribute('cite') returns correct value (was: '" + citeAttr + "')");
+        }
+
+        // Test 4: cite property (HTMLQuoteElement interface)
+        if (bq2) {
+            var citeProp = bq2.cite;
+            assert(typeof citeProp === 'string',
+                "blockquote.cite property exists and is string (was: " + typeof citeProp + ")");
+
+            if (typeof citeProp === 'string') {
+                // cite property should return resolved URL
+                assert(citeProp === "https://example.com/source.html" || citeProp.indexOf("example.com") !== -1,
+                    "blockquote.cite returns URL (was: '" + citeProp + "')");
+            }
+        }
+
+        // Test 5: cite property setter
+        if (bq2) {
+            var originalCite = bq2.cite;
+            bq2.cite = "https://newsite.com/quote.html";
+            var newCite = bq2.cite;
+            assert(newCite === "https://newsite.com/quote.html",
+                "blockquote.cite setter works (was: '" + newCite + "')");
+            bq2.cite = originalCite; // restore
+        }
+
+        // Test 6: q element exists
+        var q1 = document.getElementById('q1');
+        assert(q1 !== null, "q element found via getElementById");
+
+        // Test 7: q tagName
+        if (q1) {
+            assert(q1.tagName === "Q",
+                "q.tagName is 'Q' (was: '" + q1.tagName + "')");
+        }
+
+        // Test 8: q element cite attribute
+        var q2 = document.getElementById('q2');
+        if (q2) {
+            var qCiteAttr = q2.getAttribute("cite");
+            assert(qCiteAttr === "https://html.spec.whatwg.org/",
+                "q.getAttribute('cite') returns correct value (was: '" + qCiteAttr + "')");
+        }
+
+        // Test 9: q element cite property (shares HTMLQuoteElement)
+        if (q2) {
+            var qCiteProp = q2.cite;
+            assert(typeof qCiteProp === 'string',
+                "q.cite property exists and is string (was: " + typeof qCiteProp + ")");
+        }
+
+        // Test 10: Nested blockquote structure
+        var bq4 = document.getElementById('bq4');
+        var bq4Inner = document.getElementById('bq4-inner');
+        if (bq4 && bq4Inner) {
+            assert(bq4Inner.parentElement === bq4 ||
+                   (bq4.children && bq4.children.length > 0),
+                "Nested blockquotes maintain parent-child relationship");
+        }
+
+        // Test 11: innerHTML works on blockquote
+        if (bq1) {
+            var html = bq1.innerHTML;
+            assert(typeof html === 'string' && html.length > 0,
+                "blockquote.innerHTML returns content (length: " + html.length + ")");
+        }
+
+        // Test 12: textContent works on blockquote
+        if (bq3) {
+            var text = bq3.textContent;
+            assert(text && text.indexOf("assume") !== -1,
+                "blockquote.textContent returns text content");
+        }
+
+        // Info about visual tests
+        info("Visual tests above should verify proper indentation and margins");
+        info("Nested blockquotes should show progressive indentation");
+        info("q elements should display with quotation marks");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

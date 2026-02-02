@@ -15,8 +15,8 @@
 - [x] `<h1>` - `<h6>` - headings
 - [x] `<p>` - paragraph
 - [x] `<br>` - line break
-- [x] `<hr>` - horizontal rule
-- [x] `<pre>` - preformatted text
+- [x] `<hr>` - horizontal rule (WHATWG 4.4.2 compliant)
+- [x] `<pre>` - preformatted text (WHATWG 4.4.3: whitespace/tabs preserved, multi-line in nested elements)
 - [x] `<blockquote>` - block quotation
 - [x] `<div>` - division
 - [x] `<span>` - inline container

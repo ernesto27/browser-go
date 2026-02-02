@@ -402,6 +402,39 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
+	if strings.ToUpper(node.TagName) == "BLOCKQUOTE" || strings.ToUpper(node.TagName) == "Q" {
+		obj.DefineAccessorProperty("cite",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				cite := node.Attributes["cite"]
+				if cite == "" {
+					return goja.Undefined()
+				}
+
+				// Resolve URL relative to document base
+				baseHref := dom.FindBaseHref(rt.document)
+				if baseHref != "" {
+					baseURL, err := url.Parse(baseHref)
+					if err == nil {
+						refURL, err := url.Parse(cite)
+						if err == nil {
+							resolved := baseURL.ResolveReference(refURL)
+							return rt.vm.ToValue(resolved.String())
+						}
+					}
+				}
+
+				return rt.vm.ToValue(cite)
+
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					node.Attributes["cite"] = call.Arguments[0].String()
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
 	obj.Set("appendChild", func(call goja.FunctionCall) goja.Value {
 		if len(call.Arguments) < 1 {
 			return goja.Undefined()
