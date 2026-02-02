@@ -3,6 +3,7 @@ package js
 import (
 	"browser/dom"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -302,6 +303,20 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		nil,
 		goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+	obj.DefineAccessorProperty("children",
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			var elements []any
+			for _, child := range node.Children {
+				if child.Type == dom.Element {
+					elements = append(elements, rt.wrapElement(child))
+				}
+			}
+			arr := rt.vm.NewArray(elements...)
+			return arr
+		}),
+		nil,
+		goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	obj.Set("addEventListener", func(call goja.FunctionCall) goja.Value {
 		if len(call.Arguments) < 2 {
 			return goja.Undefined()
@@ -343,6 +358,34 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}
 			return goja.Undefined()
 		}),
+		goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+	obj.DefineAccessorProperty("href",
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			href := node.Attributes["href"]
+			if href == "" {
+				return goja.Undefined()
+			}
+
+			if strings.ToUpper(node.TagName) == "BASE" {
+				return rt.vm.ToValue(href)
+			}
+
+			baseHref := dom.FindBaseHref(rt.document)
+			if baseHref != "" {
+				baseURL, err := url.Parse(baseHref)
+				if err == nil {
+					refURL, err := url.Parse(href)
+					if err == nil {
+						resolved := baseURL.ResolveReference(refURL)
+						return rt.vm.ToValue(resolved.String())
+					}
+				}
+			}
+
+			return rt.vm.ToValue(href)
+		}),
+		nil,
 		goja.FLAG_FALSE, goja.FLAG_TRUE)
 
 	obj.Set("appendChild", func(call goja.FunctionCall) goja.Value {

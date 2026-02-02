@@ -28,6 +28,11 @@
 - [ ] `element.replaceChild(new, old)` - Replace a child
 - [x] `element.remove()` - Remove self from parent
 
+### Element Properties
+- [x] `element.children` - Get child elements (excludes text nodes)
+- [x] `element.href` - Get resolved href (for `<a>`, `<base>`, `<link>`)
+- [ ] `element.target` - Get target attribute (for `<a>`, `<base>`)
+
 ### Attribute Manipulation
 - [x] `element.classList.add(class)` - Add CSS class
 - [x] `element.classList.remove(class)` - Remove CSS class
