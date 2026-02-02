@@ -159,6 +159,11 @@ func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY f
 	case dom.TagUL, dom.TagOL, dom.TagMenu:
 		box.Margin.Top = 4
 		box.Margin.Bottom = 4
+	case dom.TagFigure:
+		box.Margin.Top = 16
+		box.Margin.Bottom = 16
+		innerX = startX + 40
+		innerWidth = containerWidth - 40
 	}
 
 	// Apply CSS margins from inline style (override defaults)
@@ -319,6 +324,7 @@ func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY f
 
 		case ImageBox:
 			childWidth, childHeight = getImageSize(child.Node)
+			childWidth += 4 // Add small right margin between images
 		case InputBox:
 			childWidth = 200.0
 			childHeight = 28.0

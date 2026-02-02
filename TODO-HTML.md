@@ -94,8 +94,8 @@
 - [ ] `<audio>` - audio player
 - [ ] `<source>` - media source
 - [ ] `<picture>` - responsive images
-- [ ] `<figure>` - figure container
-- [ ] `<figcaption>` - figure caption
+- [x] `<figure>` - figure container (WHATWG 4.4.12: block element, 40px indent, compliance tests)
+- [x] `<figcaption>` - figure caption (block element)
 - [ ] `<canvas>` - drawing canvas
 - [ ] `<svg>` - vector graphics
 - [ ] `<iframe>` - embedded frame
@@ -122,7 +122,7 @@
 - [ ] `<dialog>` - modal dialog
 
 ### Semantic
-- [ ] `<aside>` - sidebar content
+- [x] `<aside>` - sidebar content (block element)
 - [ ] `<address>` - contact info
 - [ ] `<hgroup>` - heading group
 
@@ -216,7 +216,7 @@
 ## Known Issues
 - [ ] Whitespace between inline elements missing (e.g., `<strong>`, `<em>`)
 - [ ] Text inside `position: absolute` elements not rendering
-- [x] `<main>`, `<nav>`, `<section>`, `<article>` added to blockElements map
+- [x] `<main>`, `<nav>`, `<section>`, `<article>`, `<aside>` added to blockElements map
 - [ ] No keyboard navigation between form elements (Tab key)
 - [x] No form validation feedback UI (implemented red border for required fields)
 - [ ] Images don't show alt text on load failure

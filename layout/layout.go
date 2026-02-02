@@ -42,6 +42,8 @@ var blockElements = map[string]bool{
 	"dd":         true,
 	"fieldset":   true,
 	"center":     true,
+	"figure":     true,
+	"figcaption": true,
 }
 
 var skipElements = map[string]bool{

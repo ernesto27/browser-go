@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHATWG 4.4.12 Figure Element Compliance Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .description { color: #555; margin-bottom: 10px; }
+        .expected { color: #0066cc; font-style: italic; }
+        code { background-color: #f5f5f5; padding: 2px 6px; }
+    </style>
+</head>
+<body>
+    <h1>WHATWG 4.4.12 Figure Element Compliance Test</h1>
+    <p>The <code>&lt;figure&gt;</code> element represents self-contained content, optionally with a caption.</p>
+
+    <h2>Test 1: Basic figure with image and caption</h2>
+    <div class="test">
+        <p class="description">Figure with image content and figcaption at bottom.</p>
+        <p class="expected">Expected: Image displayed, caption below, figure indented from margins.</p>
+        <figure>
+            <img src="https://picsum.photos/200/150" alt="Random image" width="200" height="150">
+            <figcaption>A random placeholder image</figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 2: Figure with caption first</h2>
+    <div class="test">
+        <p class="description">Figcaption can appear before the content (per spec).</p>
+        <p class="expected">Expected: Caption above, then image.</p>
+        <figure>
+            <figcaption>Caption appears first</figcaption>
+            <img src="https://picsum.photos/200/150" alt="Random image" width="200" height="150">
+        </figure>
+    </div>
+
+    <h2>Test 3: Figure without caption</h2>
+    <div class="test">
+        <p class="description">Figure can have no figcaption (just flow content).</p>
+        <p class="expected">Expected: Just the image, indented like a figure.</p>
+        <figure>
+            <img src="https://picsum.photos/200/150" alt="Random image" width="200" height="150">
+        </figure>
+    </div>
+
+    <h2>Test 4: Figure with code listing (spec example)</h2>
+    <div class="test">
+        <p class="description">Using figure for code listings with caption.</p>
+        <p class="expected">Expected: Caption, then code block with preformatted text.</p>
+        <figure>
+            <figcaption>Listing 1. Hello World in JavaScript</figcaption>
+            <pre><code>function hello() {
+    console.log("Hello, World!");
+}
+hello();</code></pre>
+        </figure>
+    </div>
+
+    <h2>Test 5: Figure with blockquote</h2>
+    <div class="test">
+        <p class="description">Using figure for quoted content with attribution.</p>
+        <p class="expected">Expected: Quote displayed, then citation caption.</p>
+        <figure>
+            <blockquote>
+                <p>The only way to do great work is to love what you do.</p>
+            </blockquote>
+            <figcaption>Steve Jobs</figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 6: Figure with poem (spec example)</h2>
+    <div class="test">
+        <p class="description">Using figure for poetry with citation.</p>
+        <p class="expected">Expected: Poem text with line breaks, then citation.</p>
+        <figure>
+            <p>'Twas brillig, and the slithy toves<br>
+            Did gyre and gimble in the wabe;<br>
+            All mimsy were the borogoves,<br>
+            And the mome raths outgrabe.</p>
+            <figcaption><cite>Jabberwocky</cite> (first verse). Lewis Carroll, 1832-98</figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 7: Multiple images in one figure</h2>
+    <div class="test">
+        <p class="description">Figure can contain multiple images with shared caption.</p>
+        <p class="expected">Expected: Three images, one caption for all.</p>
+        <figure>
+            <img src="https://picsum.photos/100/100?1" alt="Image 1" width="100" height="100">
+            <img src="https://picsum.photos/100/100?2" alt="Image 2" width="100" height="100">
+            <img src="https://picsum.photos/100/100?3" alt="Image 3" width="100" height="100">
+            <figcaption>Three random images in a gallery</figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 8: Nested figures (spec example)</h2>
+    <div class="test">
+        <p class="description">Figures can be nested for group captions.</p>
+        <p class="expected">Expected: Outer caption, then individual figures with own captions.</p>
+        <figure>
+            <figcaption>The project through the years</figcaption>
+            <figure>
+                <img src="https://picsum.photos/100/80?a" alt="Version 1" width="100" height="80">
+                <figcaption>Version 1.0, 2020</figcaption>
+            </figure>
+            <figure>
+                <img src="https://picsum.photos/100/80?b" alt="Version 2" width="100" height="80">
+                <figcaption>Version 2.0, 2022</figcaption>
+            </figure>
+            <figure>
+                <img src="https://picsum.photos/100/80?c" alt="Version 3" width="100" height="80">
+                <figcaption>Version 3.0, 2024</figcaption>
+            </figure>
+        </figure>
+    </div>
+
+    <h2>Test 9: Figure with styled figcaption</h2>
+    <div class="test">
+        <p class="description">Figcaption can contain inline formatting.</p>
+        <p class="expected">Expected: Caption with bold, italic, and link.</p>
+        <figure>
+            <img src="https://picsum.photos/200/150" alt="Random image" width="200" height="150">
+            <figcaption><strong>Figure 1:</strong> An <em>example</em> image from <a href="#">Picsum</a></figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 10: Figure with ID for referencing</h2>
+    <div class="test">
+        <p class="description">Figures can be referenced by ID (see spec example).</p>
+        <p class="expected">Expected: Figure with ID that could be linked to.</p>
+        <p>See <a href="#fig1">Figure 1</a> below for details.</p>
+        <figure id="fig1">
+            <img src="https://picsum.photos/200/150" alt="Referenced figure" width="200" height="150">
+            <figcaption>Figure 1: A referenced figure</figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 11: Figure in article context</h2>
+    <div class="test">
+        <p class="description">Figure commonly used in articles (spec example pattern).</p>
+        <p class="expected">Expected: Article with heading, figure, and text.</p>
+        <article>
+            <h3>Breaking News</h3>
+            <figure>
+                <img src="https://picsum.photos/200/150" alt="News image" width="200" height="150">
+                <figcaption>Photo credit: Example News</figcaption>
+            </figure>
+            <p>This is the article text that discusses the figure above.</p>
+        </article>
+    </div>
+
+    <h2>Test 12: Empty figure</h2>
+    <div class="test">
+        <p class="description">Edge case: empty figure element.</p>
+        <p class="expected">Expected: Empty block with figure margins.</p>
+        <figure></figure>
+        <p>(Figure above is empty)</p>
+    </div>
+
+    <h2>Test 13: Figure with only figcaption</h2>
+    <div class="test">
+        <p class="description">Edge case: figure with only a caption, no other content.</p>
+        <p class="expected">Expected: Just the caption text displayed.</p>
+        <figure>
+            <figcaption>A caption with no associated content</figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 14: Figure with table</h2>
+    <div class="test">
+        <p class="description">Figure can contain tables with caption.</p>
+        <p class="expected">Expected: Table displayed with figure caption.</p>
+        <figure>
+            <table>
+                <tr><th>Name</th><th>Value</th></tr>
+                <tr><td>Alpha</td><td>100</td></tr>
+                <tr><td>Beta</td><td>200</td></tr>
+            </table>
+            <figcaption>Table 1: Sample data values</figcaption>
+        </figure>
+    </div>
+
+</body>
+</html>

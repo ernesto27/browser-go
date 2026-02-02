@@ -76,4 +76,7 @@ const (
 	TagDL = "dl"
 	TagDT = "dt"
 	TagDD = "dd"
+
+	TagFigure     = "figure"
+	TagFigcaption = "figcaption"
 )
