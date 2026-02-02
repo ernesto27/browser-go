@@ -36,6 +36,14 @@
 ### HTMLTitleElement
 - [x] `titleElement.text` - Get/set title text (alias for textContent)
 
+### HTMLQuoteElement (blockquote, q)
+- [x] `element.cite` - Get/set cite URL attribute
+
+### HTMLOListElement (ol)
+- [x] `ol.start` - Get/set starting value (number)
+- [x] `ol.reversed` - Get/set reversed attribute (boolean)
+- [x] `ol.type` - Get/set marker type (1/a/A/i/I)
+
 ### Attribute Manipulation
 - [x] `element.classList.add(class)` - Add CSS class
 - [x] `element.classList.remove(class)` - Remove CSS class

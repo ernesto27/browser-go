@@ -4,6 +4,7 @@ import (
 	"browser/dom"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -429,6 +430,65 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				if len(call.Arguments) > 0 {
 					node.Attributes["cite"] = call.Arguments[0].String()
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
+	if strings.ToUpper(node.TagName) == "OL" {
+		obj.DefineAccessorProperty("start",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				startAttr := node.Attributes["start"]
+				if startAttr == "" {
+					return rt.vm.ToValue(1)
+				}
+
+				start, err := strconv.Atoi(startAttr)
+				if err != nil {
+					return rt.vm.ToValue(1)
+				}
+				return rt.vm.ToValue(start)
+			}),
+
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					node.Attributes["start"] = call.Arguments[0].String()
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE,
+		)
+
+		obj.DefineAccessorProperty("reversed",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				_, exists := node.Attributes["reversed"]
+				return rt.vm.ToValue(exists)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					if call.Arguments[0].ToBoolean() {
+						node.Attributes["reversed"] = ""
+					} else {
+						delete(node.Attributes, "reversed")
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		// type property - kind of list marker (1, a, A, i, I)
+		obj.DefineAccessorProperty("type",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				typeAttr := node.Attributes["type"]
+				if typeAttr == "" {
+					return rt.vm.ToValue("1")
+				}
+				return rt.vm.ToValue(typeAttr)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					node.Attributes["type"] = call.Arguments[0].String()
 				}
 				return goja.Undefined()
 			}),

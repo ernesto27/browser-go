@@ -6,6 +6,7 @@ import (
 	"browser/layout"
 	"fmt"
 	"image/color"
+	"strconv"
 	"strings"
 )
 
@@ -412,9 +413,9 @@ func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand,
 
 		text := css.ApplyTextTransform(box.Text, currentStyle.TextTransform)
 
-		if isListItem, isOrdered, index := getListInfo(box); isListItem {
+		if isListItem, isOrdered, index, listType := getListInfo(box); isListItem {
 			if isOrdered {
-				text = fmt.Sprintf("%d. %s", index, text)
+				text = formatListMarker(index, listType) + " " + text
 			} else {
 				text = "• " + text
 			}
@@ -694,41 +695,100 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 }
 
 // getListInfo returns (isListItem, isOrdered, itemIndex)
-func getListInfo(box *layout.LayoutBox) (bool, bool, int) {
+func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 	// Check if parent is <li>
 	if box.Parent == nil || box.Parent.Node == nil {
-		return false, false, 0
+		return false, false, 0, ""
 	}
 	if box.Parent.Node.TagName != dom.TagLI {
-		return false, false, 0
+		return false, false, 0, ""
 	}
 
 	li := box.Parent
 
 	// Check if grandparent is <ul> or <ol>
 	if li.Parent == nil || li.Parent.Node == nil {
-		return false, false, 0
+		return false, false, 0, ""
 	}
 
 	listTag := li.Parent.Node.TagName
 	if listTag != dom.TagUL && listTag != dom.TagOL {
-		return false, false, 0
+		return false, false, 0, ""
 	}
 
 	isOrdered := listTag == dom.TagOL
 
-	// Count which <li> index this is
-	index := 1
+	listType := "1"
+	if typeAttr, ok := li.Parent.Node.Attributes["type"]; ok {
+		listType = typeAttr
+	}
+
+	// Count total items and find current item's position in one pass
+	index := 0
+	totalItems := 0
 	for _, sibling := range li.Parent.Children {
-		if sibling == li {
-			break
-		}
 		if sibling.Node != nil && sibling.Node.TagName == dom.TagLI {
-			index++
+			totalItems++
+			if sibling == li {
+				index = totalItems
+			}
 		}
 	}
 
-	return true, isOrdered, index
+	_, isReversed := li.Parent.Node.Attributes["reversed"]
+
+	if isOrdered {
+		start := 1
+		if startAttr, ok := li.Parent.Node.Attributes["start"]; ok {
+			if parsed, err := strconv.Atoi(startAttr); err == nil {
+				start = parsed
+			}
+		} else if isReversed {
+			start = totalItems
+		}
+		if isReversed {
+			index = start - (index - 1)
+		} else {
+			index = start + (index - 1)
+		}
+	}
+
+	return true, isOrdered, index, listType
+}
+
+func formatListMarker(index int, listType string) string {
+	switch listType {
+	case "a":
+		return string(rune('a'+index-1)) + "."
+	case "A":
+		return string(rune('A'+index-1)) + "."
+	case "i":
+		return toRomanLower(index) + "."
+	case "I":
+		return toRomanUpper(index) + "."
+	default:
+		return fmt.Sprintf("%d.", index)
+	}
+}
+
+func toRomanLower(n int) string {
+	return strings.ToLower(toRomanUpper(n))
+}
+
+func toRomanUpper(n int) string {
+	if n <= 0 || n > 3999 {
+		return fmt.Sprintf("%d", n)
+	}
+	vals := []int{1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1}
+	syms := []string{"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"}
+	var result strings.Builder
+	for i, v := range vals {
+		for n >= v {
+			result.WriteString(syms[i])
+			n -= v
+		}
+	}
+	return result.String()
 }
 
 func getButtonTextFromBox(box *layout.LayoutBox) string {

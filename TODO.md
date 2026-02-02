@@ -22,6 +22,8 @@ https://html.spec.whatwg.org/
 [x] - <body onbeforeunload> - Navigation warning event
 [x] - <hr> (WHATWG 4.4.2 compliance - thematic break)
 [x] - <pre> (WHATWG 4.4.3 compliance - whitespace preservation, tabs, multi-line in nested elements)
+[x] - <blockquote> (WHATWG 4.4.4 compliance - cite property)
+[x] - <ol> (WHATWG 4.4.5)
 
 ### HTMLBodyElement (WHATWG 4.3.1)
 - [ ] `document.body` setter - Allow setting body element

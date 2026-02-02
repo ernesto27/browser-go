@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>OL Element Compliance Test (WHATWG 4.4.5)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>OL Element Compliance Test (WHATWG 4.4.5)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Ordered List</h3>
+    <div class="test-box">
+        <ol id="ol1">
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+        </ol>
+    </div>
+    <p>Expected: 1. 2. 3. numbering</p>
+
+    <h3>Test 2: Ordered List with start Attribute</h3>
+    <div class="test-box">
+        <ol id="ol2" start="5">
+            <li>This should be 5</li>
+            <li>This should be 6</li>
+            <li>This should be 7</li>
+        </ol>
+    </div>
+    <p>Expected: 5. 6. 7. numbering (starting from 5)</p>
+
+    <h3>Test 3: Reversed Ordered List</h3>
+    <div class="test-box">
+        <ol id="ol3" reversed>
+            <li>This should be 3</li>
+            <li>This should be 2</li>
+            <li>This should be 1</li>
+        </ol>
+    </div>
+    <p>Expected: 3. 2. 1. numbering (reversed/descending)</p>
+
+    <h3>Test 4: Reversed with start Attribute</h3>
+    <div class="test-box">
+        <ol id="ol4" reversed start="10">
+            <li>This should be 10</li>
+            <li>This should be 9</li>
+            <li>This should be 8</li>
+        </ol>
+    </div>
+    <p>Expected: 10. 9. 8. numbering</p>
+
+    <h3>Test 5: Type "a" (lowercase letters)</h3>
+    <div class="test-box">
+        <ol id="ol5" type="a">
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+        </ol>
+    </div>
+    <p>Expected: a. b. c. lettering</p>
+
+    <h3>Test 6: Type "A" (uppercase letters)</h3>
+    <div class="test-box">
+        <ol id="ol6" type="A">
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+        </ol>
+    </div>
+    <p>Expected: A. B. C. lettering</p>
+
+    <h3>Test 7: Type "i" (lowercase roman)</h3>
+    <div class="test-box">
+        <ol id="ol7" type="i">
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+        </ol>
+    </div>
+    <p>Expected: i. ii. iii. roman numerals</p>
+
+    <h3>Test 8: Type "I" (uppercase roman)</h3>
+    <div class="test-box">
+        <ol id="ol8" type="I">
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+        </ol>
+    </div>
+    <p>Expected: I. II. III. roman numerals</p>
+
+    <h3>Test 9: Nested Ordered Lists</h3>
+    <div class="test-box">
+        <ol id="ol9">
+            <li>First level item 1
+                <ol>
+                    <li>Second level item 1</li>
+                    <li>Second level item 2</li>
+                </ol>
+            </li>
+            <li>First level item 2</li>
+        </ol>
+    </div>
+    <p>Expected: Nested lists with independent numbering</p>
+
+    <h3>Test 10: Large Numbers (start at 99)</h3>
+    <div class="test-box">
+        <ol id="ol10" start="99">
+            <li>Item 99</li>
+            <li>Item 100</li>
+            <li>Item 101</li>
+        </ol>
+    </div>
+    <p>Expected: 99. 100. 101. numbering</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function assert(condition, message) {
+            const p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            const p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Test 1: Find ol element
+        var ol1 = document.getElementById('ol1');
+        assert(ol1 !== null, "OL element found via getElementById");
+
+        // Test 2: tagName is OL
+        if (ol1) {
+            assert(ol1.tagName === "OL",
+                "tagName is 'OL' (was: '" + ol1.tagName + "')");
+        }
+
+        // Test 3: start attribute via getAttribute
+        var ol2 = document.getElementById('ol2');
+        if (ol2) {
+            var startAttr = ol2.getAttribute("start");
+            assert(startAttr === "5",
+                "getAttribute('start') returns '5' (was: '" + startAttr + "')");
+        }
+
+        // Test 4: start property (HTMLOListElement interface)
+        if (ol2) {
+            var startProp = ol2.start;
+            assert(typeof startProp === 'number',
+                "ol.start property exists and is number (was: " + typeof startProp + ")");
+
+            if (typeof startProp === 'number') {
+                assert(startProp === 5,
+                    "ol.start returns 5 (was: " + startProp + ")");
+            }
+        }
+
+        // Test 5: reversed attribute via getAttribute
+        var ol3 = document.getElementById('ol3');
+        if (ol3) {
+            var hasReversed = ol3.getAttribute("reversed") !== null || ol3.hasAttribute("reversed");
+            assert(hasReversed,
+                "getAttribute('reversed') or hasAttribute('reversed') works");
+        }
+
+        // Test 6: reversed property (HTMLOListElement interface)
+        if (ol3) {
+            var reversedProp = ol3.reversed;
+            assert(typeof reversedProp === 'boolean',
+                "ol.reversed property exists and is boolean (was: " + typeof reversedProp + ")");
+
+            if (typeof reversedProp === 'boolean') {
+                assert(reversedProp === true,
+                    "ol.reversed returns true (was: " + reversedProp + ")");
+            }
+        }
+
+        // Test 7: type attribute via getAttribute
+        var ol5 = document.getElementById('ol5');
+        if (ol5) {
+            var typeAttr = ol5.getAttribute("type");
+            assert(typeAttr === "a",
+                "getAttribute('type') returns 'a' (was: '" + typeAttr + "')");
+        }
+
+        // Test 8: type property (HTMLOListElement interface)
+        if (ol5) {
+            var typeProp = ol5.type;
+            assert(typeof typeProp === 'string',
+                "ol.type property exists and is string (was: " + typeof typeProp + ")");
+
+            if (typeof typeProp === 'string') {
+                assert(typeProp === "a",
+                    "ol.type returns 'a' (was: '" + typeProp + "')");
+            }
+        }
+
+        // Test 9: children property
+        if (ol1) {
+            var children = ol1.children;
+            assert(children && children.length === 3,
+                "ol.children returns 3 li elements (was: " + (children ? children.length : 'undefined') + ")");
+        }
+
+        // Test 10: li tagName
+        if (ol1 && ol1.children && ol1.children.length > 0) {
+            assert(ol1.children[0].tagName === "LI",
+                "First child tagName is 'LI' (was: '" + ol1.children[0].tagName + "')");
+        }
+
+        // Test 11: start property setter
+        if (ol1) {
+            ol1.start = 10;
+            var newStart = ol1.start;
+            assert(newStart === 10,
+                "ol.start setter works (was: " + newStart + ")");
+            ol1.start = 1; // restore
+        }
+
+        // Test 12: type property setter
+        if (ol1) {
+            ol1.type = "A";
+            var newType = ol1.type;
+            assert(newType === "A",
+                "ol.type setter works (was: '" + newType + "')");
+            ol1.type = "1"; // restore
+        }
+
+        // Info about visual tests
+        info("Visual tests above should verify proper numbering styles");
+        info("Check: start values, reversed order, letter/roman markers");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

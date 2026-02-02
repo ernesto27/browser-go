@@ -36,7 +36,7 @@
 
 ### Lists
 - [x] `<ul>` - unordered list
-- [x] `<ol>` - ordered list
+- [x] `<ol>` - ordered list (JS: start/reversed/type properties)
 - [x] `<li>` - list item
 - [x] `<dl>` - description list
 - [x] `<dt>` - description term
