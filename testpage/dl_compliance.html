@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHATWG 4.4.9 DL Element Compliance Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { background-color: #e6ffe6; }
+        .fail { background-color: #ffe6e6; }
+        .description { color: #555; margin-bottom: 10px; }
+        .expected { color: #0066cc; font-style: italic; }
+        code { background-color: #f5f5f5; padding: 2px 6px; }
+    </style>
+</head>
+<body>
+    <h1>WHATWG 4.4.9 DL Element Compliance Test</h1>
+    <p>The <code>&lt;dl&gt;</code> element represents an association list (description list) consisting of zero or more name-value groups.</p>
+
+    <h2>Test 1: Basic description list</h2>
+    <div class="test">
+        <p class="description">Simple dl with dt (term) and dd (description).</p>
+        <p class="expected">Expected: Terms left-aligned, descriptions indented ~40px.</p>
+        <dl>
+            <dt>HTML</dt>
+            <dd>HyperText Markup Language</dd>
+            <dt>CSS</dt>
+            <dd>Cascading Style Sheets</dd>
+            <dt>JS</dt>
+            <dd>JavaScript</dd>
+        </dl>
+    </div>
+
+    <h2>Test 2: One term, multiple descriptions</h2>
+    <div class="test">
+        <p class="description">A single dt followed by multiple dd elements (spec example: Authors).</p>
+        <p class="expected">Expected: "Authors" term with two indented values "John" and "Luke".</p>
+        <dl>
+            <dt>Authors</dt>
+            <dd>John</dd>
+            <dd>Luke</dd>
+            <dt>Editor</dt>
+            <dd>Frank</dd>
+        </dl>
+    </div>
+
+    <h2>Test 3: Multiple terms, one description</h2>
+    <div class="test">
+        <p class="description">Multiple dt elements sharing one dd (spec example: color/colour).</p>
+        <p class="expected">Expected: Both "color" and "colour" terms, followed by shared definition.</p>
+        <dl>
+            <dt>color</dt>
+            <dt>colour</dt>
+            <dd>A sensation which derives from the ability of the eye to distinguish different wavelengths of light.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 4: Metadata use case</h2>
+    <div class="test">
+        <p class="description">Using dl for metadata (spec example).</p>
+        <p class="expected">Expected: Key-value pairs displayed as term/description.</p>
+        <dl>
+            <dt>Last modified time</dt>
+            <dd>2004-12-23T23:33Z</dd>
+            <dt>Recommended update interval</dt>
+            <dd>60s</dd>
+        </dl>
+    </div>
+
+    <h2>Test 5: Div wrapper pattern</h2>
+    <div class="test">
+        <p class="description">Groups wrapped in div for styling (per spec, this doesn't change semantics).</p>
+        <p class="expected">Expected: Same rendering as without divs.</p>
+        <dl>
+            <div>
+                <dt>Last modified time</dt>
+                <dd>2004-12-23T23:33Z</dd>
+            </div>
+            <div>
+                <dt>Recommended update interval</dt>
+                <dd>60s</dd>
+            </div>
+            <div>
+                <dt>Authors</dt>
+                <dt>Editors</dt>
+                <dd>Robert Rothman</dd>
+                <dd>Daniel Jackson</dd>
+            </div>
+        </dl>
+    </div>
+
+    <h2>Test 6: Glossary with dfn</h2>
+    <div class="test">
+        <p class="description">Using dl as a glossary with dfn elements (spec example).</p>
+        <p class="expected">Expected: Terms with definitions, dfn may be styled differently.</p>
+        <dl>
+            <dt><dfn>Apartment</dfn>, n.</dt>
+            <dd>An execution context grouping one or more threads with one or more COM objects.</dd>
+            <dt><dfn>Flat</dfn>, n.</dt>
+            <dd>A deflated tire.</dd>
+            <dt><dfn>Home</dfn>, n.</dt>
+            <dd>The user's login directory.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 7: Instructions/conditions (ordered matters)</h2>
+    <div class="test">
+        <p class="description">Using dl for conditional instructions (spec example: victory points).</p>
+        <p class="expected">Expected: Conditions as terms, outcomes as descriptions.</p>
+        <p>Determine the victory points as follows (use the first matching case):</p>
+        <dl>
+            <dt>If you have exactly five gold coins</dt>
+            <dd>You get five victory points</dd>
+            <dt>If you have one or more gold coins, and you have one or more silver coins</dt>
+            <dd>You get two victory points</dd>
+            <dt>If you have one or more silver coins</dt>
+            <dd>You get one victory point</dd>
+            <dt>Otherwise</dt>
+            <dd>You get no victory points</dd>
+        </dl>
+    </div>
+
+    <h2>Test 8: Tag omission</h2>
+    <div class="test">
+        <p class="description">End tags for dt and dd can be omitted per spec.</p>
+        <p class="expected">Expected: Parser handles missing end tags correctly.</p>
+        <dl>
+            <dt>Term 1
+            <dd>Description 1
+            <dt>Term 2
+            <dd>Description 2
+        </dl>
+    </div>
+
+    <h2>Test 9: Empty dl</h2>
+    <div class="test">
+        <p class="description">An empty dl is valid per spec (zero name-value groups).</p>
+        <p class="expected">Expected: No visible content, just margins.</p>
+        <dl></dl>
+        <p>(dl above is empty)</p>
+    </div>
+
+    <h2>Test 10: Nested content in dd</h2>
+    <div class="test">
+        <p class="description">dd can contain block content like paragraphs.</p>
+        <p class="expected">Expected: Multiple paragraphs within dd, all indented.</p>
+        <dl>
+            <dt>Complex definition</dt>
+            <dd>
+                <p>First paragraph of the definition.</p>
+                <p>Second paragraph continues the same definition.</p>
+            </dd>
+        </dl>
+    </div>
+
+    <h2>Test 11: Links inside dt and dd</h2>
+    <div class="test">
+        <p class="description">dt and dd can contain inline elements like links.</p>
+        <p class="expected">Expected: Clickable links within terms and descriptions.</p>
+        <dl>
+            <dt><a href="#">MDN Web Docs</a></dt>
+            <dd>Resources for <a href="#">web developers</a>.</dd>
+            <dt><a href="#">WHATWG</a></dt>
+            <dd>Maintains the <a href="#">HTML Living Standard</a>.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 12: Formatting inside dt and dd</h2>
+    <div class="test">
+        <p class="description">dt and dd support text formatting elements.</p>
+        <p class="expected">Expected: Bold, italic, and other formatting preserved.</p>
+        <dl>
+            <dt><strong>Important Term</strong></dt>
+            <dd>This is <em>emphasized</em> and <strong>strong</strong> text.</dd>
+            <dt><em>Italic Term</em></dt>
+            <dd>Contains <u>underlined</u> text.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 13: Q&A format</h2>
+    <div class="test">
+        <p class="description">Using dl for questions and answers (valid per spec).</p>
+        <p class="expected">Expected: Questions as terms, answers as descriptions.</p>
+        <dl>
+            <dt>What is the capital of France?</dt>
+            <dd>Paris</dd>
+            <dt>What is 2 + 2?</dt>
+            <dd>4</dd>
+            <dt>Who wrote Hamlet?</dt>
+            <dd>William Shakespeare</dd>
+        </dl>
+    </div>
+
+    <h2>Test 14: Mixed div and non-div groups</h2>
+    <div class="test">
+        <p class="description">Spec allows mixing div-wrapped and unwrapped groups.</p>
+        <p class="expected">Expected: All groups render consistently.</p>
+        <dl>
+            <dt>Unwrapped term 1</dt>
+            <dd>Unwrapped description 1</dd>
+            <div>
+                <dt>Wrapped term 2</dt>
+                <dd>Wrapped description 2</dd>
+            </div>
+            <dt>Unwrapped term 3</dt>
+            <dd>Unwrapped description 3</dd>
+        </dl>
+    </div>
+
+    <h2>Test 15: Nested dl inside dd</h2>
+    <div class="test">
+        <p class="description">A dl can be nested inside dd for hierarchical data.</p>
+        <p class="expected">Expected: Inner dl further indented.</p>
+        <dl>
+            <dt>Programming Languages</dt>
+            <dd>
+                <dl>
+                    <dt>Compiled</dt>
+                    <dd>C, C++, Rust, Go</dd>
+                    <dt>Interpreted</dt>
+                    <dd>Python, JavaScript, Ruby</dd>
+                </dl>
+            </dd>
+        </dl>
+    </div>
+
+</body>
+</html>
