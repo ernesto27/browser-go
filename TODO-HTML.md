@@ -38,7 +38,7 @@
 - [x] `<ul>` - unordered list (WHATWG 4.4.6 compliant)
 - [x] `<ol>` - ordered list (WHATWG 4.4.5: start/reversed/type attributes)
 - [x] `<menu>` - toolbar menu (WHATWG 4.4.7 compliant, semantic ul)
-- [x] `<li>` - list item
+- [x] `<li>` - list item (WHATWG 4.4.8: value attribute, works in ol/ul/menu)
 - [x] `<dl>` - description list
 - [x] `<dt>` - description term
 - [x] `<dd>` - description details

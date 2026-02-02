@@ -723,37 +723,52 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 		listType = typeAttr
 	}
 
-	// Count total items and find current item's position in one pass
-	index := 0
+	_, isReversed := li.Parent.Node.Attributes["reversed"]
+
+	// Count total items first (needed for reversed default start)
 	totalItems := 0
 	for _, sibling := range li.Parent.Children {
 		if sibling.Node != nil && sibling.Node.TagName == dom.TagLI {
 			totalItems++
+		}
+	}
+
+	// Determine starting ordinal per WHATWG spec
+	ordinal := 1
+	if startAttr, ok := li.Parent.Node.Attributes["start"]; ok {
+		if parsed, err := strconv.Atoi(startAttr); err == nil {
+			ordinal = parsed
+		}
+	} else if isReversed {
+		ordinal = totalItems
+	}
+
+	// Calculate ordinal for current li, respecting value attrs and reversed
+	currentOrdinal := ordinal
+	for _, sibling := range li.Parent.Children {
+		if sibling.Node != nil && sibling.Node.TagName == dom.TagLI {
+			// Check if this li has a value attribute
+			if valAttr, ok := sibling.Node.Attributes["value"]; ok {
+				if parsed, err := strconv.Atoi(valAttr); err == nil {
+					ordinal = parsed
+				}
+			}
+
 			if sibling == li {
-				index = totalItems
+				currentOrdinal = ordinal
+				break
+			}
+
+			// Move to next ordinal
+			if isReversed {
+				ordinal--
+			} else {
+				ordinal++
 			}
 		}
 	}
 
-	_, isReversed := li.Parent.Node.Attributes["reversed"]
-
-	if isOrdered {
-		start := 1
-		if startAttr, ok := li.Parent.Node.Attributes["start"]; ok {
-			if parsed, err := strconv.Atoi(startAttr); err == nil {
-				start = parsed
-			}
-		} else if isReversed {
-			start = totalItems
-		}
-		if isReversed {
-			index = start - (index - 1)
-		} else {
-			index = start + (index - 1)
-		}
-	}
-
-	return true, isOrdered, index, listType
+	return true, isOrdered, currentOrdinal, listType
 }
 
 func formatListMarker(index int, listType string) string {
@@ -836,3 +851,5 @@ func fontStackHasMonospace(fonts []string) bool {
 	}
 	return false
 }
+
+
