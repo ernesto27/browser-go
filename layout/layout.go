@@ -44,6 +44,7 @@ var blockElements = map[string]bool{
 	"center":     true,
 	"figure":     true,
 	"figcaption": true,
+	"search":     true,
 }
 
 var skipElements = map[string]bool{

@@ -79,4 +79,6 @@ const (
 
 	TagFigure     = "figure"
 	TagFigcaption = "figcaption"
+
+	TagSearch = "search"
 )

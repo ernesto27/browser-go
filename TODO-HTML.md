@@ -71,6 +71,7 @@
 - [x] `<section>` - section
 - [x] `<article>` - article
 - [x] `<center>` - centered content (deprecated but still used)
+- [x] `<search>` - search section (WHATWG 4.4.15 compliant)
 
 ---
 
