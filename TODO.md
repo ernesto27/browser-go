@@ -25,6 +25,21 @@ https://html.spec.whatwg.org/
 [x] - <blockquote> (WHATWG 4.4.4 compliance - cite property)
 [x] - <ol> (WHATWG 4.4.5)
 
+### <a> Missing / non-compliant
+- [ ] Enforce content model: no interactive content descendants, no nested <a>, no tabindex descendants
+- [ ] Enforce attribute omission rules when href is absent
+- [x] Implement download behavior
+- [ ] Implement ping behavior
+- [ ] Implement hreflang metadata
+- [ ] Implement type metadata
+- [ ] Implement referrerpolicy behavior + reflection
+- [ ] Proper HTMLAnchorElement interface (text, relList, HTMLHyperlinkElementUtils)
+- [ ] Placeholder <a> behavior when href is absent (non-link, no link styling)
+- [ ] Keyboard focus/activation (tab/enter/space), focus ring
+- [ ] Allow preventDefault() on link clicks
+- [ ] Named target handling (frames/contexts) beyond _blank
+- [ ] Visited/unvisited link styling
+
 ### HTMLBodyElement (WHATWG 4.3.1)
 - [ ] `document.body` setter - Allow setting body element
 - [ ] `onload` event - Window load event on body (High priority)
