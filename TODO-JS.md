@@ -33,6 +33,9 @@
 - [x] `element.href` - Get resolved href (for `<a>`, `<base>`, `<link>`)
 - [ ] `element.target` - Get target attribute (for `<a>`, `<base>`)
 
+### HTMLTitleElement
+- [x] `titleElement.text` - Get/set title text (alias for textContent)
+
 ### Attribute Manipulation
 - [x] `element.classList.add(class)` - Add CSS class
 - [x] `element.classList.remove(class)` - Remove CSS class

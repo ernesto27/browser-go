@@ -16,7 +16,8 @@ https://html.spec.whatwg.org/
 [x] - <p>
 [x] - <html>
 [x] - <head> (WHATWG 4.2.1 compliance)
-[x] - <title> (WHATWG 4.2.2 compliance - document.title getter/setter)
+[x] - <title> (WHATWG 4.2.2 compliance - document.title getter/setter, titleElement.text)
+[x] - <base> (WHATWG 4.2.3 compliance - element.href with URL resolution, element.children)
 [x] - <style> (WHATWG 4.2.6 compliance - disabled property)
 [x] - <body onbeforeunload> - Navigation warning event
 
