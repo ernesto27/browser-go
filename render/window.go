@@ -5,9 +5,13 @@ import (
 	"browser/dom"
 	"browser/layout"
 	"bytes"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"image/color"
+	"io"
 	"mime/multipart"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -63,6 +67,11 @@ type Browser struct {
 	selectionStart *SelectionPoint
 	selectionEnd   *SelectionPoint
 	selectedText   string
+
+	toastContainer *fyne.Container
+	toastBg        *canvas.Rectangle
+	toastLabel     *canvas.Text
+	toastTimer     *time.Timer
 }
 
 type SelectionPoint struct {
@@ -153,11 +162,20 @@ func NewBrowser(width, height float32) *Browser {
 	// Content area (NewMax makes children fill available space)
 	b.content = container.NewMax()
 
+	// Toast overlay (non-blocking message)
+	b.toastBg = canvas.NewRectangle(color.NRGBA{R: 0, G: 0, B: 0, A: 200})
+	b.toastLabel = canvas.NewText("", color.White)
+	b.toastLabel.TextSize = 14
+	b.toastContainer = container.NewWithoutLayout(b.toastBg, b.toastLabel)
+	b.toastBg.Hide()
+	b.toastLabel.Hide()
+
 	// Main layout: toolbar on top, content below
-	main := container.NewBorder(
+	base := container.NewBorder(
 		toolbar, nil, nil, nil, // top, bottom, left, right
 		b.content, // center
 	)
+	main := container.NewMax(base, b.toastContainer)
 
 	w.Canvas().SetOnTypedRune(func(r rune) {
 		b.handleTypedRune(r)
@@ -423,6 +441,18 @@ func (b *Browser) handleClick(x, y float64) {
 		return
 	}
 	fmt.Println("  Found link:", linkInfo.Href, "target:", linkInfo.Target, "rel:", linkInfo.Rel)
+
+	if linkInfo.HasDownload {
+		if linkInfo.Href == "" {
+			fmt.Println("  Download link has no href!")
+			return
+		}
+
+		fullURL := b.resolveURL(linkInfo.Href)
+		fmt.Println("Downloading file from:", fullURL)
+		go b.downloadURL(fullURL)
+		return
+	}
 
 	fullURL := b.resolveURL(linkInfo.Href)
 
@@ -731,6 +761,41 @@ func (b *Browser) ShowAlert(message string) {
 	})
 }
 
+func (b *Browser) showToast(message string) {
+	fyne.Do(func() {
+		if b.toastTimer != nil {
+			b.toastTimer.Stop()
+		}
+
+		b.toastLabel.Text = message
+		textSize := fyne.MeasureText(message, b.toastLabel.TextSize, fyne.TextStyle{})
+		paddingX := float32(12)
+		paddingY := float32(8)
+		width := textSize.Width + paddingX*2
+		height := textSize.Height + paddingY*2
+
+		canvasSize := b.Window.Canvas().Size()
+		x := (canvasSize.Width - width) / 2
+		y := canvasSize.Height - height - 24
+
+		b.toastBg.Resize(fyne.NewSize(width, height))
+		b.toastBg.Move(fyne.NewPos(x, y))
+		b.toastLabel.Move(fyne.NewPos(x+paddingX, y+paddingY))
+
+		b.toastBg.Show()
+		b.toastLabel.Show()
+		b.toastContainer.Refresh()
+
+		b.toastTimer = time.AfterFunc(3*time.Second, func() {
+			fyne.Do(func() {
+				b.toastBg.Hide()
+				b.toastLabel.Hide()
+				b.toastContainer.Refresh()
+			})
+		})
+	})
+}
+
 func (b *Browser) Refresh() {
 	if b.currentURL != nil && b.OnNavigate != nil {
 		b.OnNavigate(NavigationRequest{URL: b.currentURL.String(), Method: "GET"})
@@ -959,7 +1024,6 @@ func (b *Browser) ShowConfirm(message string) bool {
 
 	return <-result
 }
-
 
 func (b *Browser) ShowPrompt(message, defaultValue string) *string {
 	result := make(chan *string)
@@ -1353,4 +1417,71 @@ func (b *Browser) triggerRepaint() {
 
 func (b *Browser) SetBeforeNavigateHandler(handler func() bool) {
 	b.onBeforeNavigate = handler
+}
+
+func randomDownloadName(rawURL string) string {
+	ext := ""
+	if parsed, err := url.Parse(rawURL); err == nil {
+		ext = filepath.Ext(parsed.Path)
+	}
+
+	name := randomToken(12)
+	if ext != "" {
+		return name + ext
+	}
+	return name
+}
+
+func randomToken(n int) string {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return strconv.FormatInt(time.Now().UnixNano(), 10)
+	}
+	return hex.EncodeToString(b)
+}
+
+func (b *Browser) downloadURL(rawURL string) {
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println("Download error: can't resolve home directory:", err)
+		return
+	}
+
+	downloadsDir := filepath.Join(home, "Downloads")
+	if err := os.MkdirAll(downloadsDir, 0o755); err != nil {
+		fmt.Println("Download error creating directory:", err)
+		return
+	}
+
+	resp, err := http.Get(rawURL)
+	if err != nil {
+		fmt.Println("Download error:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		fmt.Println("Download error: HTTP", resp.Status)
+		return
+	}
+
+	filename := randomDownloadName(rawURL)
+	fullPath := filepath.Join(downloadsDir, filename)
+
+	out, err := os.Create(fullPath)
+	if err != nil {
+		fmt.Println("Download error creating file:", err)
+		return
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, resp.Body); err != nil {
+		fmt.Println("Download error writing file:", err)
+		return
+	}
+
+	fmt.Println("Downloaded to:", fullPath)
+	b.showToast("Downloaded to: " + fullPath)
+
 }

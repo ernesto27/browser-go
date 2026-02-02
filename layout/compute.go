@@ -857,6 +857,17 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 				maxY = currentY
 			}
 
+		case ImageBox:
+			imgW, imgH := getImageSize(box.Node)
+			box.Rect.X = currentX
+			box.Rect.Y = currentY
+			box.Rect.Width = imgW
+			box.Rect.Height = imgH
+			currentX += imgW
+			if currentY+imgH > maxY {
+				maxY = currentY + imgH
+			}
+
 		default:
 			for _, child := range box.Children {
 				layoutInline(child)

@@ -93,3 +93,27 @@ func TestResolveImageURL(t *testing.T) {
 		})
 	}
 }
+
+func TestIsSVG(t *testing.T) {
+	tests := []struct {
+		name        string
+		url         string
+		contentType string
+		expected    bool
+	}{
+		{"svg extension lowercase", "https://example.com/icon.svg", "", true},
+		{"svg extension uppercase", "https://example.com/icon.SVG", "", true},
+		{"svg extension with query", "https://example.com/icon.svg?v=1", "", false},
+		{"svg content type exact", "https://example.com/icon.png", "image/svg+xml", true},
+		{"svg content type with charset", "https://example.com/icon.png", "image/svg+xml; charset=utf-8", true},
+		{"non svg", "https://example.com/icon.png", "image/png", false},
+		{"empty inputs", "", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isSVG(tt.url, tt.contentType)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

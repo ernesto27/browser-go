@@ -41,9 +41,11 @@ func (box *LayoutBox) FindLink() string {
 }
 
 type LinkInfo struct {
-	Href   string
-	Target string
-	Rel    string
+	Href        string
+	Target      string
+	Rel         string
+	Download    string
+	HasDownload bool
 }
 
 func (box *LayoutBox) FindLinkInfo() *LinkInfo {
@@ -53,10 +55,13 @@ func (box *LayoutBox) FindLinkInfo() *LinkInfo {
 		if current.Node != nil && current.Node.TagName == "a" {
 			href, hasHref := current.Node.Attributes["href"]
 			if hasHref {
+				download, hasDownload := current.Node.Attributes["download"]
 				return &LinkInfo{
-					Href:   href,
-					Target: current.Node.Attributes["target"],
-					Rel:    current.Node.Attributes["rel"],
+					Href:        href,
+					Target:      current.Node.Attributes["target"],
+					Rel:         current.Node.Attributes["rel"],
+					Download:    download,
+					HasDownload: hasDownload,
 				}
 			}
 		}

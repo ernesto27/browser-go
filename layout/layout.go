@@ -96,6 +96,12 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 			}
 		}
 
+		if bgcolor, ok := node.Attributes["bgcolor"]; ok {
+			if c := css.ParseColor(bgcolor); c != nil {
+				box.Style.BackgroundColor = c
+			}
+		}
+
 		// Then apply inline styles (override stylesheet)
 		if styleAttr, ok := node.Attributes["style"]; ok {
 			inlineStyle := css.ParseInlineStyleWithContext(styleAttr, parentFontSize, viewport.Width, viewport.Height)

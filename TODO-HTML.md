@@ -31,7 +31,12 @@
 - [x] `<q>` - inline quotation
 
 ### Links & Media
-- [x] `<a>` - hyperlink
+- [x] `<a>` - hyperlink (href, target, rel attributes supported)
+  - [x] `download` attribute - downloads to ~/Downloads with random filename
+  - [ ] `ping` attribute - URLs to ping on click
+  - [ ] `hreflang` attribute - language of linked resource
+  - [ ] `type` attribute - MIME type hint
+  - [ ] `referrerpolicy` attribute - referrer policy
 - [x] `<img>` - image
 
 ### Lists
@@ -109,6 +114,7 @@
 - [ ] `<col>` - column properties
 - [ ] `colspan` / `rowspan` attributes
 - [ ] Content-based column width calculation
+- [ ] CSS `width` style on table cells (currently all cells get equal width)
 
 ### Forms
 - [ ] `<datalist>` - input suggestions

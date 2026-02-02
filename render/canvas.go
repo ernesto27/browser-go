@@ -1,12 +1,14 @@
 package render
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -14,6 +16,8 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"github.com/fyne-io/oksvg"
+	"github.com/srwiley/rasterx"
 )
 
 var (
@@ -742,11 +746,24 @@ func fetchimageToCache(fullURL string) {
 		}
 		defer resp.Body.Close()
 
-		img, _, err = image.Decode(resp.Body)
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Error reading image data:", err)
+			return
+		}
+
+		contentType := resp.Header.Get("Content-Type")
+		if isSVG(fullURL, contentType) {
+			img, err = decodeSVG(data)
+		} else {
+			img, _, err = image.Decode(bytes.NewReader(data))
+		}
+
 		if err != nil {
 			fmt.Println("Error decoding image:", err)
 			return
 		}
+
 	}
 
 	imageCacheMu.Lock()
@@ -789,4 +806,33 @@ func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad fu
 	}
 
 	return nil
+}
+
+func isSVG(url, contentType string) bool {
+	return strings.HasSuffix(strings.ToLower(url), ".svg") || strings.Contains(contentType, "image/svg+xml")
+}
+
+func decodeSVG(data []byte) (image.Image, error) {
+	icon, err := oksvg.ReadIconStream(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	w := int(icon.ViewBox.W)
+	h := int(icon.ViewBox.H)
+	if w <= 0 {
+		w = 64
+	}
+	if h <= 0 {
+		h = 64
+	}
+
+	icon.SetTarget(0, 0, float64(w), float64(h))
+
+	rgba := image.NewRGBA(image.Rect(0, 0, w, h))
+	scanner := rasterx.NewScannerGV(w, h, rgba, rgba.Bounds())
+	raster := rasterx.NewDasher(w, h, scanner)
+	icon.Draw(raster, 1.0)
+
+	return rgba, nil
 }
