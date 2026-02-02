@@ -115,7 +115,7 @@ func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY f
 	}
 
 	// Lists get indentation
-	if currentTag == dom.TagUL || currentTag == dom.TagOL {
+	if currentTag == dom.TagUL || currentTag == dom.TagOL || currentTag == dom.TagMenu {
 		innerX = startX + 20
 		innerWidth = containerWidth - 20
 	}
@@ -156,7 +156,7 @@ func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY f
 	case dom.TagH4, dom.TagH5, dom.TagH6:
 		box.Margin.Top = 4
 		box.Margin.Bottom = 4
-	case dom.TagUL, dom.TagOL:
+	case dom.TagUL, dom.TagOL, dom.TagMenu:
 		box.Margin.Top = 4
 		box.Margin.Bottom = 4
 	}

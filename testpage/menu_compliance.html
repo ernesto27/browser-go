@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHATWG 4.4.7 Menu Element Compliance Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { background-color: #e6ffe6; }
+        .description { color: #555; margin-bottom: 10px; }
+        
+        /* Toolbar styling example from spec */
+        .toolbar { 
+            display: flex; 
+            gap: 5px; 
+            padding: 10px; 
+            background: #f0f0f0; 
+            border: 1px solid #ccc;
+        }
+        .toolbar li { list-style: none; }
+        .toolbar button { 
+            padding: 8px 12px; 
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>WHATWG 4.4.7 Menu Element Compliance Test</h1>
+    <p>The <code>&lt;menu&gt;</code> element represents a toolbar consisting of commands (semantic alternative to <code>&lt;ul&gt;</code>).</p>
+
+    <h2>Test 1: Basic Menu (should render like ul)</h2>
+    <div class="test">
+        <p class="description">A basic menu with list items - should display with bullet points like an unordered list.</p>
+        <menu>
+            <li>Copy</li>
+            <li>Cut</li>
+            <li>Paste</li>
+        </menu>
+    </div>
+
+    <h2>Test 2: Toolbar Menu (spec example)</h2>
+    <div class="test">
+        <p class="description">Menu styled as a toolbar with buttons - the typical use case per WHATWG spec.</p>
+        <menu class="toolbar">
+            <li><button onclick="alert('Copy')">Copy</button></li>
+            <li><button onclick="alert('Cut')">Cut</button></li>
+            <li><button onclick="alert('Paste')">Paste</button></li>
+        </menu>
+    </div>
+
+    <h2>Test 3: Nested Menu</h2>
+    <div class="test">
+        <p class="description">Menu with nested submenu.</p>
+        <menu>
+            <li>File
+                <menu>
+                    <li>New</li>
+                    <li>Open</li>
+                    <li>Save</li>
+                </menu>
+            </li>
+            <li>Edit</li>
+            <li>View</li>
+        </menu>
+    </div>
+
+    <h2>Test 4: Comparison with ul</h2>
+    <div class="test">
+        <p class="description">Menu and ul should render identically (menu is semantic ul for toolbars).</p>
+        <p><strong>Using &lt;menu&gt;:</strong></p>
+        <menu>
+            <li>Item A</li>
+            <li>Item B</li>
+            <li>Item C</li>
+        </menu>
+        <p><strong>Using &lt;ul&gt;:</strong></p>
+        <ul>
+            <li>Item A</li>
+            <li>Item B</li>
+            <li>Item C</li>
+        </ul>
+    </div>
+
+    <h2>Expected Behavior</h2>
+    <ul>
+        <li>Menu renders as block element</li>
+        <li>Menu items (li) display with bullet markers</li>
+        <li>Left indentation applied (same as ul)</li>
+        <li>Vertical margins between items</li>
+        <li>Nested menus indent further</li>
+    </ul>
+</body>
+</html>

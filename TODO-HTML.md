@@ -35,8 +35,9 @@
 - [x] `<img>` - image
 
 ### Lists
-- [x] `<ul>` - unordered list
-- [x] `<ol>` - ordered list (JS: start/reversed/type properties)
+- [x] `<ul>` - unordered list (WHATWG 4.4.6 compliant)
+- [x] `<ol>` - ordered list (WHATWG 4.4.5: start/reversed/type attributes)
+- [x] `<menu>` - toolbar menu (WHATWG 4.4.7 compliant, semantic ul)
 - [x] `<li>` - list item
 - [x] `<dl>` - description list
 - [x] `<dt>` - description term

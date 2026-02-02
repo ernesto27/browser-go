@@ -23,6 +23,7 @@ var blockElements = map[string]bool{
 	"h5":         true,
 	"h6":         true,
 	"ul":         true,
+	"menu":       true,
 	"ol":         true,
 	"li":         true,
 	"header":     true,

@@ -712,7 +712,7 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 	}
 
 	listTag := li.Parent.Node.TagName
-	if listTag != dom.TagUL && listTag != dom.TagOL {
+	if listTag != dom.TagUL && listTag != dom.TagOL && listTag != dom.TagMenu {
 		return false, false, 0, ""
 	}
 

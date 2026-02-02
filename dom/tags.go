@@ -33,9 +33,10 @@ const (
 	TagIns = "ins"
 
 	// Lists
-	TagUL = "ul"
-	TagOL = "ol"
-	TagLI = "li"
+	TagUL   = "ul"
+	TagOL   = "ol"
+	TagLI   = "li"
+	TagMenu = "menu"
 
 	// Media
 	TagImg = "img"
