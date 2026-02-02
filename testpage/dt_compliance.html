@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHATWG 4.4.10 DT Element Compliance Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .description { color: #555; margin-bottom: 10px; }
+        .expected { color: #0066cc; font-style: italic; }
+        code { background-color: #f5f5f5; padding: 2px 6px; }
+    </style>
+</head>
+<body>
+    <h1>WHATWG 4.4.10 DT Element Compliance Test</h1>
+    <p>The <code>&lt;dt&gt;</code> element represents the term, or name, part of a term-description group in a description list.</p>
+
+    <h2>Test 1: Basic dt in dl</h2>
+    <div class="test">
+        <p class="description">Simple dt followed by dd.</p>
+        <p class="expected">Expected: Term left-aligned, no indentation.</p>
+        <dl>
+            <dt>Term</dt>
+            <dd>Definition of the term.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 2: Multiple dt before dd</h2>
+    <div class="test">
+        <p class="description">Multiple terms sharing one definition.</p>
+        <p class="expected">Expected: Both terms left-aligned, stacked vertically.</p>
+        <dl>
+            <dt>color</dt>
+            <dt>colour</dt>
+            <dd>A visual property of objects.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 3: dt inside div wrapper</h2>
+    <div class="test">
+        <p class="description">dt inside div child of dl (per spec context).</p>
+        <p class="expected">Expected: Same rendering as without div.</p>
+        <dl>
+            <div>
+                <dt>Wrapped Term</dt>
+                <dd>Wrapped Definition</dd>
+            </div>
+        </dl>
+    </div>
+
+    <h2>Test 4: Tag omission</h2>
+    <div class="test">
+        <p class="description">End tag omitted when followed by dt or dd (per spec).</p>
+        <p class="expected">Expected: Parser handles missing end tags.</p>
+        <dl>
+            <dt>Term 1
+            <dd>Definition 1
+            <dt>Term 2
+            <dd>Definition 2
+        </dl>
+    </div>
+
+    <h2>Test 5: dt with dfn (spec recommendation)</h2>
+    <div class="test">
+        <p class="description">Using dfn inside dt to indicate defined term.</p>
+        <p class="expected">Expected: dfn content rendered (may have special styling).</p>
+        <dl>
+            <dt><dfn>HTML</dfn></dt>
+            <dd>HyperText Markup Language</dd>
+            <dt><dfn>CSS</dfn></dt>
+            <dd>Cascading Style Sheets</dd>
+        </dl>
+    </div>
+
+    <h2>Test 6: dt with inline formatting</h2>
+    <div class="test">
+        <p class="description">dt can contain flow content like strong, em, etc.</p>
+        <p class="expected">Expected: Formatting preserved inside dt.</p>
+        <dl>
+            <dt><strong>Bold Term</strong></dt>
+            <dd>Description of bold term.</dd>
+            <dt><em>Italic Term</em></dt>
+            <dd>Description of italic term.</dd>
+            <dt><u>Underlined Term</u></dt>
+            <dd>Description of underlined term.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 7: dt with links</h2>
+    <div class="test">
+        <p class="description">dt can contain anchor elements.</p>
+        <p class="expected">Expected: Clickable links inside dt.</p>
+        <dl>
+            <dt><a href="#">Linked Term</a></dt>
+            <dd>This term is a clickable link.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 8: FAQ example (from spec)</h2>
+    <div class="test">
+        <p class="description">FAQ using dt for questions, dd for answers.</p>
+        <p class="expected">Expected: Questions left-aligned, answers indented.</p>
+        <article>
+            <dl>
+                <dt>What do we want?</dt>
+                <dd>Our data.</dd>
+                <dt>When do we want it?</dt>
+                <dd>Now.</dd>
+                <dt>Where is it?</dt>
+                <dd>We are not sure.</dd>
+            </dl>
+        </article>
+    </div>
+
+    <h2>Test 9: dt with nested inline elements</h2>
+    <div class="test">
+        <p class="description">Multiple nested inline elements inside dt.</p>
+        <p class="expected">Expected: All inline styling applied correctly.</p>
+        <dl>
+            <dt><strong><em>Bold and Italic</em></strong></dt>
+            <dd>Term with combined styling.</dd>
+            <dt>Normal with <strong>bold</strong> and <em>italic</em> parts</dt>
+            <dd>Mixed inline content.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 10: Long dt text</h2>
+    <div class="test">
+        <p class="description">dt with longer text content.</p>
+        <p class="expected">Expected: Text wraps within container.</p>
+        <dl>
+            <dt>This is a very long term that might need to wrap to multiple lines depending on the container width</dt>
+            <dd>Short definition.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 11: Empty dt</h2>
+    <div class="test">
+        <p class="description">Empty dt element (edge case).</p>
+        <p class="expected">Expected: No visible term, dd still indented.</p>
+        <dl>
+            <dt></dt>
+            <dd>Definition without visible term.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 12: dt with only whitespace</h2>
+    <div class="test">
+        <p class="description">dt containing only whitespace.</p>
+        <p class="expected">Expected: Whitespace collapsed, no visible term.</p>
+        <dl>
+            <dt>   </dt>
+            <dd>Definition after whitespace-only term.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 13: Consecutive dt elements</h2>
+    <div class="test">
+        <p class="description">Many dt elements before a single dd.</p>
+        <p class="expected">Expected: All terms stacked, then definition indented.</p>
+        <dl>
+            <dt>Synonym 1</dt>
+            <dt>Synonym 2</dt>
+            <dt>Synonym 3</dt>
+            <dt>Synonym 4</dt>
+            <dd>All these terms mean the same thing.</dd>
+        </dl>
+    </div>
+
+    <h2>Test 14: dt in glossary format</h2>
+    <div class="test">
+        <p class="description">Glossary with part of speech notation.</p>
+        <p class="expected">Expected: Term with notation rendered correctly.</p>
+        <dl>
+            <dt><dfn>Browser</dfn>, n.</dt>
+            <dd>A software application for accessing the World Wide Web.</dd>
+            <dt><dfn>Render</dfn>, v.</dt>
+            <dd>To display content on the screen.</dd>
+        </dl>
+    </div>
+
+</body>
+</html>

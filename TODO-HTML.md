@@ -40,7 +40,7 @@
 - [x] `<menu>` - toolbar menu (WHATWG 4.4.7 compliant, semantic ul)
 - [x] `<li>` - list item (WHATWG 4.4.8: value attribute, works in ol/ul/menu)
 - [x] `<dl>` - description list (WHATWG 4.4.9: compliance tests added, div wrapper pattern supported)
-- [x] `<dt>` - description term
+- [x] `<dt>` - description term (WHATWG 4.4.10: compliance tests added)
 - [x] `<dd>` - description details (40px indent)
 
 ### Tables
