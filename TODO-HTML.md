@@ -34,7 +34,7 @@
 - [x] `<a>` - hyperlink (href, target, rel attributes supported)
   - [x] `download` attribute - downloads to ~/Downloads with random filename
   - [x] `ping` attribute - URLs to ping on click
-  - [ ] `hreflang` attribute - language of linked resource
+  - [x] `hreflang` attribute - language of linked resource
   - [ ] `type` attribute - MIME type hint
   - [ ] `referrerpolicy` attribute - referrer policy
   - Content model enforcement (WHATWG 4.5.1):

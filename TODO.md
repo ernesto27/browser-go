@@ -33,7 +33,7 @@ https://html.spec.whatwg.org/
 - [x] Enforce attribute omission rules when href is absent (FindLinkInfo returns nil)
 - [x] Implement download behavior
 - [x] Implement ping behavior
-- [ ] Implement hreflang metadata
+- [x] Implement hreflang metadata
 - [ ] Implement type metadata
 - [ ] Implement referrerpolicy behavior + reflection
 - [ ] Proper HTMLAnchorElement interface (text, relList, HTMLHyperlinkElementUtils)

@@ -47,6 +47,7 @@ type LinkInfo struct {
 	Download    string
 	HasDownload bool
 	Ping        string
+	HrefLang    string
 }
 
 func (box *LayoutBox) FindLinkInfo() *LinkInfo {
@@ -64,6 +65,7 @@ func (box *LayoutBox) FindLinkInfo() *LinkInfo {
 					Download:    download,
 					HasDownload: hasDownload,
 					Ping:        current.Node.Attributes["ping"],
+					HrefLang:    current.Node.Attributes["hreflang"],
 				}
 			}
 		}
