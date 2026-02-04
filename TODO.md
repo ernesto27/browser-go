@@ -26,10 +26,13 @@ https://html.spec.whatwg.org/
 [x] - <ol> (WHATWG 4.4.5)
 
 ### <a> Missing / non-compliant
-- [ ] Enforce content model: no interactive content descendants, no nested <a>, no tabindex descendants
-- [ ] Enforce attribute omission rules when href is absent
+- Enforce content model (WHATWG 4.5.1):
+  - [x] No nested `<a>` (auto-fixed by x/net/html parser)
+  - [ ] No interactive content descendants (button, input, select, textarea, audio/video controls, details, label, embed, iframe)
+  - [ ] No tabindex descendants
+- [x] Enforce attribute omission rules when href is absent (FindLinkInfo returns nil)
 - [x] Implement download behavior
-- [ ] Implement ping behavior
+- [x] Implement ping behavior
 - [ ] Implement hreflang metadata
 - [ ] Implement type metadata
 - [ ] Implement referrerpolicy behavior + reflection

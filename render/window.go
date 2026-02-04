@@ -4,6 +4,7 @@ import (
 	"browser/css"
 	"browser/dom"
 	"browser/layout"
+	"browser/utils"
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
@@ -440,7 +441,16 @@ func (b *Browser) handleClick(x, y float64) {
 		}
 		return
 	}
-	fmt.Println("  Found link:", linkInfo.Href, "target:", linkInfo.Target, "rel:", linkInfo.Rel)
+	fmt.Println("  Found link:", linkInfo.Href, "target:", linkInfo.Target, "rel:", linkInfo.Rel, "ping:", linkInfo.Ping)
+
+	if linkInfo.Ping != "" {
+		urls := strings.FieldsSeq(linkInfo.Ping)
+		for pingURL := range urls {
+			fullURL := b.resolveURL(pingURL)
+			fmt.Println("ping to url ", fullURL)
+			go utils.DoPost(fullURL, "")
+		}
+	}
 
 	if linkInfo.HasDownload {
 		if linkInfo.Href == "" {

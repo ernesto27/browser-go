@@ -46,6 +46,7 @@ type LinkInfo struct {
 	Rel         string
 	Download    string
 	HasDownload bool
+	Ping        string
 }
 
 func (box *LayoutBox) FindLinkInfo() *LinkInfo {
@@ -62,6 +63,7 @@ func (box *LayoutBox) FindLinkInfo() *LinkInfo {
 					Rel:         current.Node.Attributes["rel"],
 					Download:    download,
 					HasDownload: hasDownload,
+					Ping:        current.Node.Attributes["ping"],
 				}
 			}
 		}

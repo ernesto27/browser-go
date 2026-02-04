@@ -33,10 +33,14 @@
 ### Links & Media
 - [x] `<a>` - hyperlink (href, target, rel attributes supported)
   - [x] `download` attribute - downloads to ~/Downloads with random filename
-  - [ ] `ping` attribute - URLs to ping on click
+  - [x] `ping` attribute - URLs to ping on click
   - [ ] `hreflang` attribute - language of linked resource
   - [ ] `type` attribute - MIME type hint
   - [ ] `referrerpolicy` attribute - referrer policy
+  - Content model enforcement (WHATWG 4.5.1):
+    - [x] No nested `<a>` (handled by x/net/html parser)
+    - [ ] No interactive content descendants (button, input, select, etc.)
+    - [ ] No tabindex descendants
 - [x] `<img>` - image
 
 ### Lists
@@ -194,7 +198,7 @@
 ### Link Features
 - [x] `target="_blank"` - open in new window (basic implementation)
 - [ ] `rel="noopener"` - security for external links (parsed but not enforced)
-- [ ] `download` - download link
+- [x] `download` - download link
 
 ### Image Features
 - [ ] `srcset` - responsive image sources

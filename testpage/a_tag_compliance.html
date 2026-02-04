@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>a Element Compliance</title>
+</head>
+<body>
+    <h1>Nested &lt;a&gt; Tests</h1>
+
+    <h2>Nested a tags</h2>
+    <a href="/page1">outer <a href="/page2">inner</a> text</a>
+
+    <h2>Triple nested a</h2>
+    <a href="/1"><a href="/2"><a href="/3">deep</a></a></a>
+
+    <h2>a with text before nested a</h2>
+    <a href="/main">Click here <a href="/other">or here</a> for more</a>
+
+    <h1>Ping Attribute Tests</h1>
+
+    <h2>Single ping URL</h2>
+    <a href="/destination" ping="/tracker">Click to ping one URL</a>
+
+    <h2>Multiple ping URLs</h2>
+    <a href="/destination" ping="/tracker1 /tracker2 /tracker3">Click to ping multiple URLs</a>
+
+    <h2>Ping with absolute URL</h2>
+    <a href="/destination" ping="https://analytics.example.com/track">Click to ping absolute URL</a>
+
+    <h2>Ping without href (should be ignored)</h2>
+    <a ping="/tracker">No href - ping should not fire</a>
+
+</body>
+</html>
