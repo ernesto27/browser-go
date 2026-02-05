@@ -2,8 +2,110 @@
 <html>
 <head>
     <title>a Element Compliance</title>
+    <style>
+        .pass { color: green; }
+        .fail { color: red; }
+        .test-result { font-family: monospace; margin: 5px 0; }
+    </style>
 </head>
 <body>
+    <h1>HTMLAnchorElement Interface Tests</h1>
+    <div id="anchor-results"></div>
+
+    <h2>Test Link</h2>
+    <a href="https://user:pass@shop.example.com:8080/products/shoes?color=red#reviews" 
+       id="test-anchor" 
+       rel="noopener noreferrer sponsored">Click here to visit the shop</a>
+
+    <script>
+    (function() {
+        var results = document.getElementById('anchor-results');
+        var anchor = document.getElementById('test-anchor');
+        var passed = 0;
+        var failed = 0;
+
+        function assert(condition, description) {
+            var div = document.createElement('div');
+            div.className = 'test-result ' + (condition ? 'pass' : 'fail');
+            div.textContent = (condition ? '✓ ' : '✗ ') + description;
+            results.appendChild(div);
+            if (condition) passed++; else failed++;
+        }
+
+        // === .text property ===
+        assert(anchor.text === 'Click here to visit the shop',
+            '.text getter returns "Click here to visit the shop" (was: "' + anchor.text + '")');
+
+        anchor.text = 'New link text';
+        assert(anchor.text === 'New link text',
+            '.text setter updates to "New link text" (was: "' + anchor.text + '")');
+        anchor.text = 'Click here to visit the shop'; // restore
+
+        // === .relList (DOMTokenList) ===
+        assert(anchor.relList !== undefined,
+            '.relList exists');
+        
+        assert(anchor.relList.length === 3,
+            '.relList.length === 3 (was: ' + anchor.relList.length + ')');
+
+        assert(anchor.relList.contains('noopener') === true,
+            '.relList.contains("noopener") === true');
+
+        assert(anchor.relList.contains('nofollow') === false,
+            '.relList.contains("nofollow") === false');
+
+        anchor.relList.add('nofollow');
+        assert(anchor.relList.contains('nofollow') === true,
+            '.relList.add("nofollow") works');
+
+        anchor.relList.remove('nofollow');
+        assert(anchor.relList.contains('nofollow') === false,
+            '.relList.remove("nofollow") works');
+
+        assert(anchor.relList.item(0) === 'noopener',
+            '.relList.item(0) === "noopener" (was: "' + anchor.relList.item(0) + '")');
+
+        // === HTMLHyperlinkElementUtils ===
+        assert(anchor.protocol === 'https:',
+            '.protocol === "https:" (was: "' + anchor.protocol + '")');
+
+        assert(anchor.username === 'user',
+            '.username === "user" (was: "' + anchor.username + '")');
+
+        assert(anchor.password === 'pass',
+            '.password === "pass" (was: "' + anchor.password + '")');
+
+        assert(anchor.host === 'shop.example.com:8080',
+            '.host === "shop.example.com:8080" (was: "' + anchor.host + '")');
+
+        assert(anchor.hostname === 'shop.example.com',
+            '.hostname === "shop.example.com" (was: "' + anchor.hostname + '")');
+
+        assert(anchor.port === '8080',
+            '.port === "8080" (was: "' + anchor.port + '")');
+
+        assert(anchor.pathname === '/products/shoes',
+            '.pathname === "/products/shoes" (was: "' + anchor.pathname + '")');
+
+        assert(anchor.search === '?color=red',
+            '.search === "?color=red" (was: "' + anchor.search + '")');
+
+        assert(anchor.hash === '#reviews',
+            '.hash === "#reviews" (was: "' + anchor.hash + '")');
+
+        assert(anchor.origin === 'https://shop.example.com:8080',
+            '.origin === "https://shop.example.com:8080" (was: "' + anchor.origin + '")');
+
+        // Summary
+        var summary = document.createElement('h3');
+        summary.textContent = 'Results: ' + passed + ' passed, ' + failed + ' failed';
+        summary.className = failed === 0 ? 'pass' : 'fail';
+        results.insertBefore(summary, results.firstChild);
+    })();
+    </script>
+
+    <hr>
+
     <h1>preventDefault() Tests</h1>
 
     <h2>Link with preventDefault (should NOT navigate)</h2>

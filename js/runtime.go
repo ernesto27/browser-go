@@ -389,6 +389,27 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		nil,
 		goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+	obj.DefineAccessorProperty("className",
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if node.Attributes == nil {
+				return rt.vm.ToValue("")
+			}
+			return rt.vm.ToValue(node.Attributes["class"])
+		}),
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if len(call.Arguments) > 0 {
+				if node.Attributes == nil {
+					node.Attributes = make(map[string]string)
+				}
+				node.Attributes["class"] = call.Arguments[0].String()
+				if rt.onReflow != nil {
+					rt.onReflow()
+				}
+			}
+			return goja.Undefined()
+		}),
+		goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	if strings.ToUpper(node.TagName) == "TITLE" {
 		obj.DefineAccessorProperty("text",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
@@ -401,6 +422,158 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				return goja.Undefined()
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
+	if strings.ToUpper(node.TagName) == "A" {
+		relList := dom.NewDOMTokenList(node, "rel")
+		relListObj := rt.vm.NewObject()
+
+		relListObj.DefineAccessorProperty("length",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				return rt.vm.ToValue(relList.Length())
+			}),
+			nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		relListObj.Set("item", rt.vm.ToValue(func(index int) string {
+			return relList.Item(index)
+		}))
+
+		relListObj.Set("contains", rt.vm.ToValue(func(token string) bool {
+			return relList.Contains(token)
+		}))
+
+		relListObj.Set("add", rt.vm.ToValue(func(token string) {
+			relList.Add(token)
+		}))
+
+		relListObj.Set("remove", rt.vm.ToValue(func(token string) {
+			relList.Remove(token)
+		}))
+
+		relListObj.Set("toggle", rt.vm.ToValue(func(token string) bool {
+			return relList.Toggle(token)
+		}))
+
+		obj.Set("relList", relListObj)
+
+		// .text property (alias for innerText)
+		obj.DefineAccessorProperty("text",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				return rt.vm.ToValue(elem.GetTextContent())
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					elem.SetTextContent(call.Arguments[0].String())
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		// Helper to parse resolved href
+		getURL := func() *url.URL {
+			href := node.Attributes["href"]
+			if href == "" {
+				return nil
+			}
+			parsed, err := url.Parse(href)
+			if err != nil {
+				return nil
+			}
+			if !parsed.IsAbs() {
+				baseHref := dom.FindBaseHref(rt.document)
+				if baseHref != "" {
+					baseURL, err := url.Parse(baseHref)
+					if err == nil {
+						parsed = baseURL.ResolveReference(parsed)
+					}
+				}
+			}
+			return parsed
+		}
+
+		obj.DefineAccessorProperty("protocol",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil {
+					return rt.vm.ToValue(u.Scheme + ":")
+				}
+				return rt.vm.ToValue(":")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("username",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil && u.User != nil {
+					return rt.vm.ToValue(u.User.Username())
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("password",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil && u.User != nil {
+					pass, _ := u.User.Password()
+					return rt.vm.ToValue(pass)
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("host",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil {
+					return rt.vm.ToValue(u.Host)
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("hostname",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil {
+					return rt.vm.ToValue(u.Hostname())
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("port",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil {
+					return rt.vm.ToValue(u.Port())
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("pathname",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil {
+					return rt.vm.ToValue(u.Path)
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("search",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil && u.RawQuery != "" {
+					return rt.vm.ToValue("?" + u.RawQuery)
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("hash",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil && u.Fragment != "" {
+					return rt.vm.ToValue("#" + u.Fragment)
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("origin",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if u := getURL(); u != nil {
+					return rt.vm.ToValue(u.Scheme + "://" + u.Host)
+				}
+				return rt.vm.ToValue("")
+			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
 	if strings.ToUpper(node.TagName) == "BLOCKQUOTE" || strings.ToUpper(node.TagName) == "Q" {
