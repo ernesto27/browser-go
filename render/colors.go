@@ -10,7 +10,8 @@ var (
 
 // Link colors
 var (
-	ColorLink = color.RGBA{0, 0, 238, 255} // Blue
+	ColorLink        = color.RGBA{0, 0, 238, 255}   // Blue
+	ColorLinkVisited = color.RGBA{85, 26, 139, 255} // Purple
 )
 
 // Border colors

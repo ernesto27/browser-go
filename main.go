@@ -170,6 +170,7 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 		}
 
 		browser.AddToHistory(pageURL)
+		browser.MarkVisited(pageURL)
 
 		fmt.Println("Page loaded!")
 	}()

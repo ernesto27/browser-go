@@ -47,10 +47,11 @@ type Browser struct {
 	externalCSS string // CSS from <link> tags, stored for reflow
 	OnNavigate  func(req NavigationRequest)
 
-	urlEntry   *widget.Entry
-	content    *fyne.Container
-	history    []string
-	historyPos int
+	urlEntry    *widget.Entry
+	content     *fyne.Container
+	history     []string
+	historyPos  int
+	visitedURLs map[string]bool
 
 	document *dom.Node
 
@@ -101,6 +102,7 @@ func NewBrowser(width, height float32) *Browser {
 		Height:          height,
 		history:         []string{},
 		historyPos:      -1,
+		visitedURLs:     make(map[string]bool),
 		inputValues:     make(map[*dom.Node]string),
 		radioValues:     make(map[string]*dom.Node),
 		checkboxValue:   make(map[*dom.Node]bool),
@@ -207,7 +209,10 @@ func NewBrowser(width, height float32) *Browser {
 func (b *Browser) SetContent(layoutTree *layout.LayoutBox) {
 	b.layoutTree = layoutTree // Save it so handleClick can use it
 
-	commands := BuildDisplayList(layoutTree)
+	commands := BuildDisplayList(layoutTree, LinkStyler{
+		IsVisited:  b.IsVisited,
+		ResolveURL: b.resolveURL,
+	})
 
 	// Get base URL for resolving relative image URLs
 	baseURL := ""
@@ -229,6 +234,14 @@ func (b *Browser) AddToHistory(url string) {
 
 	b.history = append(b.history, url)
 	b.historyPos = len(b.history) - 1
+}
+
+func (b *Browser) IsVisited(url string) bool {
+	return b.visitedURLs[url]
+}
+
+func (b *Browser) MarkVisited(url string) {
+	b.visitedURLs[url] = true
 }
 
 func (b *Browser) GoBack() {
@@ -721,6 +734,9 @@ func (b *Browser) Reflow(width float32) {
 		CheckboxValues:  b.checkboxValue,
 		FileInputValues: b.fileInputValues,
 		InvalidNodes:    b.invalidNodes,
+	}, LinkStyler{
+		IsVisited:  b.IsVisited,
+		ResolveURL: b.resolveURL,
 	})
 
 	baseURL := ""
@@ -944,6 +960,9 @@ func (b *Browser) repaint() {
 		InvalidNodes:    b.invalidNodes,
 		SelectionStart:  b.selectionStart,
 		SelectionEnd:    b.selectionEnd,
+	}, LinkStyler{
+		IsVisited:  b.IsVisited,
+		ResolveURL: b.resolveURL,
 	})
 
 	baseURL := ""

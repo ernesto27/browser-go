@@ -12,6 +12,12 @@ import (
 
 // Colors are defined in colors.go
 
+// LinkStyler provides functions for styling links
+type LinkStyler struct {
+	IsVisited  func(url string) bool
+	ResolveURL func(href string) string
+}
+
 // Font sizes
 var (
 	SizeH1     float32 = 32
@@ -207,7 +213,7 @@ type DrawFieldset struct {
 	HasLegend    bool
 }
 
-func BuildDisplayList(root *layout.LayoutBox) []DisplayCommand {
+func BuildDisplayList(root *layout.LayoutBox, linkStyler LinkStyler) []DisplayCommand {
 	var commands []DisplayCommand
 
 	// Calculate actual content height from layout tree
@@ -221,12 +227,12 @@ func BuildDisplayList(root *layout.LayoutBox) []DisplayCommand {
 		Color: color.White,
 	})
 
-	paintLayoutBox(root, &commands, DefaultStyle())
+	paintLayoutBox(root, &commands, DefaultStyle(), linkStyler)
 
 	return commands
 }
 
-func BuildDisplayListWithInputs(root *layout.LayoutBox, state InputState) []DisplayCommand {
+func BuildDisplayListWithInputs(root *layout.LayoutBox, state InputState, linkStyler LinkStyler) []DisplayCommand {
 	var commands []DisplayCommand
 
 	contentHeight := root.Rect.Y + root.Rect.Height
@@ -239,12 +245,12 @@ func BuildDisplayListWithInputs(root *layout.LayoutBox, state InputState) []Disp
 		Color: color.White,
 	})
 
-	paintLayoutBoxWithInputs(root, &commands, DefaultStyle(), state)
+	paintLayoutBoxWithInputs(root, &commands, DefaultStyle(), state, linkStyler)
 
 	return commands
 }
 
-func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState) {
+func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler) {
 	currentStyle := style
 
 	// Apply inline styles from CSS
@@ -371,7 +377,16 @@ func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand,
 			}
 		case dom.TagA:
 			if box.Style.Color == nil {
-				currentStyle.Color = ColorLink
+				href := box.Node.Attributes["href"]
+				// Resolve relative URL to absolute for visited check
+				if linkStyler.ResolveURL != nil && href != "" {
+					href = linkStyler.ResolveURL(href)
+				}
+				if linkStyler.IsVisited != nil && linkStyler.IsVisited(href) {
+					currentStyle.Color = ColorLinkVisited
+				} else {
+					currentStyle.Color = ColorLink
+				}
 			}
 			if box.Style.TextDecoration == "" {
 				currentStyle.TextDecoration = "underline"
@@ -684,14 +699,14 @@ func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand,
 			if child.Type == layout.LegendBox {
 				continue
 			}
-			paintLayoutBoxWithInputs(child, commands, currentStyle, state)
+			paintLayoutBoxWithInputs(child, commands, currentStyle, state, linkStyler)
 		}
 	}
 }
 
-func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle) {
+func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, linkStyler LinkStyler) {
 	// Delegate to the stateful version with empty state
-	paintLayoutBoxWithInputs(box, commands, style, InputState{})
+	paintLayoutBoxWithInputs(box, commands, style, InputState{}, linkStyler)
 }
 
 // getListInfo returns (isListItem, isOrdered, itemIndex)
