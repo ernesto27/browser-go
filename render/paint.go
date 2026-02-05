@@ -375,7 +375,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			}
 		case dom.TagStrong, dom.TagB:
 			currentStyle.Bold = true
-		case dom.TagEm, dom.TagI:
+		case dom.TagEm, dom.TagI, dom.TagCite:
 			currentStyle.Italic = true
 		case dom.TagSmall:
 			currentStyle.Size = SizeSmall

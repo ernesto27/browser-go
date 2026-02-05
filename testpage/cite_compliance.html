@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Cite Element Compliance Test (WHATWG 4.5.6)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Cite Element Compliance Test (WHATWG 4.5.6)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Cite (Book Title)</h3>
+    <div class="test-box">
+        <p id="test1">My favorite book is <cite>The Reality Dysfunction</cite> by Peter F. Hamilton.</p>
+    </div>
+    <p>Expected: "The Reality Dysfunction" in italic</p>
+
+    <h3>Test 2: Multiple Works</h3>
+    <div class="test-box">
+        <p id="test2">
+            I recommend <cite>1984</cite> by George Orwell,
+            <cite>Brave New World</cite> by Aldous Huxley, and
+            <cite>Fahrenheit 451</cite> by Ray Bradbury.
+        </p>
+    </div>
+    <p>Expected: All three titles in italic</p>
+
+    <h3>Test 3: Article Title (Spec Example)</h3>
+    <div class="test-box">
+        <p id="test3">According to the Wikipedia article <cite>HTML</cite>, leaving attribute values unquoted is unsafe.</p>
+    </div>
+    <p>Expected: "HTML" in italic</p>
+
+    <h3>Test 4: Bibliography Style</h3>
+    <div class="test-box">
+        <p id="test4"><cite>Universal Declaration of Human Rights</cite>, United Nations, December 1948.</p>
+    </div>
+    <p>Expected: Title in italic, rest in normal text</p>
+
+    <h3>Test 5: Various Work Types</h3>
+    <div class="test-box">
+        <ul>
+            <li>Book:<cite>The Lord of the Rings</cite></li>
+            <li>Film:<cite>Blade Runner</cite></li>
+            <li>Song:<cite>Bohemian Rhapsody</cite></li>
+            <li>Game:<cite>The Legend of Zelda</cite></li>
+            <li>TV Show:<cite>Breaking Bad</cite></li>
+        </ul>
+    </div>
+    <p>Expected: All work titles in italic</p>
+
+    <h3>Test 6: Cite with Link Inside</h3>
+    <div class="test-box">
+        <p id="test6">Read <cite><a href="#">The Hitchhiker's Guide to the Galaxy</a></cite> for more information.</p>
+    </div>
+    <p>Expected: Linked title in italic with underline</p>
+
+    <h3>Test 7: Cite Inside Other Formatting</h3>
+    <div class="test-box">
+        <p id="test7"><strong>Recommended: <cite>Clean Code</cite></strong></p>
+    </div>
+    <p>Expected: Bold and italic combined</p>
+
+    <h3>Test 8: Empty Cite Element</h3>
+    <div class="test-box">
+        <p id="test8">Before<cite></cite>After</p>
+    </div>
+    <p>Expected: "BeforeAfter" with no visible change</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Helper: find first child element with given tag name
+        function findChildByTag(parent, tagName) {
+            if (!parent || !parent.children) return null;
+            tagName = tagName.toUpperCase();
+            for (var i = 0; i < parent.children.length; i++) {
+                if (parent.children[i].tagName === tagName) {
+                    return parent.children[i];
+                }
+            }
+            return null;
+        }
+
+        // Test 1: Find cite element
+        var test1 = document.getElementById('test1');
+        var citeElement = findChildByTag(test1, 'cite');
+        assert(citeElement !== null, "Cite element found via children");
+
+        // Test 2: tagName is CITE
+        if (citeElement) {
+            assert(citeElement.tagName === "CITE",
+                "tagName is 'CITE' (was: '" + citeElement.tagName + "')");
+        }
+
+        // Test 3: textContent works
+        if (citeElement) {
+            var content = citeElement.textContent;
+            assert(content === "The Reality Dysfunction",
+                "textContent returns correct value (was: '" + content + "')");
+        }
+
+        // Test 4: innerHTML works
+        if (citeElement) {
+            var html = citeElement.innerHTML;
+            assert(typeof html === 'string' && html.length > 0,
+                "innerHTML returns content (length: " + html.length + ")");
+        }
+
+        // Test 5: Can contain phrasing content (link)
+        var test6 = document.getElementById('test6');
+        if (test6) {
+            var citeWithLink = findChildByTag(test6, 'cite');
+            var hasLink = citeWithLink && findChildByTag(citeWithLink, 'a') !== null;
+            assert(hasLink, "Cite element can contain anchor elements");
+        }
+
+        info("Visual tests above should be verified manually");
+        info("Check: cite text renders in italic style");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>
