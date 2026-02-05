@@ -35,13 +35,17 @@ func (em *EventManager) AddEventListener(node *dom.Node, eventType string, callb
 	})
 }
 
-// Dispatch fires all listeners for the given node and event type
-func (em *EventManager) Dispatch(rt *JSRuntime, node *dom.Node, eventType string) {
+// Dispatch fires all listeners for the given node and event type.
+// Returns true if any handler called preventDefault().
+func (em *EventManager) Dispatch(rt *JSRuntime, node *dom.Node, eventType string) bool {
 	fmt.Printf("Dispatch: eventType=%s, node=%p, tagName=%s\n", eventType, node, node.TagName)
 	fmt.Printf("  Total registered nodes: %d\n", len(em.listeners))
 	for n := range em.listeners {
 		fmt.Printf("    Registered node: %p tagName=%s id=%s\n", n, n.TagName, n.Attributes["id"])
 	}
+
+	// Shared state - any handler can set this to true
+	defaultPrevented := false
 
 	// Bubble up through the DOM tree
 	current := node
@@ -56,9 +60,16 @@ func (em *EventManager) Dispatch(rt *JSRuntime, node *dom.Node, eventType string
 				event.Set("type", eventType)
 				event.Set("target", rt.wrapElement(node)) // original target
 				event.Set("currentTarget", rt.wrapElement(current))
+				event.Set("defaultPrevented", defaultPrevented)
+				event.Set("preventDefault", func() {
+					defaultPrevented = true
+				})
+
 				l.callback(goja.Undefined(), event)
 			}
 		}
 		current = current.Parent
 	}
+
+	return defaultPrevented
 }

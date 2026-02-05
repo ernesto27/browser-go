@@ -64,7 +64,7 @@ type Browser struct {
 	fileInputValues  map[*dom.Node]string
 	invalidNodes     map[*dom.Node]bool
 
-	onJSClick        func(node *dom.Node)
+	onJSClick        func(node *dom.Node) bool // Returns true if preventDefault was called
 	onBeforeNavigate func() bool // Returns true if navigation should proceed
 
 	selectionStart *SelectionPoint
@@ -295,9 +295,11 @@ func (b *Browser) handleClick(x, y float64) {
 	}
 	fmt.Printf("  Hit: %+v\n", hit.Text)
 
-	if b.onJSClick != nil && hit.Node != nil {
-		// Run JS in goroutine so dialogs (confirm/prompt) don't block UI
-		go b.onJSClick(hit.Node)
+	// JS click dispatch moved to link handling section (for preventDefault support)
+	// For non-link elements, fire-and-forget is fine
+	isLinkClick := hit.FindLinkInfo() != nil
+	if b.onJSClick != nil && hit.Node != nil && !isLinkClick {
+		go b.onJSClick(hit.Node) // Fire and forget for non-links
 	}
 
 	if hit.Type == layout.InputBox && hit.Node != nil {
@@ -464,45 +466,57 @@ func (b *Browser) handleClick(x, y float64) {
 	}
 	fmt.Println("  Found link:", linkInfo.Href, "target:", linkInfo.Target, "rel:", linkInfo.Rel, "ping:", linkInfo.Ping)
 
-	if linkInfo.Ping != "" {
-		urls := strings.FieldsSeq(linkInfo.Ping)
-		for pingURL := range urls {
-			fullURL := b.resolveURL(pingURL)
-			fmt.Println("ping to url ", fullURL)
-			go utils.DoPost(fullURL, "")
+	// For link clicks: run JS async, but check preventDefault before navigating
+	// This keeps UI responsive while allowing JS to cancel navigation
+	clickedNode := hit.Node
+	go func() {
+		// Run JS click handlers first
+		if b.onJSClick != nil && clickedNode != nil {
+			if b.onJSClick(clickedNode) {
+				fmt.Println("  Navigation prevented by JavaScript")
+				return // preventDefault was called
+			}
 		}
-	}
 
-	if linkInfo.HasDownload {
-		if linkInfo.Href == "" {
-			fmt.Println("  Download link has no href!")
+		// Ping URLs (fire regardless of navigation)
+		if linkInfo.Ping != "" {
+			urls := strings.FieldsSeq(linkInfo.Ping)
+			for pingURL := range urls {
+				fullURL := b.resolveURL(pingURL)
+				fmt.Println("ping to url ", fullURL)
+				go utils.DoPost(fullURL, "")
+			}
+		}
+
+		// Handle download links
+		if linkInfo.HasDownload {
+			if linkInfo.Href == "" {
+				fmt.Println("  Download link has no href!")
+				return
+			}
+			fullURL := b.resolveURL(linkInfo.Href)
+			fmt.Println("Downloading file from:", fullURL)
+			b.downloadURL(fullURL)
 			return
 		}
 
 		fullURL := b.resolveURL(linkInfo.Href)
-		fmt.Println("Downloading file from:", fullURL)
-		go b.downloadURL(fullURL)
-		return
-	}
+		fmt.Println("Link clicked:", fullURL)
 
-	fullURL := b.resolveURL(linkInfo.Href)
+		// Open in new window
+		if linkInfo.Target == "_blank" {
+			b.openNewWindow(fullURL)
+			return
+		}
 
-	fmt.Println("Link clicked:", fullURL)
-
-	if linkInfo.Target == "_blank" {
-		b.openNewWindow(fullURL)
-		return
-	}
-
-	// Call navigation callback
-	if b.OnNavigate != nil {
-		go func() {
+		// Normal navigation
+		if b.OnNavigate != nil {
 			if b.onBeforeNavigate != nil && !b.onBeforeNavigate() {
 				return
 			}
 			b.OnNavigate(NavigationRequest{URL: fullURL, Method: "GET", ReferrerPolicy: linkInfo.ReferrerPolicy})
-		}()
-	}
+		}
+	}()
 }
 
 func (b *Browser) openNewWindow(targetURL string) {
@@ -1444,7 +1458,7 @@ func (b *Browser) validateInputs(node *dom.Node, invalidNodes *[]*dom.Node) {
 	}
 }
 
-func (b *Browser) SetJSClickHandler(handler func(node *dom.Node)) {
+func (b *Browser) SetJSClickHandler(handler func(node *dom.Node) bool) {
 	b.onJSClick = handler
 }
 

@@ -4,6 +4,32 @@
     <title>a Element Compliance</title>
 </head>
 <body>
+    <h1>preventDefault() Tests</h1>
+
+    <h2>Link with preventDefault (should NOT navigate)</h2>
+    <a href="/should-not-navigate" id="prevented-link">Click me - navigation prevented</a>
+    <p id="prevent-status">Status: not clicked</p>
+    <script>
+        document.getElementById('prevented-link').addEventListener('click', function(event) {
+            event.preventDefault();
+            document.getElementById('prevent-status').textContent = 'Status: clicked but navigation prevented!';
+        });
+    </script>
+
+    <h2>Link without preventDefault (should navigate)</h2>
+    <a href="/should-navigate" id="normal-link">Click me - normal navigation</a>
+    <p id="normal-status">Status: not clicked</p>
+    <script>
+        document.getElementById('normal-link').addEventListener('click', function(event) {
+            document.getElementById('normal-status').textContent = 'Status: clicked, navigating...';
+            // No preventDefault - should navigate
+        });
+    </script>
+
+    <h2>Inline onclick with return false (should NOT navigate)</h2>
+    <a href="/should-not-navigate" onclick="document.getElementById('inline-status').textContent = 'Status: prevented via return false!'; return false;">Click me - inline prevention</a>
+    <p id="inline-status">Status: not clicked</p>
+
     <h1>Nested &lt;a&gt; Tests</h1>
 
     <h2>Nested a tags</h2>

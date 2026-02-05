@@ -585,13 +585,11 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 	return obj
 }
 
-func (rt *JSRuntime) DispatchClick(node *dom.Node) {
-	inlineExecuted := rt.ExecuteInlineEvent(node, "click")
-	if inlineExecuted {
-		fmt.Println("inline executed")
-	}
+func (rt *JSRuntime) DispatchClick(node *dom.Node) bool {
+	inlinePrevented := rt.ExecuteInlineEvent(node, "click")
+	listenerPrevented := rt.Events.Dispatch(rt, node, "click")
 
-	rt.Events.Dispatch(rt, node, "click")
+	return inlinePrevented || listenerPrevented
 }
 
 func (rt *JSRuntime) SetAlertHandler(handler func(message string)) {

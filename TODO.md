@@ -39,7 +39,7 @@ https://html.spec.whatwg.org/
 - [ ] Proper HTMLAnchorElement interface (text, relList, HTMLHyperlinkElementUtils)
 - [ ] Placeholder <a> behavior when href is absent (non-link, no link styling)
 - [ ] Keyboard focus/activation (tab/enter/space), focus ring
-- [ ] Allow preventDefault() on link clicks
+- [x] Allow preventDefault() on link clicks
 - [ ] Named target handling (frames/contexts) beyond _blank
 - [x] Visited/unvisited link styling (visitedURLs map, LinkStyler)
 
