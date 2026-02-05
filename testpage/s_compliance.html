@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>S Element Compliance Test (WHATWG 4.5.5)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>S Element Compliance Test (WHATWG 4.5.5)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Strikethrough</h3>
+    <div class="test-box">
+        <p id="test1"><s>This text should have a strikethrough</s></p>
+    </div>
+    <p>Expected: Text with line through it</p>
+
+    <h3>Test 2: Price Example (Spec Example)</h3>
+    <div class="test-box">
+        <p>Buy our Iced Tea and Lemonade!</p>
+        <p id="test2"><s>Recommended retail price: $3.99 per bottle</s></p>
+        <p><strong>Now selling for just $2.99 a bottle!</strong></p>
+    </div>
+    <p>Expected: Old price struck through, new price in bold</p>
+
+    <h3>Test 3: Inline with Other Text</h3>
+    <div class="test-box">
+        <p id="test3">The meeting is on <s>Tuesday</s> Wednesday.</p>
+    </div>
+    <p>Expected: Only "Tuesday" has strikethrough</p>
+
+    <h3>Test 4: Nested Inside Other Elements</h3>
+    <div class="test-box">
+        <p id="test4"><strong><s>Bold and strikethrough</s></strong></p>
+    </div>
+    <p>Expected: Text is both bold AND has strikethrough</p>
+
+    <h3>Test 5: S vs DEL Distinction</h3>
+    <div class="test-box">
+        <p><s>No longer accurate (s element)</s></p>
+        <p><del>Deleted from document (del element)</del></p>
+    </div>
+    <p>Expected: Both should have strikethrough visually (semantic difference only)</p>
+
+    <h3>Test 6: Multiple S Elements</h3>
+    <div class="test-box">
+        <p id="test6">
+            <s>First struck</s> normal text <s>second struck</s>
+        </p>
+    </div>
+    <p>Expected: Two separate strikethrough sections with normal text between</p>
+
+    <h3>Test 7: S with Link Inside</h3>
+    <div class="test-box">
+        <p id="test7"><s>Visit our <a href="#">old website</a> for more</s></p>
+    </div>
+    <p>Expected: Entire text including link has strikethrough</p>
+
+    <h3>Test 8: Empty S Element</h3>
+    <div class="test-box">
+        <p id="test8">Before<s></s>After</p>
+    </div>
+    <p>Expected: "BeforeAfter" with no visible strikethrough (empty element)</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Helper: find first child element with given tag name
+        function findChildByTag(parent, tagName) {
+            if (!parent || !parent.children) return null;
+            tagName = tagName.toUpperCase();
+            for (var i = 0; i < parent.children.length; i++) {
+                if (parent.children[i].tagName === tagName) {
+                    return parent.children[i];
+                }
+            }
+            return null;
+        }
+
+        // Helper: count children with given tag name
+        function countChildrenByTag(parent, tagName) {
+            if (!parent || !parent.children) return 0;
+            tagName = tagName.toUpperCase();
+            var count = 0;
+            for (var i = 0; i < parent.children.length; i++) {
+                if (parent.children[i].tagName === tagName) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // Test 1: Find s element via children
+        var test1 = document.getElementById('test1');
+        var sElement = findChildByTag(test1, 's');
+        assert(sElement !== null, "S element found via children");
+
+        // Test 2: tagName is S
+        if (sElement) {
+            assert(sElement.tagName === "S",
+                "tagName is 'S' (was: '" + sElement.tagName + "')");
+        }
+
+        // Test 3: textContent works
+        if (sElement) {
+            var content = sElement.textContent;
+            assert(content === "This text should have a strikethrough",
+                "textContent returns correct value");
+        }
+
+        // Test 4: innerHTML works
+        if (sElement) {
+            var html = sElement.innerHTML;
+            assert(typeof html === 'string' && html.length > 0,
+                "innerHTML returns content (length: " + html.length + ")");
+        }
+
+        // Test 5: Can contain phrasing content (link)
+        var test7 = document.getElementById('test7');
+        if (test7) {
+            var sWithLink = findChildByTag(test7, 's');
+            var hasLink = sWithLink && findChildByTag(sWithLink, 'a') !== null;
+            assert(hasLink, "S element can contain anchor elements");
+        }
+
+        // Test 6: Multiple s elements work independently
+        var test6 = document.getElementById('test6');
+        if (test6) {
+            var sCount = countChildrenByTag(test6, 's');
+            assert(sCount === 2,
+                "Multiple S elements found (count: " + sCount + ")");
+        }
+
+        info("Visual tests above should be verified manually");
+        info("Check: strikethrough line visible through text");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

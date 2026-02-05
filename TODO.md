@@ -24,6 +24,9 @@ https://html.spec.whatwg.org/
 [x] - <pre> (WHATWG 4.4.3 compliance - whitespace preservation, tabs, multi-line in nested elements)
 [x] - <blockquote> (WHATWG 4.4.4 compliance - cite property)
 [x] - <ol> (WHATWG 4.4.5)
+[x] - <em> (WHATWG 4.5.2 compliance - italic styling, inline box)
+[x] - <strong> (WHATWG 4.5.3 compliance - bold styling, inline box)
+[x] - <s> (WHATWG 4.5.5 compliance - strikethrough styling, inline box)
 
 ### <a> Missing / non-compliant
 - Enforce content model (WHATWG 4.5.1):
@@ -107,6 +110,10 @@ https://html.spec.whatwg.org/
   - Adjacent vertical margins should collapse (larger wins, not add up)
   - Causes excessive spacing in nested block elements (e.g., `<p>` inside `<blockquote>`)
   - CSS spec: https://www.w3.org/TR/CSS2/box.html#collapsing-margins
+- [ ] Text decoration not inherited by nested inline elements
+  - `<s>` strikethrough does not show on nested `<a>` links
+  - `<a>` underline overwrites parent's text-decoration instead of combining
+  - Example: `<s>Visit <a href="#">link</a></s>` - link has no strikethrough
 
 ---
 

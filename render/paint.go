@@ -383,6 +383,8 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			currentStyle.TextDecoration = "underline"
 		case dom.TagDel:
 			currentStyle.TextDecoration = "line-through"
+		case dom.TagS:
+			currentStyle.TextDecoration = "line-through"
 		case dom.TagIns:
 			currentStyle.TextDecoration = "underline"
 		case dom.TagPre:

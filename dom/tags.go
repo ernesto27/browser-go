@@ -31,6 +31,7 @@ const (
 	TagPre = "pre"
 	TagDel = "del"
 	TagIns = "ins"
+	TagS   = "s"
 
 	// Lists
 	TagUL   = "ul"

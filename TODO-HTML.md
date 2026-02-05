@@ -89,6 +89,7 @@
 ## Missing Tags
 
 ### Text Formatting
+- [x] `<s>` - no longer accurate/relevant content (WHATWG 4.5.5 - strikethrough)
 - [ ] `<code>` - inline code
 - [ ] `<kbd>` - keyboard input
 - [ ] `<samp>` - sample output
