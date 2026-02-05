@@ -209,7 +209,7 @@ func NewBrowser(width, height float32) *Browser {
 func (b *Browser) SetContent(layoutTree *layout.LayoutBox) {
 	b.layoutTree = layoutTree // Save it so handleClick can use it
 
-	commands := BuildDisplayList(layoutTree, LinkStyler{
+	commands := BuildDisplayList(layoutTree, InputState{}, LinkStyler{
 		IsVisited:  b.IsVisited,
 		ResolveURL: b.resolveURL,
 	})
@@ -726,7 +726,7 @@ func (b *Browser) Reflow(width float32) {
 	b.layoutTree = layoutTree
 
 	// Repaint with input state preserved (uses DOM node keys, stable across reflow)
-	commands := BuildDisplayListWithInputs(layoutTree, InputState{
+	commands := BuildDisplayList(layoutTree, InputState{
 		InputValues:     b.inputValues,
 		FocusedNode:     b.focusedInputNode,
 		OpenSelectNode:  b.openSelectNode,
@@ -950,7 +950,7 @@ func (b *Browser) repaint() {
 		return
 	}
 
-	commands := BuildDisplayListWithInputs(b.layoutTree, InputState{
+	commands := BuildDisplayList(b.layoutTree, InputState{
 		InputValues:     b.inputValues,
 		FocusedNode:     b.focusedInputNode,
 		OpenSelectNode:  b.openSelectNode,

@@ -41,7 +41,7 @@ https://html.spec.whatwg.org/
 - [ ] Keyboard focus/activation (tab/enter/space), focus ring
 - [ ] Allow preventDefault() on link clicks
 - [ ] Named target handling (frames/contexts) beyond _blank
-- [ ] Visited/unvisited link styling
+- [x] Visited/unvisited link styling (visitedURLs map, LinkStyler)
 
 ### HTMLBodyElement (WHATWG 4.3.1)
 - [ ] `document.body` setter - Allow setting body element

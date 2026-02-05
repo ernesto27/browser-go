@@ -213,7 +213,7 @@ type DrawFieldset struct {
 	HasLegend    bool
 }
 
-func BuildDisplayList(root *layout.LayoutBox, linkStyler LinkStyler) []DisplayCommand {
+func BuildDisplayList(root *layout.LayoutBox, state InputState, linkStyler LinkStyler) []DisplayCommand {
 	var commands []DisplayCommand
 
 	// Calculate actual content height from layout tree
@@ -227,30 +227,12 @@ func BuildDisplayList(root *layout.LayoutBox, linkStyler LinkStyler) []DisplayCo
 		Color: color.White,
 	})
 
-	paintLayoutBox(root, &commands, DefaultStyle(), linkStyler)
+	paintLayoutBox(root, &commands, DefaultStyle(), state, linkStyler)
 
 	return commands
 }
 
-func BuildDisplayListWithInputs(root *layout.LayoutBox, state InputState, linkStyler LinkStyler) []DisplayCommand {
-	var commands []DisplayCommand
-
-	contentHeight := root.Rect.Y + root.Rect.Height
-	if contentHeight < 600 {
-		contentHeight = 600
-	}
-
-	commands = append(commands, DrawRect{
-		Rect:  layout.Rect{X: 0, Y: 0, Width: 3000, Height: contentHeight},
-		Color: color.White,
-	})
-
-	paintLayoutBoxWithInputs(root, &commands, DefaultStyle(), state, linkStyler)
-
-	return commands
-}
-
-func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler) {
+func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler) {
 	currentStyle := style
 
 	// Apply inline styles from CSS
@@ -699,15 +681,11 @@ func paintLayoutBoxWithInputs(box *layout.LayoutBox, commands *[]DisplayCommand,
 			if child.Type == layout.LegendBox {
 				continue
 			}
-			paintLayoutBoxWithInputs(child, commands, currentStyle, state, linkStyler)
+			paintLayoutBox(child, commands, currentStyle, state, linkStyler)
 		}
 	}
 }
 
-func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, linkStyler LinkStyler) {
-	// Delegate to the stateful version with empty state
-	paintLayoutBoxWithInputs(box, commands, style, InputState{}, linkStyler)
-}
 
 // getListInfo returns (isListItem, isOrdered, itemIndex)
 func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {

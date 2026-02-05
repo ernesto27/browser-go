@@ -37,6 +37,7 @@
   - [x] `hreflang` attribute - language of linked resource
   - [x] `type` attribute - MIME type hint
   - [x] `referrerpolicy` attribute - referrer policy
+  - [x] Visited/unvisited link styling (purple/blue colors)
   - Content model enforcement (WHATWG 4.5.1):
     - [x] No nested `<a>` (handled by x/net/html parser)
     - [ ] No interactive content descendants (button, input, select, etc.)
