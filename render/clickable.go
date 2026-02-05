@@ -80,6 +80,9 @@ func (c *ClickableContainer) MouseMoved(event *desktop.MouseEvent) {
 			break
 		}
 		if box.Node != nil && box.Node.TagName == "a" {
+			if _, hasHref := box.Node.Attributes["href"]; !hasHref {
+				continue
+			}
 			cursor = desktop.PointerCursor
 			break
 		}

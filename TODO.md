@@ -37,7 +37,7 @@ https://html.spec.whatwg.org/
 - [x] Implement type metadata
 - [x] Implement referrerpolicy behavior + reflection
 - [x] Proper HTMLAnchorElement interface (text, relList, HTMLHyperlinkElementUtils)
-- [ ] Placeholder <a> behavior when href is absent (non-link, no link styling)
+- [x] Placeholder <a> behavior when href is absent (non-link, no link styling, no pointer cursor)
 - [ ] Keyboard focus/activation (tab/enter/space), focus ring
 - [x] Allow preventDefault() on link clicks
 - [ ] Named target handling (frames/contexts) beyond _blank

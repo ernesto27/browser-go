@@ -132,6 +132,24 @@
     <a href="/should-not-navigate" onclick="document.getElementById('inline-status').textContent = 'Status: prevented via return false!'; return false;">Click me - inline prevention</a>
     <p id="inline-status">Status: not clicked</p>
 
+    <h1>Placeholder &lt;a&gt; Tests (no href)</h1>
+
+    <h2>Placeholder anchor (should render as plain text, not a link)</h2>
+    <a>This is a placeholder - no href, no link styling, not clickable</a>
+
+    <h2>Placeholder with other attributes (still not a link)</h2>
+    <a id="placeholder-anchor" class="nav-item" hreflang="en" type="text/html">Attributes present but no href</a>
+
+    <h2>Placeholder vs real link side by side</h2>
+    <p><a href="/destination">This is a real link (blue, underlined)</a> vs <a>this is a placeholder (plain text)</a></p>
+
+    <h2>Navigation menu with current page placeholder</h2>
+    <p>
+        <a href="/home">Home</a> |
+        <a>About (current page)</a> |
+        <a href="/contact">Contact</a>
+    </p>
+
     <h1>Nested &lt;a&gt; Tests</h1>
 
     <h2>Nested a tags</h2>

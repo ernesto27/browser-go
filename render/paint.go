@@ -358,8 +358,8 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				currentStyle.Bold = true
 			}
 		case dom.TagA:
-			if box.Style.Color == nil {
-				href := box.Node.Attributes["href"]
+			href, hasHref := box.Node.Attributes["href"]
+			if hasHref {
 				// Resolve relative URL to absolute for visited check
 				if linkStyler.ResolveURL != nil && href != "" {
 					href = linkStyler.ResolveURL(href)
@@ -369,9 +369,9 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				} else {
 					currentStyle.Color = ColorLink
 				}
-			}
-			if box.Style.TextDecoration == "" {
+
 				currentStyle.TextDecoration = "underline"
+
 			}
 		case dom.TagStrong, dom.TagB:
 			currentStyle.Bold = true
@@ -686,7 +686,6 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	}
 }
 
-
 // getListInfo returns (isListItem, isOrdered, itemIndex)
 func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 	// Check if parent is <li>
@@ -844,5 +843,3 @@ func fontStackHasMonospace(fonts []string) bool {
 	}
 	return false
 }
-
-

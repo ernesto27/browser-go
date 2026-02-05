@@ -38,6 +38,7 @@
   - [x] `type` attribute - MIME type hint
   - [x] `referrerpolicy` attribute - referrer policy
   - [x] Visited/unvisited link styling (purple/blue colors)
+  - [x] Placeholder `<a>` without href (no link color, no underline, no pointer cursor)
   - Content model enforcement (WHATWG 4.5.1):
     - [x] No nested `<a>` (handled by x/net/html parser)
     - [ ] No interactive content descendants (button, input, select, etc.)
