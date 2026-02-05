@@ -34,8 +34,8 @@ https://html.spec.whatwg.org/
 - [x] Implement download behavior
 - [x] Implement ping behavior
 - [x] Implement hreflang metadata
-- [ ] Implement type metadata
-- [ ] Implement referrerpolicy behavior + reflection
+- [x] Implement type metadata
+- [x] Implement referrerpolicy behavior + reflection
 - [ ] Proper HTMLAnchorElement interface (text, relList, HTMLHyperlinkElementUtils)
 - [ ] Placeholder <a> behavior when href is absent (non-link, no link styling)
 - [ ] Keyboard focus/activation (tab/enter/space), focus ring

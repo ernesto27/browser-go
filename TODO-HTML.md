@@ -35,8 +35,8 @@
   - [x] `download` attribute - downloads to ~/Downloads with random filename
   - [x] `ping` attribute - URLs to ping on click
   - [x] `hreflang` attribute - language of linked resource
-  - [ ] `type` attribute - MIME type hint
-  - [ ] `referrerpolicy` attribute - referrer policy
+  - [x] `type` attribute - MIME type hint
+  - [x] `referrerpolicy` attribute - referrer policy
   - Content model enforcement (WHATWG 4.5.1):
     - [x] No nested `<a>` (handled by x/net/html parser)
     - [ ] No interactive content descendants (button, input, select, etc.)

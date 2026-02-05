@@ -29,11 +29,12 @@ import (
 )
 
 type NavigationRequest struct {
-	URL         string
-	Method      string
-	Data        url.Values
-	Body        []byte
-	ContentType string
+	URL            string
+	Method         string
+	Data           url.Values
+	Body           []byte
+	ContentType    string
+	ReferrerPolicy string
 }
 
 type Browser struct {
@@ -252,6 +253,13 @@ func (b *Browser) SetCurrentURL(rawURL string) {
 	if err == nil {
 		b.currentURL = parsed
 	}
+}
+
+func (b *Browser) GetCurrentURL() string {
+	if b.currentURL != nil {
+		return b.currentURL.String()
+	}
+	return ""
 }
 
 func (b *Browser) handleClick(x, y float64) {
@@ -479,7 +487,7 @@ func (b *Browser) handleClick(x, y float64) {
 			if b.onBeforeNavigate != nil && !b.onBeforeNavigate() {
 				return
 			}
-			b.OnNavigate(NavigationRequest{URL: fullURL, Method: "GET"})
+			b.OnNavigate(NavigationRequest{URL: fullURL, Method: "GET", ReferrerPolicy: linkInfo.ReferrerPolicy})
 		}()
 	}
 }

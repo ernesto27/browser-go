@@ -40,5 +40,36 @@
     <h2>Hreflang without href (should be ignored)</h2>
     <a hreflang="fr">No href - hreflang ignored</a>
 
+    <h1>Type Attribute Tests</h1>
+
+    <h2>PDF type hint</h2>
+    <a href="/doc.pdf" type="application/pdf">Download PDF</a>
+
+    <h2>JSON type hint</h2>
+    <a href="/data.json" type="application/json">View JSON</a>
+
+    <h2>Type without href (should be ignored)</h2>
+    <a type="text/html">No href - type ignored</a>
+
+    <h1>ReferrerPolicy Attribute Tests</h1>
+
+    <h2>no-referrer</h2>
+    <a href="/page" referrerpolicy="no-referrer">No referrer sent</a>
+
+    <h2>origin</h2>
+    <a href="/page" referrerpolicy="origin">Only origin sent</a>
+
+    <h2>same-origin</h2>
+    <a href="/page" referrerpolicy="same-origin">Full URL same-site only</a>
+
+    <h2>strict-origin-when-cross-origin</h2>
+    <a href="/page" referrerpolicy="strict-origin-when-cross-origin">Modern default</a>
+
+    <h2>unsafe-url</h2>
+    <a href="/page" referrerpolicy="unsafe-url">Always full URL</a>
+
+    <h2>ReferrerPolicy without href (should be ignored)</h2>
+    <a referrerpolicy="no-referrer">No href - policy ignored</a>
+
 </body>
 </html>

@@ -41,13 +41,15 @@ func (box *LayoutBox) FindLink() string {
 }
 
 type LinkInfo struct {
-	Href        string
-	Target      string
-	Rel         string
-	Download    string
-	HasDownload bool
-	Ping        string
-	HrefLang    string
+	Href           string
+	Target         string
+	Rel            string
+	Download       string
+	HasDownload    bool
+	Ping           string
+	HrefLang       string
+	Type           string
+	ReferrerPolicy string
 }
 
 func (box *LayoutBox) FindLinkInfo() *LinkInfo {
@@ -59,13 +61,15 @@ func (box *LayoutBox) FindLinkInfo() *LinkInfo {
 			if hasHref {
 				download, hasDownload := current.Node.Attributes["download"]
 				return &LinkInfo{
-					Href:        href,
-					Target:      current.Node.Attributes["target"],
-					Rel:         current.Node.Attributes["rel"],
-					Download:    download,
-					HasDownload: hasDownload,
-					Ping:        current.Node.Attributes["ping"],
-					HrefLang:    current.Node.Attributes["hreflang"],
+					Href:           href,
+					Target:         current.Node.Attributes["target"],
+					Rel:            current.Node.Attributes["rel"],
+					Download:       download,
+					HasDownload:    hasDownload,
+					Ping:           current.Node.Attributes["ping"],
+					HrefLang:       current.Node.Attributes["hreflang"],
+					Type:           current.Node.Attributes["type"],
+					ReferrerPolicy: current.Node.Attributes["referrerpolicy"],
 				}
 			}
 		}
