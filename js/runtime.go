@@ -668,6 +668,25 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
+	obj.DefineAccessorProperty("title",
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			title := node.Attributes["title"]
+			if title == "" {
+				return goja.Undefined()
+			}
+			return rt.vm.ToValue(title)
+		}),
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if len(call.Arguments) > 0 {
+				if node.Attributes == nil {
+					node.Attributes = make(map[string]string)
+				}
+				node.Attributes["title"] = call.Arguments[0].String()
+			}
+			return goja.Undefined()
+		}),
+		goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	obj.Set("appendChild", func(call goja.FunctionCall) goja.Value {
 		if len(call.Arguments) < 1 {
 			return goja.Undefined()

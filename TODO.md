@@ -27,6 +27,9 @@ https://html.spec.whatwg.org/
 [x] - <em> (WHATWG 4.5.2 compliance - italic styling, inline box)
 [x] - <strong> (WHATWG 4.5.3 compliance - bold styling, inline box)
 [x] - <s> (WHATWG 4.5.5 compliance - strikethrough styling, inline box)
+[x] - <q> (WHATWG 4.5.7 partial - curly quotes added, missing: cite attr, nested quote styles, HTMLQuoteElement)
+[x] - <dfn> (WHATWG 4.5.8 partial
+[] - fix navigation for hash-only URLs (e.g., "#section") - scroll to element with ID
 
 ### <a> Missing / non-compliant
 - Enforce content model (WHATWG 4.5.1):

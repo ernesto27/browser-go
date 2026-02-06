@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Dfn Element Compliance Test (WHATWG 4.5.8)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Dfn Element Compliance Test (WHATWG 4.5.8)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Definition</h3>
+    <div class="test-box">
+        <p id="test1">A <dfn>browser</dfn> is a software application for accessing the World Wide Web.</p>
+    </div>
+    <p>Expected: "browser" in italic</p>
+
+    <h3>Test 2: Definition with Title Attribute</h3>
+    <div class="test-box">
+        <p id="test2">The <dfn title="HyperText Markup Language">HTML</dfn> is the standard markup language for documents.</p>
+    </div>
+    <p>Expected: "HTML" in italic (title contains full term)</p>
+
+    <h3>Test 3: Dfn with Abbr Child (Spec Example)</h3>
+    <div class="test-box">
+        <p id="test3">The <dfn><abbr title="Garage Door Opener">GDO</abbr></dfn> is a device that allows off-world teams to open the iris.</p>
+    </div>
+    <p>Expected: "GDO" in italic</p>
+
+    <h3>Test 4: Dfn with ID for Linking</h3>
+    <div class="test-box">
+        <p>The <dfn id="api-def">API</dfn> (Application Programming Interface) defines how software components interact.</p>
+        <p id="test4">Later reference: See the <a href="#api-def">API</a> definition above.</p>
+    </div>
+    <p>Expected: "API" in italic, link jumps to definition</p>
+
+    <h3>Test 5: Multiple Definitions</h3>
+    <div class="test-box">
+        <p id="test5">
+            A <dfn>variable</dfn> stores data. 
+            A <dfn>function</dfn> performs actions.
+            A <dfn>loop</dfn> repeats code.
+        </p>
+    </div>
+    <p>Expected: All three terms in italic</p>
+
+    <h3>Test 6: Dfn Inside Other Formatting</h3>
+    <div class="test-box">
+        <p id="test6"><strong>Important: <dfn>recursion</dfn></strong> is when a function calls itself.</p>
+    </div>
+    <p>Expected: "recursion" bold and italic</p>
+
+    <h3>Test 7: Dfn with Link Inside</h3>
+    <div class="test-box">
+        <p id="test7">The <dfn><a href="#">DOM</a></dfn> represents the document structure.</p>
+    </div>
+    <p>Expected: "DOM" as italic link</p>
+
+    <h3>Test 8: Empty Dfn Element</h3>
+    <div class="test-box">
+        <p id="test8">Before<dfn></dfn>After</p>
+    </div>
+    <p>Expected: "BeforeAfter" with no visible change</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Helper: find first child element with given tag name
+        function findChildByTag(parent, tagName) {
+            if (!parent || !parent.children) return null;
+            tagName = tagName.toUpperCase();
+            for (var i = 0; i < parent.children.length; i++) {
+                if (parent.children[i].tagName === tagName) {
+                    return parent.children[i];
+                }
+            }
+            return null;
+        }
+
+        // Test 1: Find dfn element
+        var test1 = document.getElementById('test1');
+        var dfnElement = findChildByTag(test1, 'dfn');
+        assert(dfnElement !== null, "Dfn element found via children");
+
+        // Test 2: tagName is DFN
+        if (dfnElement) {
+            assert(dfnElement.tagName === "DFN",
+                "tagName is 'DFN' (was: '" + dfnElement.tagName + "')");
+        }
+
+        // Test 3: textContent works
+        if (dfnElement) {
+            var content = dfnElement.textContent;
+            assert(content === "browser",
+                "textContent returns correct value (was: '" + content + "')");
+        }
+
+        // Test 4: title attribute accessible
+        var test2 = document.getElementById('test2');
+        var dfnWithTitle = findChildByTag(test2, 'dfn');
+        if (dfnWithTitle) {
+            var title = dfnWithTitle.title;
+            assert(title === "HyperText Markup Language",
+                "title attribute accessible (was: '" + title + "')");
+        }
+
+        // Test 5: Can contain abbr element
+        var test3 = document.getElementById('test3');
+        if (test3) {
+            var dfnWithAbbr = findChildByTag(test3, 'dfn');
+            var hasAbbr = dfnWithAbbr && findChildByTag(dfnWithAbbr, 'abbr') !== null;
+            assert(hasAbbr, "Dfn element can contain abbr element");
+        }
+
+        // Test 6: Can contain link
+        var test7 = document.getElementById('test7');
+        if (test7) {
+            var dfnWithLink = findChildByTag(test7, 'dfn');
+            var hasLink = dfnWithLink && findChildByTag(dfnWithLink, 'a') !== null;
+            assert(hasLink, "Dfn element can contain anchor element");
+        }
+
+        info("Visual tests above should be verified manually");
+        info("Check: dfn text renders in italic style");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>
