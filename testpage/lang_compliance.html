@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Lang Attribute Compliance Test</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Lang Attribute Compliance Test</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Lang on Root Element</h3>
+    <div class="test-box">
+        <p>This page has lang="en" on the html element.</p>
+    </div>
+
+    <h3>Test 2: Lang on Inline Element</h3>
+    <div class="test-box">
+        <p>There is a certain <i lang="fr">je ne sais quoi</i> in the air.</p>
+    </div>
+    <p>Expected: French phrase rendered in italic</p>
+
+    <h3>Test 3: Lang on Block Element</h3>
+    <div class="test-box" lang="es">
+        <p id="test3-p">Este es un párrafo en español.</p>
+    </div>
+    <p>Expected: Spanish text displayed normally</p>
+
+    <h3>Test 4: Nested Lang Override</h3>
+    <div class="test-box" lang="de">
+        <p id="test4-outer">Deutscher Text.
+            <span id="test4-inner" lang="ja">日本語テキスト</span>
+            Mehr Deutsch.
+        </p>
+    </div>
+    <p>Expected: German text with Japanese span inside</p>
+
+    <h3>Test 5: Lang Inheritance (No Override)</h3>
+    <div class="test-box">
+        <div id="test5-parent" lang="pt">
+            <p id="test5-child">Texto em português.</p>
+            <p id="test5-grandchild"><span id="test5-span">Outro texto.</span></p>
+        </div>
+    </div>
+    <p>Expected: All text inherits lang="pt" from parent div</p>
+
+    <h3>Test 6: Empty Lang Attribute</h3>
+    <div class="test-box">
+        <p id="test6" lang="">Unknown language text.</p>
+    </div>
+    <p>Expected: Empty lang indicates unknown language</p>
+
+    <h3>Test 7: Multiple Languages in One Paragraph</h3>
+    <div class="test-box">
+        <p id="test7">
+            English text,
+            <span lang="fr">texte français</span>,
+            <span lang="it">testo italiano</span>,
+            and back to English.
+        </p>
+    </div>
+    <p>Expected: All text displayed, each span has its own lang</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+    <h3>Phase 2: element.lang getter/setter</h3>
+    <h3>Phase 3: Language inheritance</h3>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        info("=== Phase 2: element.lang getter/setter ===");
+
+        // Test 1: Read lang from html element
+        var htmlEl = document.documentElement;
+        if (htmlEl) {
+            assert(htmlEl.lang === "en",
+                "html.lang returns 'en' (was: '" + htmlEl.lang + "')");
+        } else {
+            info("document.documentElement not available");
+        }
+
+        // Test 2: Read lang from element with explicit lang
+        var test3p = document.getElementById('test3-p');
+        if (test3p) {
+            var parentLang = test3p.attributes ? test3p.attributes["lang"] : undefined;
+            info("test3-p own lang attribute: '" + (parentLang || "undefined") + "'");
+        }
+
+        // Test 3: Read lang from element with lang set
+        var test4inner = document.getElementById('test4-inner');
+        if (test4inner) {
+            assert(test4inner.lang === "ja",
+                "element.lang reads 'ja' (was: '" + test4inner.lang + "')");
+        }
+
+        // Test 4: Set lang via property
+        var test6 = document.getElementById('test6');
+        if (test6) {
+            var oldLang = test6.lang;
+            test6.lang = "zh";
+            assert(test6.lang === "zh",
+                "element.lang setter works (set to 'zh', got: '" + test6.lang + "')");
+            test6.lang = oldLang;
+        }
+
+        // Test 5: Set lang on element without lang
+        var test7 = document.getElementById('test7');
+        if (test7) {
+            var before = test7.lang;
+            test7.lang = "en";
+            assert(test7.lang === "en",
+                "element.lang setter adds lang attribute (was: '" + before + "', now: '" + test7.lang + "')");
+        }
+
+        // Test 6: Set lang to empty string
+        if (test6) {
+            test6.lang = "";
+            assert(test6.lang === "",
+                "element.lang can be set to empty string (got: '" + test6.lang + "')");
+        }
+
+        info("=== Phase 3: Language inheritance ===");
+
+        // Test 7: Child inherits lang from parent
+        var test5child = document.getElementById('test5-child');
+        if (test5child) {
+            var childLang = test5child.lang;
+            info("test5-child.lang (own): '" + childLang + "'");
+
+            var inheritedLang = "";
+            if (typeof test5child.getLang === "function") {
+                inheritedLang = test5child.getLang();
+                assert(inheritedLang === "pt",
+                    "Child inherits lang='pt' from parent via getLang() (got: '" + inheritedLang + "')");
+            } else if (test5child.effectiveLang !== undefined) {
+                inheritedLang = test5child.effectiveLang;
+                assert(inheritedLang === "pt",
+                    "Child inherits lang='pt' from parent via effectiveLang (got: '" + inheritedLang + "')");
+            } else {
+                info("Language inheritance API not yet implemented (no getLang() or effectiveLang)");
+            }
+        }
+
+        // Test 8: Grandchild inherits through chain
+        var test5span = document.getElementById('test5-span');
+        if (test5span) {
+            if (typeof test5span.getLang === "function") {
+                var spanLang = test5span.getLang();
+                assert(spanLang === "pt",
+                    "Grandchild inherits lang='pt' through chain via getLang() (got: '" + spanLang + "')");
+            } else if (test5span.effectiveLang !== undefined) {
+                var spanLang = test5span.effectiveLang;
+                assert(spanLang === "pt",
+                    "Grandchild inherits lang='pt' through chain via effectiveLang (got: '" + spanLang + "')");
+            } else {
+                info("Grandchild inheritance test skipped (no getLang() or effectiveLang)");
+            }
+        }
+
+        // Test 9: Explicit lang overrides inherited lang
+        var test4outer = document.getElementById('test4-outer');
+        if (test4inner && test4outer) {
+            if (typeof test4inner.getLang === "function") {
+                var outerLang = test4outer.getLang();
+                var innerLang = test4inner.getLang();
+                assert(outerLang === "de" && innerLang === "ja",
+                    "Inner lang='ja' overrides parent lang='de' (outer: '" + outerLang + "', inner: '" + innerLang + "')");
+            } else if (test4inner.effectiveLang !== undefined) {
+                assert(test4outer.effectiveLang === "de" && test4inner.effectiveLang === "ja",
+                    "Inner lang='ja' overrides parent lang='de'");
+            } else {
+                info("Override test skipped (no getLang() or effectiveLang)");
+            }
+        }
+
+        // Test 10: Root-level inheritance from html element
+        var bodyEl = document.body;
+        if (bodyEl) {
+            if (typeof bodyEl.getLang === "function") {
+                assert(bodyEl.getLang() === "en",
+                    "body inherits lang='en' from html element via getLang()");
+            } else if (bodyEl.effectiveLang !== undefined) {
+                assert(bodyEl.effectiveLang === "en",
+                    "body inherits lang='en' from html element via effectiveLang");
+            } else {
+                info("Root inheritance test skipped (no getLang() or effectiveLang)");
+            }
+        }
+
+        info("Visual tests above should be verified manually");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

@@ -31,6 +31,7 @@
 ### Element Properties
 - [x] `element.children` - Get child elements (excludes text nodes)
 - [x] `element.href` - Get resolved href (for `<a>`, `<base>`, `<link>`)
+- [x] `element.lang` - Get/set lang attribute (language specification)
 - [ ] `element.target` - Get target attribute (for `<a>`, `<base>`)
 
 ### HTMLTitleElement

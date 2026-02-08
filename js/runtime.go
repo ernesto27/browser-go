@@ -812,6 +812,21 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
+	obj.DefineAccessorProperty("lang",
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if val, ok := node.Attributes["lang"]; ok {
+				return rt.vm.ToValue(val)
+			}
+			return rt.vm.ToValue("")
+		}),
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if len(call.Arguments) > 0 {
+				node.Attributes["lang"] = call.Arguments[0].String()
+			}
+			return goja.Undefined()
+		}),
+		goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	// Cache before returning
 	rt.elementCache[node] = obj
 

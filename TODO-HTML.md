@@ -223,7 +223,7 @@
 - [ ] `draggable` - drag and drop
 - [ ] `hidden` - hide element
 - [x] `title` - tooltip on hover (partial: implemented with 500ms delay, needs positioning fixes)
-- [ ] `lang` - language specification
+- [x] `lang` - language specification (element.lang getter/setter via JS)
 - [ ] `data-*` - custom data attributes
 
 ---
