@@ -96,7 +96,7 @@
 - [ ] `<var>` - variable
 - [x] `<abbr>` - abbreviation (WHATWG 4.5.9 - dotted underline, title attribute for expansion)
 - [x] `<cite>` - citation (WHATWG 4.5.6 - italic styling)
-- [ ] `<mark>` - highlighted text
+- [x] `<mark>` - highlighted text (WHATWG 4.5.23 - yellow background, black text)
 - [ ] `<sub>` - subscript
 - [ ] `<sup>` - superscript
 - [x] `<time>` - date/time (WHATWG 4.5.14 - datetime attribute, HTMLTimeElement.dateTime property)

@@ -88,4 +88,6 @@ const (
 
 	TagData = "data"
 	TagTime = "time"
+
+	TagMark = "mark"
 )

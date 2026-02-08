@@ -408,6 +408,15 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			}
 		case dom.TagTH:
 			currentStyle.Bold = true
+		case dom.TagMark:
+			currentStyle.Color = color.RGBA{0, 0, 0, 255}
+			if !isHidden {
+				*commands = append(*commands, DrawRect{
+					Rect:  box.Rect,
+					Color: color.RGBA{255, 255, 0, 255},
+				})
+			}
+
 		}
 	}
 
