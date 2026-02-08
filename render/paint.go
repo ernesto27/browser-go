@@ -30,6 +30,14 @@ var (
 	SizeSmall  float32 = 12
 )
 
+// Text decoration constants
+const (
+	TextDecorationNone            = ""
+	TextDecorationUnderline       = "underline"
+	TextDecorationDottedUnderline = "dotted-underline"
+	TextDecorationLineThrough     = "line-through"
+)
+
 // TextStyle holds inherited text styling
 type TextStyle struct {
 	Color          color.Color
@@ -175,17 +183,18 @@ type DrawRect struct {
 }
 
 type DrawText struct {
-	Text          string
-	X, Y          float64
-	Width         float64
-	Color         color.Color
-	Size          float32
-	Bold          bool
-	Italic        bool
-	Monospace     bool
-	Underline     bool
-	Strikethrough bool
-	TextTransform string
+	Text            string
+	X, Y            float64
+	Width           float64
+	Color           color.Color
+	Size            float32
+	Bold            bool
+	Italic          bool
+	Monospace       bool
+	Underline       bool
+	DottedUnderline bool
+	Strikethrough   bool
+	TextTransform   string
 }
 
 type DrawImage struct {
@@ -370,23 +379,25 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 					currentStyle.Color = ColorLink
 				}
 
-				currentStyle.TextDecoration = "underline"
+				currentStyle.TextDecoration = TextDecorationUnderline
 
 			}
 		case dom.TagStrong, dom.TagB:
 			currentStyle.Bold = true
 		case dom.TagEm, dom.TagI, dom.TagCite, dom.TagDnf:
 			currentStyle.Italic = true
+		case dom.TagAbbr:
+			currentStyle.TextDecoration = TextDecorationDottedUnderline
 		case dom.TagSmall:
 			currentStyle.Size = SizeSmall
 		case dom.TagU:
-			currentStyle.TextDecoration = "underline"
+			currentStyle.TextDecoration = TextDecorationUnderline
 		case dom.TagDel:
-			currentStyle.TextDecoration = "line-through"
+			currentStyle.TextDecoration = TextDecorationLineThrough
 		case dom.TagS:
-			currentStyle.TextDecoration = "line-through"
+			currentStyle.TextDecoration = TextDecorationLineThrough
 		case dom.TagIns:
-			currentStyle.TextDecoration = "underline"
+			currentStyle.TextDecoration = TextDecorationUnderline
 		case dom.TagPre:
 			currentStyle.Monospace = true
 			if box.Style.BackgroundColor == nil && !isHidden {
@@ -429,13 +440,14 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			for _, line := range lines {
 				*commands = append(*commands, DrawText{
 					Text: line, X: box.Rect.X, Y: y, Width: box.Rect.Width,
-					Size:          currentStyle.Size,
-					Color:         applyOpacity(currentStyle.Color, currentStyle.Opacity),
-					Bold:          currentStyle.Bold,
-					Italic:        currentStyle.Italic,
-					Monospace:     currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
-					Underline:     currentStyle.TextDecoration == "underline",
-					Strikethrough: currentStyle.TextDecoration == "line-through",
+					Size:            currentStyle.Size,
+					Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
+					Bold:            currentStyle.Bold,
+					Italic:          currentStyle.Italic,
+					Monospace:       currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
+					Underline:       currentStyle.TextDecoration == TextDecorationUnderline,
+					DottedUnderline: currentStyle.TextDecoration == TextDecorationDottedUnderline,
+					Strikethrough:   currentStyle.TextDecoration == TextDecorationLineThrough,
 				})
 				y += lineHeight
 			}
@@ -447,26 +459,28 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform)
 				*commands = append(*commands, DrawText{
 					Text: transformedLine, X: box.Rect.X, Y: y, Width: box.Rect.Width,
-					Size:          currentStyle.Size,
-					Color:         applyOpacity(currentStyle.Color, currentStyle.Opacity),
-					Bold:          currentStyle.Bold,
-					Italic:        currentStyle.Italic,
-					Monospace:     currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
-					Underline:     currentStyle.TextDecoration == "underline",
-					Strikethrough: currentStyle.TextDecoration == "line-through",
+					Size:            currentStyle.Size,
+					Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
+					Bold:            currentStyle.Bold,
+					Italic:          currentStyle.Italic,
+					Monospace:       currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
+					Underline:       currentStyle.TextDecoration == TextDecorationUnderline,
+					DottedUnderline: currentStyle.TextDecoration == TextDecorationDottedUnderline,
+					Strikethrough:   currentStyle.TextDecoration == TextDecorationLineThrough,
 				})
 				y += lineHeight
 			}
 		} else {
 			*commands = append(*commands, DrawText{
 				Text: text, X: box.Rect.X, Y: box.Rect.Y, Width: box.Rect.Width,
-				Size:          currentStyle.Size,
-				Color:         applyOpacity(currentStyle.Color, currentStyle.Opacity),
-				Bold:          currentStyle.Bold,
-				Italic:        currentStyle.Italic,
-				Monospace:     currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
-				Underline:     currentStyle.TextDecoration == "underline",
-				Strikethrough: currentStyle.TextDecoration == "line-through",
+				Size:            currentStyle.Size,
+				Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
+				Bold:            currentStyle.Bold,
+				Italic:          currentStyle.Italic,
+				Monospace:       currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
+				Underline:       currentStyle.TextDecoration == TextDecorationUnderline,
+				DottedUnderline: currentStyle.TextDecoration == TextDecorationDottedUnderline,
+				Strikethrough:   currentStyle.TextDecoration == TextDecorationLineThrough,
 			})
 		}
 	}

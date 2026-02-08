@@ -28,7 +28,9 @@ https://html.spec.whatwg.org/
 [x] - <strong> (WHATWG 4.5.3 compliance - bold styling, inline box)
 [x] - <s> (WHATWG 4.5.5 compliance - strikethrough styling, inline box)
 [x] - <q> (WHATWG 4.5.7 partial - curly quotes added, missing: cite attr, nested quote styles, HTMLQuoteElement)
-[x] - <dfn> (WHATWG 4.5.8 partial
+[x] - <cite> (WHATWG 4.5.6 compliance - italic styling, inline box)
+[x] - <dfn> (WHATWG 4.5.8 compliance - italic styling, inline box)
+[x] - <abbr> (WHATWG 4.5.9 compliance - dotted underline, title attribute for expansion)
 [] - fix navigation for hash-only URLs (e.g., "#section") - scroll to element with ID
 
 ### <a> Missing / non-compliant
@@ -98,6 +100,7 @@ https://html.spec.whatwg.org/
 
 ## In Progress
 - [ ] Word wrapping for long text that exceeds container width
+- [x] Tooltip on hover for `title` attribute (partial - positioning needs fixes for scroll offset)
 
 ---
 

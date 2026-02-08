@@ -243,18 +243,40 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, useCache bool, on
 			objects = append(objects, text)
 
 			// Draw text decoration lines
-			if c.Underline || c.Strikethrough {
+			if c.Underline || c.DottedUnderline || c.Strikethrough {
 				lineHeight := float32(1)
 				var lineY float32
-				if c.Underline {
+				if c.Underline || c.DottedUnderline {
 					lineY = float32(c.Y) + c.Size + 2
 				} else {
-					lineY = float32(c.Y) + c.Size*0.9
+					lineY = float32(c.Y) + c.Size*0.5
 				}
-				line := canvas.NewRectangle(c.Color)
-				line.Resize(fyne.NewSize(float32(c.Width), lineHeight))
-				line.Move(fyne.NewPos(float32(c.X), lineY))
-				objects = append(objects, line)
+
+				if c.DottedUnderline {
+					// Draw dotted underline: small dots with gaps
+					dotWidth := float32(2)
+					gapWidth := float32(2)
+					x := float32(c.X)
+					endX := float32(c.X) + float32(c.Width)
+					for x < endX {
+						dot := canvas.NewRectangle(c.Color)
+						remainingWidth := endX - x
+						actualDotWidth := dotWidth
+						if remainingWidth < dotWidth {
+							actualDotWidth = remainingWidth
+						}
+						dot.Resize(fyne.NewSize(actualDotWidth, lineHeight))
+						dot.Move(fyne.NewPos(x, lineY))
+						objects = append(objects, dot)
+						x += dotWidth + gapWidth
+					}
+				} else {
+					// Draw solid line (underline or strikethrough)
+					line := canvas.NewRectangle(c.Color)
+					line.Resize(fyne.NewSize(float32(c.Width), lineHeight))
+					line.Move(fyne.NewPos(float32(c.X), lineY))
+					objects = append(objects, line)
+				}
 			}
 
 		case DrawImage:

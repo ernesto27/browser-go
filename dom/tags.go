@@ -27,6 +27,7 @@ const (
 	TagI      = "i"
 	TagCite   = "cite"
 	TagDnf    = "dfn"
+	TagAbbr   = "abbr"
 	TagSmall  = "small"
 	TagU      = "u"
 

@@ -94,13 +94,13 @@
 - [ ] `<kbd>` - keyboard input
 - [ ] `<samp>` - sample output
 - [ ] `<var>` - variable
-- [ ] `<abbr>` - abbreviation
-- [ ] `<cite>` - citation
+- [x] `<abbr>` - abbreviation (WHATWG 4.5.9 - dotted underline, title attribute for expansion)
+- [x] `<cite>` - citation (WHATWG 4.5.6 - italic styling)
 - [ ] `<mark>` - highlighted text
 - [ ] `<sub>` - subscript
 - [ ] `<sup>` - superscript
 - [ ] `<time>` - date/time
-- [ ] `<dfn>` - definition term
+- [x] `<dfn>` - definition term (WHATWG 4.5.8 - italic styling)
 
 ### Media
 - [ ] `<video>` - video player
@@ -221,7 +221,7 @@
 - [ ] `contenteditable` - editable content
 - [ ] `draggable` - drag and drop
 - [ ] `hidden` - hide element
-- [ ] `title` - tooltip on hover
+- [x] `title` - tooltip on hover (partial: implemented with 500ms delay, needs positioning fixes)
 - [ ] `lang` - language specification
 - [ ] `data-*` - custom data attributes
 

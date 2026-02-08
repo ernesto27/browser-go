@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Abbr Element Compliance Test (WHATWG 4.5.9)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Abbr Element Compliance Test (WHATWG 4.5.9)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Abbreviation with Title</h3>
+    <div class="test-box">
+        <p id="test1">The <abbr title="World Wide Web">WWW</abbr> was invented by Tim Berners-Lee.</p>
+    </div>
+    <p>Expected: "WWW" displayed (title attribute contains expansion)</p>
+
+    <h3>Test 2: Abbreviation Without Title (Semantic Only)</h3>
+    <div class="test-box">
+        <p id="test2">Philip and Dashiva both denied that they were going to backfill the <abbr>WHATWG</abbr> issue graph.</p>
+    </div>
+    <p>Expected: "WHATWG" displayed as abbreviation (no expansion provided)</p>
+
+    <h3>Test 3: Abbr Inside Dfn (Spec Example)</h3>
+    <div class="test-box">
+        <p id="test3">The <dfn id="whatwg-def"><abbr title="Web Hypertext Application Technology Working Group">WHATWG</abbr></dfn> is a collaboration of browser manufacturers.</p>
+    </div>
+    <p>Expected: "WHATWG" in italic (from dfn), defines the term</p>
+
+    <h3>Test 4: Dfn with Full Term, Abbr in Parentheses (Alternate Style)</h3>
+    <div class="test-box">
+        <p id="test4">The <dfn id="whatwg-def2">Web Hypertext Application Technology Working Group</dfn> (<abbr title="Web Hypertext Application Technology Working Group">WHATWG</abbr>) develops web standards.</p>
+    </div>
+    <p>Expected: Full term in italic, abbreviation in parentheses</p>
+
+    <h3>Test 5: Linked Abbreviation</h3>
+    <div class="test-box">
+        <p id="test5">The <a href="#whatwg-def"><abbr title="Web Hypertext Application Technology Working Group">WHATWG</abbr></a> community is global.</p>
+    </div>
+    <p>Expected: "WHATWG" as a clickable link</p>
+
+    <h3>Test 6: Plural Outside Abbreviation (Singular Expansion)</h3>
+    <div class="test-box">
+        <p id="test6">Two <abbr title="Working Group">WG</abbr>s worked on this specification.</p>
+    </div>
+    <p>Expected: "WGs" with expansion "Working Group" (singular)</p>
+
+    <h3>Test 7: Plural Inside Abbreviation (Plural Expansion)</h3>
+    <div class="test-box">
+        <p id="test7">Two <abbr title="Working Groups">WGs</abbr> worked on this specification.</p>
+    </div>
+    <p>Expected: "WGs" with expansion "Working Groups" (plural)</p>
+
+    <h3>Test 8: Multiple Abbreviations</h3>
+    <div class="test-box">
+        <p id="test8">
+            <abbr title="HyperText Markup Language">HTML</abbr>,
+            <abbr title="Cascading Style Sheets">CSS</abbr>, and
+            <abbr title="JavaScript">JS</abbr> are essential web technologies.
+        </p>
+    </div>
+    <p>Expected: All three abbreviations displayed with their expansions in title</p>
+
+    <h3>Test 9: Abbreviation Inside Other Formatting</h3>
+    <div class="test-box">
+        <p id="test9"><strong>Important: <abbr title="Application Programming Interface">API</abbr></strong> documentation is required.</p>
+    </div>
+    <p>Expected: "API" in bold</p>
+
+    <h3>Test 10: Empty Abbr Element</h3>
+    <div class="test-box">
+        <p id="test10">Before<abbr></abbr>After</p>
+    </div>
+    <p>Expected: "BeforeAfter" with no visible change</p>
+
+    <h3>Test 11: Abbr with Link Inside</h3>
+    <div class="test-box">
+        <p id="test11">See the <abbr title="Document Object Model"><a href="#">DOM</a></abbr> specification.</p>
+    </div>
+    <p>Expected: "DOM" as a clickable link</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Helper: find first child element with given tag name
+        function findChildByTag(parent, tagName) {
+            if (!parent || !parent.children) return null;
+            tagName = tagName.toUpperCase();
+            for (var i = 0; i < parent.children.length; i++) {
+                if (parent.children[i].tagName === tagName) {
+                    return parent.children[i];
+                }
+            }
+            return null;
+        }
+
+        // Helper: find abbr inside nested structure
+        function findNestedAbbr(parent) {
+            if (!parent || !parent.children) return null;
+            for (var i = 0; i < parent.children.length; i++) {
+                var child = parent.children[i];
+                if (child.tagName === 'ABBR') {
+                    return child;
+                }
+                // Check nested children
+                var nested = findNestedAbbr(child);
+                if (nested) return nested;
+            }
+            return null;
+        }
+
+        // Test 1: Find abbr element
+        var test1 = document.getElementById('test1');
+        var abbrElement = findChildByTag(test1, 'abbr');
+        assert(abbrElement !== null, "Abbr element found via children");
+
+        // Test 2: tagName is ABBR
+        if (abbrElement) {
+            assert(abbrElement.tagName === "ABBR",
+                "tagName is 'ABBR' (was: '" + abbrElement.tagName + "')");
+        }
+
+        // Test 3: textContent works
+        if (abbrElement) {
+            var content = abbrElement.textContent;
+            assert(content === "WWW",
+                "textContent returns correct value (was: '" + content + "')");
+        }
+
+        // Test 4: title attribute accessible
+        if (abbrElement) {
+            var title = abbrElement.title;
+            assert(title === "World Wide Web",
+                "title attribute accessible (was: '" + title + "')");
+        }
+
+        // Test 5: Abbr without title has no title
+        var test2 = document.getElementById('test2');
+        var abbrNoTitle = findChildByTag(test2, 'abbr');
+        if (abbrNoTitle) {
+            var noTitle = abbrNoTitle.title;
+            assert(noTitle === undefined || noTitle === "",
+                "Abbr without title attribute has no title (was: '" + noTitle + "')");
+        }
+
+        // Test 6: Abbr can be inside dfn
+        var test3 = document.getElementById('test3');
+        var dfnElement = findChildByTag(test3, 'dfn');
+        if (dfnElement) {
+            var abbrInDfn = findChildByTag(dfnElement, 'abbr');
+            assert(abbrInDfn !== null, "Abbr element can be nested inside dfn");
+            if (abbrInDfn) {
+                assert(abbrInDfn.title === "Web Hypertext Application Technology Working Group",
+                    "Nested abbr title is accessible");
+            }
+        }
+
+        // Test 7: Abbr can be inside link
+        var test5 = document.getElementById('test5');
+        var linkElement = findChildByTag(test5, 'a');
+        if (linkElement) {
+            var abbrInLink = findChildByTag(linkElement, 'abbr');
+            assert(abbrInLink !== null, "Abbr element can be nested inside anchor");
+        }
+
+        // Test 8: Abbr can contain link
+        var test11 = document.getElementById('test11');
+        var abbrWithLink = findChildByTag(test11, 'abbr');
+        if (abbrWithLink) {
+            var linkInAbbr = findChildByTag(abbrWithLink, 'a');
+            assert(linkInAbbr !== null, "Abbr element can contain anchor element");
+        }
+
+        // Test 9: Multiple abbr elements are independent
+        var test8 = document.getElementById('test8');
+        var abbrs = [];
+        if (test8 && test8.children) {
+            for (var i = 0; i < test8.children.length; i++) {
+                if (test8.children[i].tagName === 'ABBR') {
+                    abbrs.push(test8.children[i]);
+                }
+            }
+        }
+        assert(abbrs.length === 3, "Multiple abbr elements found (count: " + abbrs.length + ")");
+        if (abbrs.length === 3) {
+            assert(abbrs[0].title === "HyperText Markup Language",
+                "First abbr has correct title");
+            assert(abbrs[1].title === "Cascading Style Sheets",
+                "Second abbr has correct title");
+            assert(abbrs[2].title === "JavaScript",
+                "Third abbr has correct title");
+        }
+
+        info("Visual tests above should be verified manually");
+        info("Note: title attribute tooltips are not yet implemented");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

@@ -65,7 +65,7 @@ type Browser struct {
 	invalidNodes     map[*dom.Node]bool
 
 	onJSClick        func(node *dom.Node) bool // Returns true if preventDefault was called
-	onBeforeNavigate func() bool // Returns true if navigation should proceed
+	onBeforeNavigate func() bool               // Returns true if navigation should proceed
 
 	selectionStart *SelectionPoint
 	selectionEnd   *SelectionPoint
@@ -75,6 +75,14 @@ type Browser struct {
 	toastBg        *canvas.Rectangle
 	toastLabel     *canvas.Text
 	toastTimer     *time.Timer
+
+	// Tooltip support
+	hoveredNode     *dom.Node
+	tooltipTimer    *time.Timer
+	tooltipOverlay  *fyne.Container
+	tooltipPos      fyne.Position
+	contentScroll   *container.Scroll // Reference to scroll container for offset calculation
+	toolbarHeight   float32           // Height of toolbar for tooltip positioning
 }
 
 type SelectionPoint struct {
@@ -705,7 +713,7 @@ func (b *Browser) isBoxInSelection(box *layout.LayoutBox) bool {
 func (b *Browser) createContentScroll(objects []fyne.CanvasObject) *container.Scroll {
 	clickable := NewClickableContainer(objects, func(x, y float32) {
 		b.handleClick(float64(x), float64(y))
-	}, b.layoutTree)
+	}, b.layoutTree, b)
 
 	// Wire up handlers for text selection
 	clickable.onDrag = func(x, y float32) {
@@ -715,7 +723,9 @@ func (b *Browser) createContentScroll(objects []fyne.CanvasObject) *container.Sc
 		b.handleMouseDown(float64(x), float64(y))
 	}
 
-	return container.NewScroll(clickable)
+	scroll := container.NewScroll(clickable)
+	b.contentScroll = scroll // Store reference for tooltip positioning
+	return scroll
 }
 
 // Reflow re-computes layout with new width and repaints
@@ -1535,4 +1545,74 @@ func (b *Browser) downloadURL(rawURL string) {
 	fmt.Println("Downloaded to:", fullPath)
 	b.showToast("Downloaded to: " + fullPath)
 
+}
+
+func (b *Browser) cancelTooltipTimer() {
+	if b.tooltipTimer != nil {
+		b.tooltipTimer.Stop()
+		b.tooltipTimer = nil
+	}
+}
+
+func (b *Browser) hideTooltip() {
+	b.cancelTooltipTimer()
+	if b.tooltipOverlay != nil {
+		b.toastContainer.Remove(b.tooltipOverlay)
+		b.toastContainer.Refresh()
+		b.tooltipOverlay = nil
+	}
+}
+
+// showTooltip displays a tooltip at the given position
+func (b *Browser) showTooltip(text string, pos fyne.Position) {
+	b.hideTooltip()
+
+	// Create tooltip background (light yellow, like browser default)
+	bg := canvas.NewRectangle(color.RGBA{255, 255, 225, 255})
+	bg.StrokeColor = color.RGBA{128, 128, 128, 255}
+	bg.StrokeWidth = 1
+
+	// Create tooltip text
+	label := canvas.NewText(text, color.Black)
+	label.TextSize = 12
+
+	// Calculate size with padding
+	padding := float32(6)
+	textSize := fyne.MeasureText(text, label.TextSize, label.TextStyle)
+	tooltipWidth := textSize.Width + padding*2
+	tooltipHeight := textSize.Height + padding*2
+
+	// Convert scroll content coordinates to window coordinates
+	var scrollOffsetY float32 = 0
+	if b.contentScroll != nil {
+		scrollOffsetY = b.contentScroll.Offset.Y
+	}
+
+	// Account for toolbar height (approximately 40px)
+	toolbarHeight := float32(40)
+
+	// Position tooltip below and right of cursor, adjusted for scroll
+	tooltipX := pos.X + 12
+	tooltipY := pos.Y - scrollOffsetY + toolbarHeight + 20
+
+	// Create container for tooltip
+	bg.Resize(fyne.NewSize(tooltipWidth, tooltipHeight))
+	bg.Move(fyne.NewPos(tooltipX, tooltipY))
+	label.Move(fyne.NewPos(tooltipX+padding, tooltipY+padding))
+
+	b.tooltipOverlay = container.NewWithoutLayout(bg, label)
+	b.toastContainer.Add(b.tooltipOverlay)
+	b.toastContainer.Refresh()
+}
+
+// startTooltipTimer begins the countdown to show a tooltip
+func (b *Browser) startTooltipTimer(text string, pos fyne.Position) {
+	b.cancelTooltipTimer()
+	b.tooltipPos = pos
+
+	b.tooltipTimer = time.AfterFunc(500*time.Millisecond, func() {
+		fyne.Do(func() {
+			b.showTooltip(text, b.tooltipPos)
+		})
+	})
 }

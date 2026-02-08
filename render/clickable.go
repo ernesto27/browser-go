@@ -1,6 +1,7 @@
 package render
 
 import (
+	"browser/dom"
 	"browser/layout"
 
 	"fyne.io/fyne/v2"
@@ -19,15 +20,18 @@ type ClickableContainer struct {
 	onMouseDown func(x, y float32)
 	onMouseUp   func(x, y float32)
 	onDrag      func(x, y float32)
+
+	browser *Browser // Reference to browser for tooltip support
 }
 
 // NewClickableContainer creates a clickable container
-func NewClickableContainer(objects []fyne.CanvasObject, onTapped func(x, y float32), layoutTree *layout.LayoutBox) *ClickableContainer {
+func NewClickableContainer(objects []fyne.CanvasObject, onTapped func(x, y float32), layoutTree *layout.LayoutBox, browser *Browser) *ClickableContainer {
 	c := &ClickableContainer{
 		objects:       objects,
 		onTapped:      onTapped,
 		layoutTree:    layoutTree,
 		currentCursor: desktop.DefaultCursor,
+		browser:       browser,
 	}
 	c.ExtendBaseWidget(c)
 	return c
@@ -65,6 +69,32 @@ func (c *ClickableContainer) MouseMoved(event *desktop.MouseEvent) {
 	}
 
 	hit := c.layoutTree.HitTest(float64(event.Position.X), float64(event.Position.Y))
+
+	// Tooltip handling: check if hovered element changed
+	var hoveredNode *dom.Node
+	if hit != nil {
+		hoveredNode = hit.Node
+	}
+
+	if c.browser != nil && hoveredNode != c.browser.hoveredNode {
+		// Hovered element changed
+		c.browser.hideTooltip()
+		c.browser.hoveredNode = hoveredNode
+
+		// Check for title attribute on this node or ancestors
+		if hoveredNode != nil {
+			titleNode := hoveredNode
+			for titleNode != nil {
+				if titleNode.Attributes != nil {
+					if title := titleNode.Attributes["title"]; title != "" {
+						c.browser.startTooltipTimer(title, event.Position)
+						break
+					}
+				}
+				titleNode = titleNode.Parent
+			}
+		}
+	}
 
 	cursor := desktop.DefaultCursor
 	for box := hit; box != nil; box = box.Parent {
