@@ -55,6 +55,9 @@
 ### HTMLDataElement (WHATWG 4.5.13)
 - [x] `dataElement.value` - Get/set machine-readable value
 
+### HTMLTimeElement (WHATWG 4.5.14)
+- [x] `timeElement.dateTime` - Get/set datetime attribute
+
 
 ---
 

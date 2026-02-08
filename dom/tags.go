@@ -87,4 +87,5 @@ const (
 	TagSearch = "search"
 
 	TagData = "data"
+	TagTime = "time"
 )

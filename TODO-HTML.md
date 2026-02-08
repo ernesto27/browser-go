@@ -99,7 +99,7 @@
 - [ ] `<mark>` - highlighted text
 - [ ] `<sub>` - subscript
 - [ ] `<sup>` - superscript
-- [ ] `<time>` - date/time
+- [x] `<time>` - date/time (WHATWG 4.5.14 - datetime attribute, HTMLTimeElement.dateTime property)
 - [x] `<dfn>` - definition term (WHATWG 4.5.8 - italic styling)
 - [x] `<data>` - machine-readable value (WHATWG 4.5.13 - value attribute, HTMLDataElement.value property)
 

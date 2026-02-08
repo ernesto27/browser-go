@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Time Element Compliance Test (WHATWG 4.5.14)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Time Element Compliance Test (WHATWG 4.5.14)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Date with datetime Attribute</h3>
+    <div class="test-box">
+        <p id="test1">Today is <time datetime="2011-11-18">Friday</time>.</p>
+    </div>
+    <p>Expected: "Friday" displayed (datetime contains machine-readable date)</p>
+
+    <h3>Test 2: Valid Date String</h3>
+    <div class="test-box">
+        <p id="test2">Our first date was <time datetime="2006-09-23">a Saturday</time>.</p>
+    </div>
+    <p>Expected: "a Saturday" displayed</p>
+
+    <h3>Test 3: Date and Time with Timezone</h3>
+    <div class="test-box">
+        <p id="test3">We stopped talking at <time datetime="2006-09-24T05:00-07:00">5am the next morning</time>.</p>
+    </div>
+    <p>Expected: "5am the next morning" displayed</p>
+
+    <h3>Test 4: Time Only</h3>
+    <div class="test-box">
+        <p id="test4">Your next meeting is at <time datetime="15:00">3pm</time>.</p>
+    </div>
+    <p>Expected: "3pm" displayed</p>
+
+    <h3>Test 5: Duration</h3>
+    <div class="test-box">
+        <p id="test5">The movie lasts <time datetime="PT2H32M">2 hours and 32 minutes</time>.</p>
+    </div>
+    <p>Expected: "2 hours and 32 minutes" displayed</p>
+
+    <h3>Test 6: Year Only</h3>
+    <div class="test-box">
+        <p id="test6">The event happened in <time datetime="2011">twenty-eleven</time>.</p>
+    </div>
+    <p>Expected: "twenty-eleven" displayed</p>
+
+    <h3>Test 7: Month String</h3>
+    <div class="test-box">
+        <p id="test7">It was released in <time datetime="2011-11">November 2011</time>.</p>
+    </div>
+    <p>Expected: "November 2011" displayed</p>
+
+    <h3>Test 8: Week String</h3>
+    <div class="test-box">
+        <p id="test8">That was during <time datetime="2011-W47">week 47 of 2011</time>.</p>
+    </div>
+    <p>Expected: "week 47 of 2011" displayed</p>
+
+    <h3>Test 9: Time Without datetime (Text Content as Value)</h3>
+    <div class="test-box">
+        <p id="test9">Published on <time>2009-08-29</time>.</p>
+    </div>
+    <p>Expected: "2009-08-29" displayed (text content IS the machine-readable value)</p>
+
+    <h3>Test 10: Global Date and Time (UTC)</h3>
+    <div class="test-box">
+        <p id="test10">The event starts at <time datetime="2011-11-18T14:54Z">2:54 PM UTC</time>.</p>
+    </div>
+    <p>Expected: "2:54 PM UTC" displayed</p>
+
+    <h3>Test 11: Time Inside Other Formatting</h3>
+    <div class="test-box">
+        <p id="test11"><strong>Published: <time datetime="2024-01-15">January 15, 2024</time></strong></p>
+    </div>
+    <p>Expected: Date in bold</p>
+
+    <h3>Test 12: Time with Link Inside</h3>
+    <div class="test-box">
+        <p id="test12">See the <time datetime="2024-03-20"><a href="#">Spring Equinox</a></time> event.</p>
+    </div>
+    <p>Expected: "Spring Equinox" as clickable link</p>
+
+    <h3>Test 13: Multiple Time Elements</h3>
+    <div class="test-box">
+        <p id="test13">
+            From <time datetime="2011-11-05">November 5</time> to
+            <time datetime="2011-11-07">November 7</time>, 2011.
+        </p>
+    </div>
+    <p>Expected: Both dates displayed normally</p>
+
+    <h3>Test 14: Microformat Example (hCalendar-style)</h3>
+    <div class="test-box">
+        <div id="test14" class="vevent">
+            <span class="summary">Web 2.0 Conference</span>:
+            <time class="dtstart" datetime="2005-10-05">October 5</time> -
+            <time class="dtend" datetime="2005-10-07">7</time>,
+            at the <span class="location">Argent Hotel, San Francisco, CA</span>
+        </div>
+    </div>
+    <p>Expected: Event details displayed with dates</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Helper: find first child element with given tag name (recursive)
+        function findByTag(parent, tagName) {
+            if (!parent || !parent.children) return null;
+            tagName = tagName.toUpperCase();
+            for (var i = 0; i < parent.children.length; i++) {
+                var child = parent.children[i];
+                if (child.tagName === tagName) {
+                    return child;
+                }
+                var nested = findByTag(child, tagName);
+                if (nested) return nested;
+            }
+            return null;
+        }
+
+        // Test 1: Find time element
+        var test1 = document.getElementById('test1');
+        var timeElement = findByTag(test1, 'time');
+        assert(timeElement !== null, "Time element found via children");
+
+        // Test 2: tagName is TIME
+        if (timeElement) {
+            assert(timeElement.tagName === "TIME",
+                "tagName is 'TIME' (was: '" + timeElement.tagName + "')");
+        }
+
+        // Test 3: textContent works
+        if (timeElement) {
+            var content = timeElement.textContent;
+            assert(content === "Friday",
+                "textContent returns correct value (was: '" + content + "')");
+        }
+
+        // Test 4: datetime attribute accessible via attributes
+        if (timeElement) {
+            var datetimeAttr = timeElement.attributes["datetime"];
+            if (datetimeAttr) {
+                assert(datetimeAttr === "2011-11-18",
+                    "datetime attribute accessible via attributes (was: '" + datetimeAttr + "')");
+            } else {
+                info("attributes['datetime'] not available");
+            }
+        }
+
+        // Test 5: HTMLTimeElement.dateTime property (if implemented)
+        if (timeElement) {
+            var dateTimeProperty = timeElement.dateTime;
+            if (dateTimeProperty !== undefined) {
+                assert(dateTimeProperty === "2011-11-18",
+                    "HTMLTimeElement.dateTime property works (was: '" + dateTimeProperty + "')");
+            } else {
+                info("HTMLTimeElement.dateTime property not yet implemented");
+            }
+        }
+
+        // Test 6: Time without datetime - text content is the value
+        var test9 = document.getElementById('test9');
+        var timeNoAttr = findByTag(test9, 'time');
+        if (timeNoAttr) {
+            var hasDatetime = timeNoAttr.attributes && timeNoAttr.attributes["datetime"];
+            assert(!hasDatetime || hasDatetime === "",
+                "Time without datetime attribute (text is the value)");
+            assert(timeNoAttr.textContent === "2009-08-29",
+                "Text content is the machine-readable value");
+        }
+
+        // Test 7: Time can contain phrasing content (link)
+        var test12 = document.getElementById('test12');
+        var timeWithLink = findByTag(test12, 'time');
+        if (timeWithLink) {
+            var linkInTime = findByTag(timeWithLink, 'a');
+            assert(linkInTime !== null, "Time element can contain anchor element");
+        }
+
+        // Test 8: Multiple time elements
+        var test13 = document.getElementById('test13');
+        var timeElements = [];
+        function collectTime(parent) {
+            if (!parent || !parent.children) return;
+            for (var i = 0; i < parent.children.length; i++) {
+                var child = parent.children[i];
+                if (child.tagName === 'TIME') {
+                    timeElements.push(child);
+                }
+                collectTime(child);
+            }
+        }
+        collectTime(test13);
+        assert(timeElements.length === 2, "Found 2 time elements (found: " + timeElements.length + ")");
+
+        // Test 9: Different datetime formats
+        var test3 = document.getElementById('test3');
+        var timeWithTz = findByTag(test3, 'time');
+        if (timeWithTz && timeWithTz.attributes) {
+            var tzDatetime = timeWithTz.attributes["datetime"];
+            assert(tzDatetime === "2006-09-24T05:00-07:00",
+                "Timezone offset format preserved (was: '" + tzDatetime + "')");
+        }
+
+        // Test 10: Duration format
+        var test5 = document.getElementById('test5');
+        var timeDuration = findByTag(test5, 'time');
+        if (timeDuration && timeDuration.attributes) {
+            var duration = timeDuration.attributes["datetime"];
+            assert(duration === "PT2H32M",
+                "Duration format preserved (was: '" + duration + "')");
+        }
+
+        info("Visual tests above should be verified manually");
+        info("Time element should render inline with no special styling");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>
