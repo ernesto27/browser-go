@@ -101,6 +101,7 @@
 - [ ] `<sup>` - superscript
 - [ ] `<time>` - date/time
 - [x] `<dfn>` - definition term (WHATWG 4.5.8 - italic styling)
+- [x] `<data>` - machine-readable value (WHATWG 4.5.13 - value attribute, HTMLDataElement.value property)
 
 ### Media
 - [ ] `<video>` - video player

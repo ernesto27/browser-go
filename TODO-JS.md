@@ -50,6 +50,10 @@
 - [ ] `element.classList.toggle(class)` - Toggle CSS class
 - [ ] `element.classList.contains(class)` - Check for class
 - [ ] `element.style.property` - Get/set inline styles
+- [x] `element.attributes["name"]` - Generic attribute access via object
+
+### HTMLDataElement (WHATWG 4.5.13)
+- [x] `dataElement.value` - Get/set machine-readable value
 
 
 ---

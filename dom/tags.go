@@ -85,4 +85,6 @@ const (
 	TagFigcaption = "figcaption"
 
 	TagSearch = "search"
+
+	TagData = "data"
 )

@@ -271,6 +271,12 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 	elem := newElement(rt, node)
 	obj := rt.vm.NewObject()
 
+	attrsObj := rt.vm.NewObject()
+	for name, value := range node.Attributes {
+		attrsObj.Set(name, value)
+	}
+	obj.Set("attributes", attrsObj)
+
 	// Static properties
 	obj.Set("tagName", strings.ToUpper(node.TagName))
 	obj.Set("id", node.Attributes["id"])
@@ -765,6 +771,23 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 					if rt.onReflow != nil {
 						rt.onReflow()
 					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
+	if node.TagName == "data" {
+		obj.DefineAccessorProperty("value",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if val, ok := node.Attributes["value"]; ok {
+					return rt.vm.ToValue(val)
+				}
+				return rt.vm.ToValue("")
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					node.Attributes["value"] = call.Arguments[0].String()
 				}
 				return goja.Undefined()
 			}),

@@ -31,6 +31,7 @@ https://html.spec.whatwg.org/
 [x] - <cite> (WHATWG 4.5.6 compliance - italic styling, inline box)
 [x] - <dfn> (WHATWG 4.5.8 compliance - italic styling, inline box)
 [x] - <abbr> (WHATWG 4.5.9 compliance - dotted underline, title attribute for expansion)
+[x] - <data> (WHATWG 4.5.13 compliance - value attribute, HTMLDataElement.value property)
 [] - fix navigation for hash-only URLs (e.g., "#section") - scroll to element with ID
 
 ### <a> Missing / non-compliant

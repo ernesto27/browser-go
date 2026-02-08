@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Data Element Compliance Test (WHATWG 4.5.13)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+        table { border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Data Element Compliance Test (WHATWG 4.5.13)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Data Element</h3>
+    <div class="test-box">
+        <p id="test1">There are <data value="8">eight</data> planets in our solar system.</p>
+    </div>
+    <p>Expected: "eight" displayed normally (value="8" is machine-readable)</p>
+
+    <h3>Test 2: Data in Table (Sortable Use Case)</h3>
+    <div class="test-box">
+        <table id="test2">
+            <thead>
+                <tr><th>Game</th><th>Corporations</th><th>Map Size</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1830</td>
+                    <td><data value="8">Eight</data></td>
+                    <td><data value="93">19+74 hexes (93 total)</data></td>
+                </tr>
+                <tr>
+                    <td>1856</td>
+                    <td><data value="11">Eleven</data></td>
+                    <td><data value="99">12+87 hexes (99 total)</data></td>
+                </tr>
+                <tr>
+                    <td>1870</td>
+                    <td><data value="10">Ten</data></td>
+                    <td><data value="149">4+145 hexes (149 total)</data></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: Human-readable text displayed, machine values in value attribute</p>
+
+    <h3>Test 3: Data with Numeric Value</h3>
+    <div class="test-box">
+        <p id="test3">Price: <data value="39.99">$39.99 USD</data></p>
+    </div>
+    <p>Expected: "$39.99 USD" displayed (value="39.99" for processing)</p>
+
+    <h3>Test 4: Data with Product ID</h3>
+    <div class="test-box">
+        <p id="test4">Product: <data value="UPC:022014640201">North Face Jacket</data></p>
+    </div>
+    <p>Expected: "North Face Jacket" displayed (value contains UPC code)</p>
+
+    <h3>Test 5: Multiple Data Elements</h3>
+    <div class="test-box">
+        <p id="test5">
+            Score: <data value="100">One Hundred</data> points,
+            Level: <data value="5">Five</data>,
+            Lives: <data value="3">Three</data>
+        </p>
+    </div>
+    <p>Expected: All text displayed normally</p>
+
+    <h3>Test 6: Data Inside Other Formatting</h3>
+    <div class="test-box">
+        <p id="test6"><strong>Total: <data value="1500">1,500</data></strong> items sold.</p>
+    </div>
+    <p>Expected: "1,500" in bold</p>
+
+    <h3>Test 7: Data with Link Inside</h3>
+    <div class="test-box">
+        <p id="test7">See <data value="ISBN:978-0-13-468599-1"><a href="#">Clean Code</a></data> for details.</p>
+    </div>
+    <p>Expected: "Clean Code" as clickable link</p>
+
+    <h3>Test 8: Empty Value Attribute</h3>
+    <div class="test-box">
+        <p id="test8">Status: <data value="">Unknown</data></p>
+    </div>
+    <p>Expected: "Unknown" displayed (empty value is valid)</p>
+
+    <h3>Test 9: Data Without Value (Invalid but should render)</h3>
+    <div class="test-box">
+        <p id="test9">Count: <data>Forty-Two</data></p>
+    </div>
+    <p>Expected: "Forty-Two" displayed (missing value is invalid per spec but should still render)</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        // Helper: find first child element with given tag name (recursive)
+        function findByTag(parent, tagName) {
+            if (!parent || !parent.children) return null;
+            tagName = tagName.toUpperCase();
+            for (var i = 0; i < parent.children.length; i++) {
+                var child = parent.children[i];
+                if (child.tagName === tagName) {
+                    return child;
+                }
+                var nested = findByTag(child, tagName);
+                if (nested) return nested;
+            }
+            return null;
+        }
+
+        // Test 1: Find data element
+        var test1 = document.getElementById('test1');
+        var dataElement = findByTag(test1, 'data');
+        assert(dataElement !== null, "Data element found via children");
+
+        // Test 2: tagName is DATA
+        if (dataElement) {
+            assert(dataElement.tagName === "DATA",
+                "tagName is 'DATA' (was: '" + dataElement.tagName + "')");
+        }
+
+        // Test 3: textContent works
+        if (dataElement) {
+            var content = dataElement.textContent;
+            assert(content === "eight",
+                "textContent returns correct value (was: '" + content + "')");
+        }
+
+        // Test 4: value attribute accessible via attributes
+        if (dataElement) {
+            var valueAttr = dataElement.attributes["value"];
+            if (valueAttr) {
+                assert(valueAttr === "8",
+                    "value attribute accessible via attributes (was: '" + valueAttr + "')");
+            } else {
+                info("attributes['value'] not available, trying .value property");
+            }
+        }
+
+        // Test 5: HTMLDataElement.value property (if implemented)
+        if (dataElement) {
+            var valueProperty = dataElement.value;
+            if (valueProperty !== undefined) {
+                assert(valueProperty === "8",
+                    "HTMLDataElement.value property works (was: '" + valueProperty + "')");
+            } else {
+                info("HTMLDataElement.value property not yet implemented");
+            }
+        }
+
+        // Test 6: Data can contain link
+        var test7 = document.getElementById('test7');
+        var dataWithLink = findByTag(test7, 'data');
+        if (dataWithLink) {
+            var linkInData = findByTag(dataWithLink, 'a');
+            assert(linkInData !== null, "Data element can contain anchor element");
+        }
+
+        // Test 7: Multiple data elements in table
+        var test2 = document.getElementById('test2');
+        var dataElements = [];
+        function collectData(parent) {
+            if (!parent || !parent.children) return;
+            for (var i = 0; i < parent.children.length; i++) {
+                var child = parent.children[i];
+                if (child.tagName === 'DATA') {
+                    dataElements.push(child);
+                }
+                collectData(child);
+            }
+        }
+        collectData(test2);
+        assert(dataElements.length === 6, "Found 6 data elements in table (found: " + dataElements.length + ")");
+
+        // Test 8: Data values are independent
+        if (dataElements.length >= 2) {
+            var val1 = dataElements[0].attributes ? dataElements[0].attributes["value"] : null;
+            var val2 = dataElements[1].attributes ? dataElements[1].attributes["value"] : null;
+            assert(val1 === "8" && val2 === "93",
+                "Data elements have independent values ('" + val1 + "', '" + val2 + "')");
+        }
+
+        info("Visual tests above should be verified manually");
+        info("Data element should render inline with no special styling");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>
