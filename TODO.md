@@ -33,6 +33,7 @@ https://html.spec.whatwg.org/
 [x] - <abbr> (WHATWG 4.5.9 compliance - dotted underline, title attribute for expansion)
 [x] - <data> (WHATWG 4.5.13 compliance - value attribute, HTMLDataElement.value property)
 [x] - <time> (WHATWG 4.5.14 compliance - datetime attribute, HTMLTimeElement.dateTime property)
+[x] - <mark> (WHATWG 4.5.23 compliance - yellow background, black text)
 [] - fix navigation for hash-only URLs (e.g., "#section") - scroll to element with ID
 
 ### <a> Missing / non-compliant
