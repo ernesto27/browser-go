@@ -44,6 +44,15 @@ func TestBuildLayoutTreeBoxTypes(t *testing.T) {
 		{"small is InlineBox", "<div><small></small></div>", "small", InlineBox, true},
 		{"u is InlineBox", "<div><u></u></div>", "u", InlineBox, true},
 
+		// Transparent elements (inline when no block children)
+		{"ins is InlineBox", "<div><ins>text</ins></div>", "ins", InlineBox, true},
+		{"del is InlineBox", "<div><del>text</del></div>", "del", InlineBox, true},
+
+		// Transparent elements (promoted to block when containing block children)
+		{"ins with p is BlockBox", "<div><ins><p>text</p></ins></div>", "ins", BlockBox, true},
+		{"del with p is BlockBox", "<div><del><p>text</p></del></div>", "del", BlockBox, true},
+		{"a with div is BlockBox", "<div><a><div>text</div></a></div>", "a", BlockBox, true},
+
 		// Special elements
 		{"img is ImageBox", "<div><img src=\"test.png\"></div>", "img", ImageBox, true},
 		{"hr is HRBox", "<div><hr></div>", "hr", HRBox, true},

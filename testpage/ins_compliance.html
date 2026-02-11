@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Ins Element Compliance Test (WHATWG 4.7.1)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Ins Element Compliance Test (WHATWG 4.7.1)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Basic Insertion</h3>
+    <div class="test-box">
+        <p id="test1"><ins>This text was inserted</ins></p>
+    </div>
+    <p>Expected: Text displayed with underline decoration</p>
+
+    <h3>Test 2: Inline with Surrounding Text</h3>
+    <div class="test-box">
+        <p id="test2">The document was <ins>updated with new content</ins> recently.</p>
+    </div>
+    <p>Expected: Only "updated with new content" is underlined, flows inline</p>
+
+    <h3>Test 3: Spec Example - Insertion Inside Aside</h3>
+    <div class="test-box">
+        <aside id="test3">
+            <ins>
+                <p>I like fruit.</p>
+            </ins>
+        </aside>
+    </div>
+    <p>Expected: "I like fruit." displayed as a paragraph with underline</p>
+
+    <h3>Test 4: Spec Example - Phrasing Content Insertions</h3>
+    <div class="test-box">
+        <aside id="test4">
+            <ins>Apples are <em>tasty</em>.</ins>
+            <ins>So are pears.</ins>
+        </aside>
+    </div>
+    <p>Expected: Both sentences underlined, "tasty" also italic</p>
+
+    <h3>Test 5: Ins with datetime Attribute</h3>
+    <div class="test-box">
+        <p id="test5"><ins datetime="2005-03-16T00:00Z">This was added on March 16, 2005.</ins></p>
+    </div>
+    <p>Expected: Underlined text (datetime is metadata, not visible)</p>
+
+    <h3>Test 6: Ins with cite Attribute</h3>
+    <div class="test-box">
+        <p id="test6"><ins cite="https://example.com/changelog">See changelog for details.</ins></p>
+    </div>
+    <p>Expected: Underlined text (cite is metadata, not visible)</p>
+
+    <h3>Test 7: Nested Inside Other Elements</h3>
+    <div class="test-box">
+        <p id="test7"><strong><ins>Bold and inserted</ins></strong></p>
+    </div>
+    <p>Expected: Text is both bold AND underlined</p>
+
+    <h3>Test 8: Ins Containing a Link</h3>
+    <div class="test-box">
+        <p id="test8"><ins>Visit our <a href="#">website</a> for more info</ins></p>
+    </div>
+    <p>Expected: Full text underlined, link also underlined and colored</p>
+
+    <h3>Test 9: Multiple Ins Elements</h3>
+    <div class="test-box">
+        <p id="test9">
+            <ins>First addition</ins> original text <ins>second addition</ins>
+        </p>
+    </div>
+    <p>Expected: Two separate underlined sections with normal text between</p>
+
+    <h3>Test 10: Empty Ins Element</h3>
+    <div class="test-box">
+        <p id="test10">Before<ins></ins>After</p>
+    </div>
+    <p>Expected: "BeforeAfter" with no visible underline (empty element)</p>
+
+    <h3>Test 11: Ins vs Del Distinction</h3>
+    <div class="test-box">
+        <p id="test11"><del>Old text removed</del> <ins>New text added</ins></p>
+    </div>
+    <p>Expected: First part has strikethrough, second part has underline</p>
+
+    <h3>Test 12: Spec Best Practice - Non-crossing Paragraph Boundaries</h3>
+    <div class="test-box">
+        <aside id="test12">
+            <ins datetime="2005-03-16T00:00Z">
+                <p>I like fruit.</p>
+            </ins>
+            <ins datetime="2005-03-16T00:00Z">
+                Apples are <em>tasty</em>.
+            </ins>
+            <ins datetime="2007-12-19T00:00Z">
+                So are pears.
+            </ins>
+        </aside>
+    </div>
+    <p>Expected: Three separate insertions, each underlined independently</p>
+
+    <hr>
+
+    <h2>JavaScript Tests</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        function findChildByTag(parent, tagName) {
+            if (!parent || !parent.children) return null;
+            tagName = tagName.toUpperCase();
+            for (var i = 0; i < parent.children.length; i++) {
+                if (parent.children[i].tagName === tagName) {
+                    return parent.children[i];
+                }
+            }
+            return null;
+        }
+
+        function countChildrenByTag(parent, tagName) {
+            if (!parent || !parent.children) return 0;
+            tagName = tagName.toUpperCase();
+            var count = 0;
+            for (var i = 0; i < parent.children.length; i++) {
+                if (parent.children[i].tagName === tagName) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // Test 1: Find ins element via children
+        var test1 = document.getElementById('test1');
+        var insElement = findChildByTag(test1, 'ins');
+        assert(insElement !== null, "Ins element found via children");
+
+        // Test 2: tagName is INS
+        if (insElement) {
+            assert(insElement.tagName === "INS",
+                "tagName is 'INS' (was: '" + insElement.tagName + "')");
+        }
+
+        // Test 3: textContent works
+        if (insElement) {
+            var content = insElement.textContent;
+            assert(content === "This text was inserted",
+                "textContent returns correct value");
+        }
+
+        // Test 4: innerHTML works
+        if (insElement) {
+            var html = insElement.innerHTML;
+            assert(typeof html === 'string' && html.length > 0,
+                "innerHTML returns content (length: " + html.length + ")");
+        }
+
+        // Test 5: cite attribute accessible
+        var test6 = document.getElementById('test6');
+        if (test6) {
+            var insWithCite = findChildByTag(test6, 'ins');
+            if (insWithCite) {
+                var citeAttr = insWithCite.getAttribute('cite');
+                assert(citeAttr === "https://example.com/changelog",
+                    "cite attribute accessible via getAttribute (was: '" + citeAttr + "')");
+            }
+        }
+
+        // Test 6: datetime attribute accessible
+        var test5 = document.getElementById('test5');
+        if (test5) {
+            var insWithDatetime = findChildByTag(test5, 'ins');
+            if (insWithDatetime) {
+                var dtAttr = insWithDatetime.getAttribute('datetime');
+                assert(dtAttr === "2005-03-16T00:00Z",
+                    "datetime attribute accessible via getAttribute (was: '" + dtAttr + "')");
+            }
+        }
+
+        // Test 7: Can contain phrasing content (em)
+        var test4 = document.getElementById('test4');
+        if (test4) {
+            var firstIns = findChildByTag(test4, 'ins');
+            var hasEm = firstIns && findChildByTag(firstIns, 'em') !== null;
+            assert(hasEm, "Ins element can contain emphasis elements");
+        }
+
+        // Test 8: Can contain links
+        var test8 = document.getElementById('test8');
+        if (test8) {
+            var insWithLink = findChildByTag(test8, 'ins');
+            var hasLink = insWithLink && findChildByTag(insWithLink, 'a') !== null;
+            assert(hasLink, "Ins element can contain anchor elements");
+        }
+
+        // Test 9: Multiple ins elements work independently
+        var test9 = document.getElementById('test9');
+        if (test9) {
+            var insCount = countChildrenByTag(test9, 'ins');
+            assert(insCount === 2,
+                "Multiple ins elements found (count: " + insCount + ")");
+        }
+
+        // Test 10: Ins with del distinction
+        var test11 = document.getElementById('test11');
+        if (test11) {
+            var hasDel = findChildByTag(test11, 'del') !== null;
+            var hasIns = findChildByTag(test11, 'ins') !== null;
+            assert(hasDel && hasIns,
+                "Both del and ins elements coexist in same paragraph");
+        }
+
+        // Test 11: Spec example - multiple dated insertions
+        var test12 = document.getElementById('test12');
+        if (test12) {
+            var insCount12 = countChildrenByTag(test12, 'ins');
+            assert(insCount12 === 3,
+                "Three separate ins elements found in spec example (count: " + insCount12 + ")");
+        }
+
+        // Test 12: HTMLElement properties available
+        if (insElement) {
+            assert(typeof insElement.id !== 'undefined',
+                "Ins element has HTMLElement properties (id)");
+            assert(typeof insElement.textContent !== 'undefined',
+                "Ins element has HTMLElement properties (textContent)");
+        }
+
+        info("Visual tests above should be verified manually");
+        info("Check: underline text-decoration on ins elements");
+        info("Note: HTMLModElement.cite and HTMLModElement.dateTime properties not yet implemented");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

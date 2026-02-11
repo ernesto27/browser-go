@@ -34,6 +34,7 @@ https://html.spec.whatwg.org/
 [x] - <data> (WHATWG 4.5.13 compliance - value attribute, HTMLDataElement.value property)
 [x] - <time> (WHATWG 4.5.14 compliance - datetime attribute, HTMLTimeElement.dateTime property)
 [x] - <mark> (WHATWG 4.5.23 compliance - yellow background, black text)
+[x] - <ins> (WHATWG 4.7.1 compliance - underline, HTMLModElement.cite/dateTime, transparent content model)
 [] - fix navigation for hash-only URLs (e.g., "#section") - scroll to element with ID
 
 ### <a> Missing / non-compliant

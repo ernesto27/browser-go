@@ -582,7 +582,8 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
-	if strings.ToUpper(node.TagName) == "BLOCKQUOTE" || strings.ToUpper(node.TagName) == "Q" {
+	if strings.ToUpper(node.TagName) == "BLOCKQUOTE" || strings.ToUpper(node.TagName) == "Q" ||
+		strings.ToUpper(node.TagName) == "INS" || strings.ToUpper(node.TagName) == "DEL" {
 		obj.DefineAccessorProperty("cite",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				cite := node.Attributes["cite"]
@@ -795,7 +796,8 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 	}
 
 	// HTMLTimeElement.dateTime property (WHATWG 4.5.14)
-	if node.TagName == "time" {
+	// HTMLModElement.dateTime property (WHATWG 4.7.1, 4.7.2)
+	if node.TagName == "time" || node.TagName == "ins" || node.TagName == "del" {
 		obj.DefineAccessorProperty("dateTime",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				if val, ok := node.Attributes["datetime"]; ok {

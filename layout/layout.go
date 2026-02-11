@@ -47,6 +47,15 @@ var blockElements = map[string]bool{
 	"search":     true,
 }
 
+// transparentElements have a transparent content model per the HTML spec.
+// They inherit the content model of their parent, so if they contain block
+// children they should be promoted from InlineBox to BlockBox.
+var transparentElements = map[string]bool{
+	"ins": true,
+	"del": true,
+	"a":   true,
+}
+
 var skipElements = map[string]bool{
 	"script": true, "style": true, "head": true,
 	"meta": true, "link": true, "option": true,
@@ -176,6 +185,16 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 		childBox := BuildBox(child, box, stylesheet, viewport)
 		if childBox != nil {
 			box.Children = append(box.Children, childBox)
+		}
+	}
+
+	// Promote transparent elements to block if they contain block children
+	if box.Type == InlineBox && box.Node != nil && transparentElements[box.Node.TagName] {
+		for _, child := range box.Children {
+			if child.Type == BlockBox {
+				box.Type = BlockBox
+				break
+			}
 		}
 	}
 
