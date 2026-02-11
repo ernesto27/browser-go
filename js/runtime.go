@@ -654,6 +654,54 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				return goja.Undefined()
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("tHead",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				for _, child := range node.Children {
+					if child.Type == dom.Element && child.TagName == "thead" {
+						return rt.wrapElement(child)
+					}
+				}
+				return goja.Null()
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					// Remove existing thead first
+					for _, child := range node.Children {
+						if child.Type == dom.Element && child.TagName == "thead" {
+							node.RemoveChild(child)
+							break
+						}
+					}
+
+					// Find insertion index: after all caption and colgroup elements
+					insertIdx := 0
+					for _, child := range node.Children {
+						if child.Type == dom.Element && (child.TagName == "caption" || child.TagName == "colgroup") {
+							insertIdx++
+						} else {
+							break
+						}
+					}
+
+					// If new value is not null, insert at computed index
+					if !goja.IsNull(call.Arguments[0]) && !goja.IsUndefined(call.Arguments[0]) {
+						newTHead := unwrapNode(rt, call.Arguments[0])
+						if newTHead != nil {
+							newTHead.Parent = node
+							node.Children = append(
+								node.Children[:insertIdx],
+								append([]*dom.Node{newTHead}, node.Children[insertIdx:]...)...)
+						}
+					}
+
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {

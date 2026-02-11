@@ -55,6 +55,64 @@
     </div>
     <p>Expected: Per spec, table.caption returns first caption child only</p>
 
+    <h3>Test 4: Table with thead</h3>
+    <div class="test-box">
+        <table id="test4">
+            <caption>Sales Report</caption>
+            <thead>
+                <tr>
+                    <th>Quarter</th>
+                    <th>Revenue</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Q1</td>
+                    <td>$10,000</td>
+                </tr>
+                <tr>
+                    <td>Q2</td>
+                    <td>$15,000</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: Table with caption "Sales Report" and a thead containing column headers</p>
+
+    <h3>Test 5: Table without thead</h3>
+    <div class="test-box">
+        <table id="test5">
+            <tr>
+                <td>No thead here</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Table with no thead element</p>
+
+    <h3>Test 6: Table with caption + colgroup + thead (insertion order test)</h3>
+    <div class="test-box">
+        <table id="test6">
+            <caption>Inventory</caption>
+            <colgroup>
+                <col style="background-color: #f0f0f0">
+                <col>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Widget</td>
+                    <td>42</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: Table with caption, colgroup, and thead in correct order</p>
+
     <hr>
 
     <h2>JavaScript Tests - table.caption</h2>
@@ -140,6 +198,93 @@
         }
 
         info("Tests cover: getter (with/without caption), setter (replace/remove), multiple captions");
+
+        // ========================================
+        // table.tHead tests
+        // ========================================
+        info("--- table.tHead tests ---");
+
+        var table4 = document.getElementById('test4');
+        var table5 = document.getElementById('test5');
+        var table6 = document.getElementById('test6');
+
+        // Test 8: tHead getter returns thead element
+        if (table4) {
+            assert(table4.tHead !== null && table4.tHead !== undefined,
+                "table.tHead getter returns a value (not null/undefined)");
+        }
+
+        // Test 9: tHead is a THEAD element
+        if (table4 && table4.tHead) {
+            assert(table4.tHead.tagName === "THEAD",
+                "table.tHead.tagName is 'THEAD' (was: '" + table4.tHead.tagName + "')");
+        }
+
+        // Test 10: tHead contains expected header text
+        if (table4 && table4.tHead) {
+            var headerText = table4.tHead.textContent;
+            assert(headerText.indexOf("Quarter") !== -1,
+                "table.tHead contains header text 'Quarter' (content: '" + headerText.trim() + "')");
+        }
+
+        // Test 11: table without thead returns null
+        if (table5) {
+            assert(table5.tHead === null,
+                "table.tHead returns null when no thead exists (was: " + table5.tHead + ")");
+        }
+
+        // Test 12: tHead setter - replace with new thead
+        if (table4) {
+            var newTHead = document.createElement('thead');
+            var tr = document.createElement('tr');
+            var th = document.createElement('th');
+            th.textContent = "New Header";
+            tr.appendChild(th);
+            newTHead.appendChild(tr);
+            table4.tHead = newTHead;
+            assert(table4.tHead !== null && table4.tHead.textContent.indexOf("New Header") !== -1,
+                "table.tHead setter replaces thead (content: '" +
+                (table4.tHead ? table4.tHead.textContent.trim() : "null") + "')");
+        }
+
+        // Test 13: tHead setter - set to null removes thead
+        if (table5) {
+            var addTHead = document.createElement('thead');
+            var addTr = document.createElement('tr');
+            var addTh = document.createElement('th');
+            addTh.textContent = "Temporary Header";
+            addTr.appendChild(addTh);
+            addTHead.appendChild(addTr);
+            table5.tHead = addTHead;
+            var hadTHead = table5.tHead !== null;
+            table5.tHead = null;
+            assert(table5.tHead === null,
+                "table.tHead = null removes the thead (had thead: " + hadTHead + ")");
+        }
+
+        // Test 14: tHead inserts after caption and colgroup
+        if (table6) {
+            var newTH = document.createElement('thead');
+            var newTr = document.createElement('tr');
+            var newTh = document.createElement('th');
+            newTh.textContent = "Replaced Header";
+            newTr.appendChild(newTh);
+            newTH.appendChild(newTr);
+            table6.tHead = newTH;
+
+            // Verify caption is still first, and thead comes after caption/colgroup
+            var children = table6.children;
+            var captionIdx = -1;
+            var theadIdx = -1;
+            for (var i = 0; i < children.length; i++) {
+                if (children[i].tagName === "CAPTION" && captionIdx === -1) captionIdx = i;
+                if (children[i].tagName === "THEAD" && theadIdx === -1) theadIdx = i;
+            }
+            assert(captionIdx < theadIdx,
+                "tHead inserted after caption (caption at " + captionIdx + ", thead at " + theadIdx + ")");
+        }
+
+        info("Tests cover: tHead getter (with/without), setter (replace/remove), insertion order after caption/colgroup");
     </script>
 
     <hr>

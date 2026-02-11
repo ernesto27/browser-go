@@ -77,7 +77,7 @@ https://html.spec.whatwg.org/
 ### HTMLTableElement (WHATWG 4.9.1)
 - [x] `table.caption` getter/setter - Get/set caption element
 - [ ] `table.createCaption()` / `table.deleteCaption()` - Create/remove caption
-- [ ] `table.tHead` getter/setter - Get/set thead element
+- [x] `table.tHead` getter/setter - Get/set thead element (inserts after caption/colgroup per spec)
 - [ ] `table.createTHead()` / `table.deleteTHead()` - Create/remove thead
 - [ ] `table.tFoot` getter/setter - Get/set tfoot element
 - [ ] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
