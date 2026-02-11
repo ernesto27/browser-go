@@ -79,7 +79,7 @@ https://html.spec.whatwg.org/
 - [x] `table.createCaption()` / `table.deleteCaption()` - Create/remove caption
 - [x] `table.tHead` getter/setter - Get/set thead element (inserts after caption/colgroup per spec)
 - [ ] `table.createTHead()` / `table.deleteTHead()` - Create/remove thead
-- [ ] `table.tFoot` getter/setter - Get/set tfoot element
+- [x] `table.tFoot` getter/setter - Get/set tfoot element (appends at end per spec)
 - [ ] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
 - [ ] `table.tBodies` - HTMLCollection of tbody elements
 - [ ] `table.createTBody()` - Create and insert tbody

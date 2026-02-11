@@ -113,6 +113,45 @@
     </div>
     <p>Expected: Table with caption, colgroup, and thead in correct order</p>
 
+    <h3>Test 7: Table with tfoot</h3>
+    <div class="test-box">
+        <table id="test7">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Widget</td>
+                    <td>$5.00</td>
+                </tr>
+                <tr>
+                    <td>Gadget</td>
+                    <td>$8.00</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Total</td>
+                    <td>$13.00</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: Table with thead, tbody, and tfoot containing "Total $13.00"</p>
+
+    <h3>Test 8: Table without tfoot</h3>
+    <div class="test-box">
+        <table id="test8">
+            <tr>
+                <td>No tfoot here</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Table with no tfoot element</p>
+
     <hr>
 
     <h2>JavaScript Tests - table.caption</h2>
@@ -344,6 +383,86 @@
         }
 
         info("Tests cover: tHead getter (with/without), setter (replace/remove), insertion order after caption/colgroup");
+
+        // ========================================
+        // table.tFoot tests
+        // ========================================
+        info("--- table.tFoot tests ---");
+
+        var table7 = document.getElementById('test7');
+        var table8 = document.getElementById('test8');
+
+        // tFoot getter returns tfoot element
+        if (table7) {
+            assert(table7.tFoot !== null && table7.tFoot !== undefined,
+                "table.tFoot getter returns a value (not null/undefined)");
+        }
+
+        // tFoot is a TFOOT element
+        if (table7 && table7.tFoot) {
+            assert(table7.tFoot.tagName === "TFOOT",
+                "table.tFoot.tagName is 'TFOOT' (was: '" + table7.tFoot.tagName + "')");
+        }
+
+        // tFoot contains expected text
+        if (table7 && table7.tFoot) {
+            var footText = table7.tFoot.textContent;
+            assert(footText.indexOf("Total") !== -1,
+                "table.tFoot contains text 'Total' (content: '" + footText.trim() + "')");
+        }
+
+        // table without tfoot returns null
+        if (table8) {
+            assert(table8.tFoot === null,
+                "table.tFoot returns null when no tfoot exists (was: " + table8.tFoot + ")");
+        }
+
+        // tFoot setter - replace with new tfoot
+        if (table7) {
+            var newTFoot = document.createElement('tfoot');
+            var tr = document.createElement('tr');
+            var td = document.createElement('td');
+            td.textContent = "New Footer";
+            tr.appendChild(td);
+            newTFoot.appendChild(tr);
+            table7.tFoot = newTFoot;
+            assert(table7.tFoot !== null && table7.tFoot.textContent.indexOf("New Footer") !== -1,
+                "table.tFoot setter replaces tfoot (content: '" +
+                (table7.tFoot ? table7.tFoot.textContent.trim() : "null") + "')");
+        }
+
+        // tFoot setter - set to null removes tfoot
+        if (table8) {
+            var addTFoot = document.createElement('tfoot');
+            var addTr = document.createElement('tr');
+            var addTd = document.createElement('td');
+            addTd.textContent = "Temporary Footer";
+            addTr.appendChild(addTd);
+            addTFoot.appendChild(addTr);
+            table8.tFoot = addTFoot;
+            var hadTFoot = table8.tFoot !== null;
+            table8.tFoot = null;
+            assert(table8.tFoot === null,
+                "table.tFoot = null removes the tfoot (had tfoot: " + hadTFoot + ")");
+        }
+
+        // tFoot is appended at the end of the table
+        if (table7) {
+            var newFoot = document.createElement('tfoot');
+            var footTr = document.createElement('tr');
+            var footTd = document.createElement('td');
+            footTd.textContent = "End Footer";
+            footTr.appendChild(footTd);
+            newFoot.appendChild(footTr);
+            table7.tFoot = newFoot;
+
+            var children = table7.children;
+            var lastIdx = children.length - 1;
+            assert(children[lastIdx].tagName === "TFOOT",
+                "tFoot is appended as last child (last child is: '" + children[lastIdx].tagName + "')");
+        }
+
+        info("Tests cover: tFoot getter (with/without), setter (replace/remove), appended at end");
     </script>
 
     <hr>
