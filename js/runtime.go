@@ -655,6 +655,43 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+		// HTMLTableElement.createCaption() (WHATWG 4.9.1)
+		obj.Set("createCaption", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			// Return existing caption if one exists
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "caption" {
+					return rt.wrapElement(child)
+				}
+			}
+			// Create new caption and insert as first child
+			newCaption := &dom.Node{
+				Type:       dom.Element,
+				TagName:    "caption",
+				Children:   []*dom.Node{},
+				Attributes: map[string]string{},
+				Parent:     node,
+			}
+			node.Children = append([]*dom.Node{newCaption}, node.Children...)
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			return rt.wrapElement(newCaption)
+		}))
+
+		// HTMLTableElement.deleteCaption() (WHATWG 4.9.1)
+		obj.Set("deleteCaption", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "caption" {
+					node.RemoveChild(child)
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+					break
+				}
+			}
+			return goja.Undefined()
+		}))
+
 		obj.DefineAccessorProperty("tHead",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				for _, child := range node.Children {

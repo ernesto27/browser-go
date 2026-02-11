@@ -200,6 +200,65 @@
         info("Tests cover: getter (with/without caption), setter (replace/remove), multiple captions");
 
         // ========================================
+        // table.createCaption() / table.deleteCaption() tests
+        // ========================================
+        info("--- table.createCaption() / table.deleteCaption() tests ---");
+
+        // Test: createCaption returns existing caption when one exists
+        if (table3) {
+            var existingCaption = table3.caption;
+            var created = table3.createCaption();
+            assert(created === existingCaption,
+                "createCaption() returns existing caption (same object, not a new one)");
+        }
+
+        // Test: createCaption creates a new caption when none exists
+        if (table2) {
+            // table2 had its caption removed by earlier setter test
+            assert(table2.caption === null,
+                "table2 has no caption before createCaption() (was: " + table2.caption + ")");
+            var newCap = table2.createCaption();
+            assert(newCap !== null && newCap !== undefined,
+                "createCaption() returns a non-null element");
+            assert(newCap.tagName === "CAPTION",
+                "createCaption() returns a CAPTION element (was: '" + newCap.tagName + "')");
+            assert(table2.caption !== null,
+                "table.caption getter now returns the created caption");
+        }
+
+        // Test: created caption is inserted as first child
+        if (table2 && table2.caption) {
+            var firstChild = table2.children[0];
+            assert(firstChild.tagName === "CAPTION",
+                "createCaption() inserts caption as first child (first child is: '" + firstChild.tagName + "')");
+        }
+
+        // Test: deleteCaption removes the caption
+        if (table2) {
+            table2.deleteCaption();
+            assert(table2.caption === null,
+                "deleteCaption() removes the caption (table.caption is now: " + table2.caption + ")");
+        }
+
+        // Test: deleteCaption on table without caption does nothing (no error)
+        if (table5) {
+            table5.deleteCaption();
+            assert(table5.caption === null,
+                "deleteCaption() on table without caption does not throw (caption: " + table5.caption + ")");
+        }
+
+        // Test: createCaption then set text, verify content
+        if (table2) {
+            var cap = table2.createCaption();
+            cap.textContent = "Dynamically Created";
+            assert(table2.caption.textContent === "Dynamically Created",
+                "createCaption() element is writable (text: '" + table2.caption.textContent + "')");
+            table2.deleteCaption();
+        }
+
+        info("Tests cover: createCaption (existing/new), insertion position, deleteCaption (with/without caption)");
+
+        // ========================================
         // table.tHead tests
         // ========================================
         info("--- table.tHead tests ---");
