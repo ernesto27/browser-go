@@ -385,6 +385,65 @@
         info("Tests cover: tHead getter (with/without), setter (replace/remove), insertion order after caption/colgroup");
 
         // ========================================
+        // table.createTHead() / table.deleteTHead() tests
+        // ========================================
+        info("--- table.createTHead() / table.deleteTHead() tests ---");
+
+        // createTHead returns existing thead when one exists
+        if (table4 && table4.tHead) {
+            var existingTHead = table4.tHead;
+            var created = table4.createTHead();
+            assert(created === existingTHead,
+                "createTHead() returns existing thead (same object, not a new one)");
+        }
+
+        // createTHead creates a new thead when none exists
+        if (table5) {
+            // table5 had its thead removed by earlier setter test
+            assert(table5.tHead === null,
+                "table5 has no thead before createTHead() (was: " + table5.tHead + ")");
+            var newTH = table5.createTHead();
+            assert(newTH !== null && newTH !== undefined,
+                "createTHead() returns a non-null element");
+            assert(newTH.tagName === "THEAD",
+                "createTHead() returns a THEAD element (was: '" + newTH.tagName + "')");
+            assert(table5.tHead !== null,
+                "table.tHead getter now returns the created thead");
+        }
+
+        // createTHead inserts after caption and colgroup
+        if (table6) {
+            // table6 has caption + colgroup
+            table6.deleteTHead();
+            var createdTH = table6.createTHead();
+            var children = table6.children;
+            var captionIdx = -1;
+            var theadIdx = -1;
+            for (var i = 0; i < children.length; i++) {
+                if (children[i].tagName === "CAPTION" && captionIdx === -1) captionIdx = i;
+                if (children[i].tagName === "THEAD" && theadIdx === -1) theadIdx = i;
+            }
+            assert(captionIdx < theadIdx,
+                "createTHead() inserts after caption (caption at " + captionIdx + ", thead at " + theadIdx + ")");
+        }
+
+        // deleteTHead removes the thead
+        if (table5) {
+            table5.deleteTHead();
+            assert(table5.tHead === null,
+                "deleteTHead() removes the thead (table.tHead is now: " + table5.tHead + ")");
+        }
+
+        // deleteTHead on table without thead does nothing (no error)
+        if (table8) {
+            table8.deleteTHead();
+            assert(table8.tHead === null,
+                "deleteTHead() on table without thead does not throw (tHead: " + table8.tHead + ")");
+        }
+
+        info("Tests cover: createTHead (existing/new), insertion order after caption/colgroup, deleteTHead (with/without)");
+
+        // ========================================
         // table.tFoot tests
         // ========================================
         info("--- table.tFoot tests ---");

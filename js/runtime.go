@@ -740,6 +740,53 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+		// HTMLTableElement.createTHead() (WHATWG 4.9.1)
+		obj.Set("createTHead", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			// Return existing thead if one exists
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "thead" {
+					return rt.wrapElement(child)
+				}
+			}
+			// Create new thead and insert after caption/colgroup
+			newTHead := &dom.Node{
+				Type:       dom.Element,
+				TagName:    "thead",
+				Children:   []*dom.Node{},
+				Attributes: map[string]string{},
+				Parent:     node,
+			}
+			insertIdx := 0
+			for _, child := range node.Children {
+				if child.Type == dom.Element && (child.TagName == "caption" || child.TagName == "colgroup") {
+					insertIdx++
+				} else {
+					break
+				}
+			}
+			node.Children = append(
+				node.Children[:insertIdx],
+				append([]*dom.Node{newTHead}, node.Children[insertIdx:]...)...)
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			return rt.wrapElement(newTHead)
+		}))
+
+		// HTMLTableElement.deleteTHead() (WHATWG 4.9.1)
+		obj.Set("deleteTHead", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "thead" {
+					node.RemoveChild(child)
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+					break
+				}
+			}
+			return goja.Undefined()
+		}))
+
 		obj.DefineAccessorProperty("tFoot",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				for _, child := range node.Children {
