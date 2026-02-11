@@ -74,6 +74,39 @@ https://html.spec.whatwg.org/
 - [ ] `load` event - Fire when style processing completes
 - [ ] `error` event - Fire when style loading fails
 
+### HTMLTableElement (WHATWG 4.9.1)
+- [x] `table.caption` getter/setter - Get/set caption element
+- [ ] `table.createCaption()` / `table.deleteCaption()` - Create/remove caption
+- [ ] `table.tHead` getter/setter - Get/set thead element
+- [ ] `table.createTHead()` / `table.deleteTHead()` - Create/remove thead
+- [ ] `table.tFoot` getter/setter - Get/set tfoot element
+- [ ] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
+- [ ] `table.tBodies` - HTMLCollection of tbody elements
+- [ ] `table.createTBody()` - Create and insert tbody
+- [ ] `table.rows` - HTMLCollection of all tr elements (ordered: thead, tbody, tfoot)
+- [ ] `table.insertRow(index)` / `table.deleteRow(index)` - Insert/remove rows
+
+### HTMLTableRowElement (WHATWG 4.9.8)
+- [ ] `tr.cells` - HTMLCollection of td/th elements
+- [ ] `tr.rowIndex` - Row position in table
+- [ ] `tr.sectionRowIndex` - Row position in section
+- [ ] `tr.insertCell(index)` / `tr.deleteCell(index)` - Insert/remove cells
+
+### HTMLTableCellElement (WHATWG 4.9.11)
+- [ ] `td.colSpan` / `td.rowSpan` - Span attributes
+- [ ] `td.cellIndex` - Cell position in row
+- [ ] `td.headers` - Associated header cells
+- [ ] `td.scope` - Header cell scope (th only)
+
+### Table Layout Gaps
+- [ ] `colspan` / `rowspan` attribute support in layout
+- [ ] Content-based column width calculation
+- [ ] CSS `width` on table cells
+- [ ] `thead`/`tfoot` ordering (thead first, tfoot last per spec)
+- [ ] Text wrapping inside cells
+- [ ] `vertical-align` in cells
+- [ ] `<colgroup>` / `<col>` elements
+
 ### CSSStyleSheet (CSSOM)
 - [ ] `sheet.cssRules` - Get list of CSS rules
 - [ ] `sheet.insertRule(rule, index)` - Add a CSS rule

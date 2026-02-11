@@ -616,6 +616,46 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
+	// HTMLTableElement.caption property (WHATWG 4.9.1)
+	if strings.ToUpper(node.TagName) == "TABLE" {
+		obj.DefineAccessorProperty("caption",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				// Return first caption child, or null
+				for _, child := range node.Children {
+					if child.Type == dom.Element && child.TagName == "caption" {
+						return rt.wrapElement(child)
+					}
+				}
+				return goja.Null()
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					// Remove existing caption first
+					for _, child := range node.Children {
+						if child.Type == dom.Element && child.TagName == "caption" {
+							node.RemoveChild(child)
+							break
+						}
+					}
+
+					// If new value is not null, insert as first child
+					if !goja.IsNull(call.Arguments[0]) && !goja.IsUndefined(call.Arguments[0]) {
+						newCaption := unwrapNode(rt, call.Arguments[0])
+						if newCaption != nil {
+							newCaption.Parent = node
+							node.Children = append([]*dom.Node{newCaption}, node.Children...)
+						}
+					}
+
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
 	if strings.ToUpper(node.TagName) == "OL" {
 		obj.DefineAccessorProperty("start",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {

@@ -26,8 +26,8 @@
 - [x] `<em>` / `<i>` - italic
 - [x] `<u>` - underline
 - [x] `<small>` - smaller text
-- [x] `<del>` - deleted text (strikethrough)
-- [x] `<ins>` - inserted text (underline)
+- [x] `<del>` - deleted text (WHATWG 4.7.2: strikethrough, transparent content model, HTMLModElement.cite/dateTime)
+- [x] `<ins>` - inserted text (WHATWG 4.7.1: underline, transparent content model, HTMLModElement.cite/dateTime)
 - [x] `<q>` - inline quotation
 
 ### Links & Media

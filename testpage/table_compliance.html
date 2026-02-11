@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Table Element Compliance Test (WHATWG 4.9.1)</title>
+    <meta charset="UTF-8">
+    <style>
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .test-box { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Table Element Compliance Test (WHATWG 4.9.1)</h1>
+
+    <div id="results"></div>
+
+    <h2>Visual Tests</h2>
+
+    <h3>Test 1: Table with Caption</h3>
+    <div class="test-box">
+        <table id="test1">
+            <caption>Employee Directory</caption>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+            </tr>
+            <tr>
+                <td>Alice</td>
+                <td>Developer</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: "Employee Directory" caption centered above the table</p>
+
+    <h3>Test 2: Table without Caption</h3>
+    <div class="test-box">
+        <table id="test2">
+            <tr>
+                <td>No caption here</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Table with no caption</p>
+
+    <h3>Test 3: Table with Multiple Captions (only first valid)</h3>
+    <div class="test-box">
+        <table id="test3">
+            <caption>First Caption</caption>
+            <caption>Second Caption</caption>
+            <tr>
+                <td>Data</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Per spec, table.caption returns first caption child only</p>
+
+    <hr>
+
+    <h2>JavaScript Tests - table.caption</h2>
+
+    <script>
+        var results = document.getElementById('results');
+
+        function assert(condition, message) {
+            var p = document.createElement('p');
+            if (condition) {
+                p.innerHTML = "PASS: " + message;
+                p.classList.add('pass');
+            } else {
+                p.innerHTML = "FAIL: " + message;
+                p.classList.add('fail');
+            }
+            results.appendChild(p);
+        }
+
+        function info(message) {
+            var p = document.createElement('p');
+            p.innerHTML = "INFO: " + message;
+            p.classList.add('info');
+            results.appendChild(p);
+        }
+
+        var table1 = document.getElementById('test1');
+        var table2 = document.getElementById('test2');
+        var table3 = document.getElementById('test3');
+
+        // Test 1: caption getter returns first caption element
+        if (table1) {
+            assert(table1.caption !== null && table1.caption !== undefined,
+                "table.caption getter returns a value (not null/undefined)");
+        }
+
+        // Test 2: caption is a CAPTION element
+        if (table1 && table1.caption) {
+            assert(table1.caption.tagName === "CAPTION",
+                "table.caption.tagName is 'CAPTION' (was: '" + table1.caption.tagName + "')");
+        }
+
+        // Test 3: caption textContent matches
+        if (table1 && table1.caption) {
+            assert(table1.caption.textContent === "Employee Directory",
+                "table.caption.textContent is correct (was: '" + table1.caption.textContent + "')");
+        }
+
+        // Test 4: table without caption returns null
+        if (table2) {
+            assert(table2.caption === null,
+                "table.caption returns null when no caption exists (was: " + table2.caption + ")");
+        }
+
+        // Test 5: caption setter - replace with new caption
+        if (table1) {
+            var oldText = table1.caption ? table1.caption.textContent : "";
+            var newCap = document.createElement('caption');
+            newCap.textContent = "Updated Caption";
+            table1.caption = newCap;
+            assert(table1.caption !== null && table1.caption.textContent === "Updated Caption",
+                "table.caption setter replaces caption (was: '" +
+                (table1.caption ? table1.caption.textContent : "null") + "')");
+        }
+
+        // Test 6: caption setter - set to null removes caption
+        if (table2) {
+            var addCap = document.createElement('caption');
+            addCap.textContent = "Temporary";
+            table2.caption = addCap;
+            var hadCaption = table2.caption !== null;
+            table2.caption = null;
+            assert(table2.caption === null,
+                "table.caption = null removes the caption (had caption: " + hadCaption + ")");
+        }
+
+        // Test 7: with multiple captions, getter returns first
+        if (table3) {
+            assert(table3.caption !== null &&
+                table3.caption.textContent === "First Caption",
+                "table.caption returns FIRST caption child (was: '" +
+                (table3.caption ? table3.caption.textContent : "null") + "')");
+        }
+
+        info("Tests cover: getter (with/without caption), setter (replace/remove), multiple captions");
+    </script>
+
+    <hr>
+    <p><a href="index.html">Back to Index</a></p>
+</body>
+</html>

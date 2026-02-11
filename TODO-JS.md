@@ -40,6 +40,22 @@
 ### HTMLQuoteElement (blockquote, q)
 - [x] `element.cite` - Get/set cite URL attribute
 
+### HTMLModElement (ins, del) (WHATWG 4.7.1, 4.7.2)
+- [x] `element.cite` - Get/set cite URL attribute (shared with HTMLQuoteElement)
+- [x] `element.dateTime` - Get/set datetime attribute
+
+### HTMLTableElement (WHATWG 4.9.1)
+- [x] `table.caption` - Get/set caption element (getter returns first caption child or null, setter replaces/removes)
+- [ ] `table.createCaption()` / `table.deleteCaption()` - Create/remove caption
+- [ ] `table.tHead` getter/setter - Get/set thead element
+- [ ] `table.createTHead()` / `table.deleteTHead()` - Create/remove thead
+- [ ] `table.tFoot` getter/setter - Get/set tfoot element
+- [ ] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
+- [ ] `table.tBodies` - HTMLCollection of tbody elements
+- [ ] `table.createTBody()` - Create and insert tbody
+- [ ] `table.rows` - HTMLCollection of all tr elements
+- [ ] `table.insertRow(index)` / `table.deleteRow(index)` - Insert/remove rows
+
 ### HTMLOListElement (ol)
 - [x] `ol.start` - Get/set starting value (number)
 - [x] `ol.reversed` - Get/set reversed attribute (boolean)
