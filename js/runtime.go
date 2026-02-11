@@ -821,6 +821,43 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+		// HTMLTableElement.createTFoot() (WHATWG 4.9.1)
+		obj.Set("createTFoot", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			// Return existing tfoot if one exists
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "tfoot" {
+					return rt.wrapElement(child)
+				}
+			}
+			// Create new tfoot and append at end
+			newTFoot := &dom.Node{
+				Type:       dom.Element,
+				TagName:    "tfoot",
+				Children:   []*dom.Node{},
+				Attributes: map[string]string{},
+				Parent:     node,
+			}
+			node.Children = append(node.Children, newTFoot)
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			return rt.wrapElement(newTFoot)
+		}))
+
+		// HTMLTableElement.deleteTFoot() (WHATWG 4.9.1)
+		obj.Set("deleteTFoot", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "tfoot" {
+					node.RemoveChild(child)
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+					break
+				}
+			}
+			return goja.Undefined()
+		}))
+
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {

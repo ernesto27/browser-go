@@ -50,7 +50,7 @@
 - [x] `table.tHead` getter/setter - Get/set thead element (inserts after caption/colgroup per spec)
 - [x] `table.createTHead()` / `table.deleteTHead()` - Create/remove thead
 - [x] `table.tFoot` getter/setter - Get/set tfoot element (appends at end per spec)
-- [ ] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
+- [x] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
 - [ ] `table.tBodies` - HTMLCollection of tbody elements
 - [ ] `table.createTBody()` - Create and insert tbody
 - [ ] `table.rows` - HTMLCollection of all tr elements

@@ -522,6 +522,66 @@
         }
 
         info("Tests cover: tFoot getter (with/without), setter (replace/remove), appended at end");
+
+        // ========================================
+        // table.createTFoot() / table.deleteTFoot() tests
+        // ========================================
+        info("--- table.createTFoot() / table.deleteTFoot() tests ---");
+
+        // createTFoot returns existing tfoot when one exists
+        if (table7 && table7.tFoot) {
+            var existingTFoot = table7.tFoot;
+            var created = table7.createTFoot();
+            assert(created === existingTFoot,
+                "createTFoot() returns existing tfoot (same object, not a new one)");
+        }
+
+        // createTFoot creates a new tfoot when none exists
+        if (table8) {
+            // table8 had its tfoot removed by earlier setter test
+            assert(table8.tFoot === null,
+                "table8 has no tfoot before createTFoot() (was: " + table8.tFoot + ")");
+            var newFoot = table8.createTFoot();
+            assert(newFoot !== null && newFoot !== undefined,
+                "createTFoot() returns a non-null element");
+            assert(newFoot.tagName === "TFOOT",
+                "createTFoot() returns a TFOOT element (was: '" + newFoot.tagName + "')");
+            assert(table8.tFoot !== null,
+                "table.tFoot getter now returns the created tfoot");
+        }
+
+        // createTFoot appends at end of table
+        if (table8 && table8.tFoot) {
+            var children = table8.children;
+            var lastIdx = children.length - 1;
+            assert(children[lastIdx].tagName === "TFOOT",
+                "createTFoot() appends tfoot as last child (last child is: '" + children[lastIdx].tagName + "')");
+        }
+
+        // deleteTFoot removes the tfoot
+        if (table8) {
+            table8.deleteTFoot();
+            assert(table8.tFoot === null,
+                "deleteTFoot() removes the tfoot (table.tFoot is now: " + table8.tFoot + ")");
+        }
+
+        // deleteTFoot on table without tfoot does nothing (no error)
+        if (table5) {
+            table5.deleteTFoot();
+            assert(table5.tFoot === null,
+                "deleteTFoot() on table without tfoot does not throw (tFoot: " + table5.tFoot + ")");
+        }
+
+        // createTFoot then set text, verify content
+        if (table8) {
+            var foot = table8.createTFoot();
+            foot.textContent = "Dynamic Footer";
+            assert(table8.tFoot.textContent === "Dynamic Footer",
+                "createTFoot() element is writable (text: '" + table8.tFoot.textContent + "')");
+            table8.deleteTFoot();
+        }
+
+        info("Tests cover: createTFoot (existing/new), appended at end, deleteTFoot (with/without)");
     </script>
 
     <hr>
