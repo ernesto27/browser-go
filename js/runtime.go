@@ -858,6 +858,20 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			return goja.Undefined()
 		}))
 
+		// HTMLTableElement.tBodies (WHATWG 4.9.1) - returns HTMLCollection of tbody elements
+		obj.DefineAccessorProperty("tBodies",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				var tbodies []any
+				for _, child := range node.Children {
+					if child.Type == dom.Element && child.TagName == "tbody" {
+						tbodies = append(tbodies, rt.wrapElement(child))
+					}
+				}
+				return rt.vm.NewArray(tbodies...)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {

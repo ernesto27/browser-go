@@ -44,17 +44,6 @@
 - [x] `element.cite` - Get/set cite URL attribute (shared with HTMLQuoteElement)
 - [x] `element.dateTime` - Get/set datetime attribute
 
-### HTMLTableElement (WHATWG 4.9.1)
-- [x] `table.caption` - Get/set caption element (getter returns first caption child or null, setter replaces/removes)
-- [x] `table.createCaption()` / `table.deleteCaption()` - Create/remove caption
-- [x] `table.tHead` getter/setter - Get/set thead element (inserts after caption/colgroup per spec)
-- [x] `table.createTHead()` / `table.deleteTHead()` - Create/remove thead
-- [x] `table.tFoot` getter/setter - Get/set tfoot element (appends at end per spec)
-- [x] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
-- [ ] `table.tBodies` - HTMLCollection of tbody elements
-- [ ] `table.createTBody()` - Create and insert tbody
-- [ ] `table.rows` - HTMLCollection of all tr elements
-- [ ] `table.insertRow(index)` / `table.deleteRow(index)` - Insert/remove rows
 
 ### HTMLOListElement (ol)
 - [x] `ol.start` - Get/set starting value (number)

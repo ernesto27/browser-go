@@ -584,6 +584,100 @@
         info("Tests cover: createTFoot (existing/new), appended at end, deleteTFoot (with/without)");
     </script>
 
+    <!-- ============================================ -->
+    <!-- table.tBodies tests                          -->
+    <!-- ============================================ -->
+    <h2>table.tBodies</h2>
+
+    <!-- Table with multiple tbody elements -->
+    <table id="tBodies-1">
+        <thead><tr><td>Head</td></tr></thead>
+        <tbody id="tb1"><tr><td>Body 1</td></tr></tbody>
+        <tbody id="tb2"><tr><td>Body 2</td></tr></tbody>
+        <tfoot><tr><td>Foot</td></tr></tfoot>
+    </table>
+
+    <!-- Table with no tbody -->
+    <table id="tBodies-2">
+        <tr><td>No explicit tbody</td></tr>
+    </table>
+
+    <!-- Table with single tbody -->
+    <table id="tBodies-3">
+        <tbody id="tb3"><tr><td>Only body</td></tr></tbody>
+    </table>
+
+    <!-- Empty table -->
+    <table id="tBodies-4"></table>
+
+    <script>
+        info("--- table.tBodies tests ---");
+
+        var tbTable1 = document.getElementById("tBodies-1");
+        var tbTable2 = document.getElementById("tBodies-2");
+        var tbTable3 = document.getElementById("tBodies-3");
+        var tbTable4 = document.getElementById("tBodies-4");
+
+        // tBodies returns collection of tbody elements
+        if (tbTable1) {
+            assert(tbTable1.tBodies !== null && tbTable1.tBodies !== undefined,
+                "tBodies is not null/undefined");
+            assert(tbTable1.tBodies.length === 2,
+                "table with 2 tbody elements has tBodies.length === 2 (got: " + tbTable1.tBodies.length + ")");
+        }
+
+        // tBodies elements have correct tagName
+        if (tbTable1 && tbTable1.tBodies.length === 2) {
+            assert(tbTable1.tBodies[0].tagName === "TBODY",
+                "tBodies[0].tagName === 'TBODY' (got: '" + tbTable1.tBodies[0].tagName + "')");
+            assert(tbTable1.tBodies[1].tagName === "TBODY",
+                "tBodies[1].tagName === 'TBODY' (got: '" + tbTable1.tBodies[1].tagName + "')");
+        }
+
+        // tBodies elements are in document order
+        if (tbTable1 && tbTable1.tBodies.length === 2) {
+            assert(tbTable1.tBodies[0].id === "tb1",
+                "tBodies[0] is first tbody (id: '" + tbTable1.tBodies[0].id + "')");
+            assert(tbTable1.tBodies[1].id === "tb2",
+                "tBodies[1] is second tbody (id: '" + tbTable1.tBodies[1].id + "')");
+        }
+
+        // tBodies on table with no explicit tbody - parser inserts implicit tbody around <tr>
+        if (tbTable2) {
+            assert(tbTable2.tBodies.length === 1,
+                "table with implicit tbody has tBodies.length === 1 (got: " + tbTable2.tBodies.length + ")");
+        }
+
+        // tBodies on table with single tbody
+        if (tbTable3) {
+            assert(tbTable3.tBodies.length === 1,
+                "table with 1 tbody has tBodies.length === 1 (got: " + tbTable3.tBodies.length + ")");
+            assert(tbTable3.tBodies[0].id === "tb3",
+                "single tbody has correct id (got: '" + tbTable3.tBodies[0].id + "')");
+        }
+
+        // tBodies on empty table
+        if (tbTable4) {
+            assert(tbTable4.tBodies.length === 0,
+                "empty table has tBodies.length === 0 (got: " + tbTable4.tBodies.length + ")");
+        }
+
+        // tBodies does not include thead or tfoot
+        if (tbTable1) {
+            var allTbodies = tbTable1.tBodies;
+            var foundNonTbody = false;
+            for (var i = 0; i < allTbodies.length; i++) {
+                if (allTbodies[i].tagName !== "TBODY") {
+                    foundNonTbody = true;
+                }
+            }
+            assert(!foundNonTbody,
+                "tBodies only contains tbody elements, not thead/tfoot");
+        }
+
+        info("Tests cover: tBodies (multiple, single, none, empty, ordering, excludes thead/tfoot)");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
