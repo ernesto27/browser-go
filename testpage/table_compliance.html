@@ -942,6 +942,110 @@
         info("Tests cover: rows (count, ordering thead/tbody/tfoot, multiple tbodies, implicit tbody, empty, reordered DOM, thead-only)");
     </script>
 
+    <!-- ============================================ -->
+    <!-- table.insertRow() tests                       -->
+    <!-- ============================================ -->
+    <h2>table.insertRow()</h2>
+
+    <!-- Table with all sections for insertRow -->
+    <table id="ir-1">
+        <thead><tr id="ir1-h1"><td>Head</td></tr></thead>
+        <tbody>
+            <tr id="ir1-b1"><td>Body 1</td></tr>
+            <tr id="ir1-b2"><td>Body 2</td></tr>
+        </tbody>
+        <tfoot><tr id="ir1-f1"><td>Foot</td></tr></tfoot>
+    </table>
+
+    <!-- Empty table for insertRow -->
+    <table id="ir-2"></table>
+
+    <!-- Table with multiple tbodies for insertRow -->
+    <table id="ir-3">
+        <tbody><tr id="ir3-b1"><td>Body A</td></tr></tbody>
+        <tbody><tr id="ir3-b2"><td>Body B</td></tr></tbody>
+    </table>
+
+    <script>
+        info("--- table.insertRow() tests ---");
+
+        var irT1 = document.getElementById("ir-1");
+        var irT2 = document.getElementById("ir-2");
+        var irT3 = document.getElementById("ir-3");
+
+        // insertRow(-1) appends to parent of last row in table.rows
+        if (irT1) {
+            var before = irT1.rows.length;
+            var newRow = irT1.insertRow(-1);
+            assert(newRow !== null && newRow !== undefined,
+                "insertRow(-1) returns an element");
+            assert(newRow.tagName === "TR",
+                "insertRow(-1) returns a TR element (got: '" + newRow.tagName + "')");
+            assert(irT1.rows.length === before + 1,
+                "insertRow(-1) increases row count (was: " + before + ", now: " + irT1.rows.length + ")");
+        }
+
+        // insertRow(-1) new row is now the last row (appended to tfoot, parent of last row)
+        if (irT1) {
+            var rows = irT1.rows;
+            var lastIdx = rows.length - 1;
+            assert(rows[lastIdx] !== null && rows[lastIdx].id === "",
+                "after insertRow(-1), new row is last in rows (parent is tfoot of last row)");
+            assert(rows[lastIdx - 1].id === "ir1-f1",
+                "original tfoot row is second-to-last (id: '" + rows[lastIdx - 1].id + "')");
+        }
+
+        // insertRow() with no args same as insertRow(-1)
+        if (irT1) {
+            var before = irT1.rows.length;
+            var newRow = irT1.insertRow();
+            assert(irT1.rows.length === before + 1,
+                "insertRow() with no args appends row (count: " + before + " -> " + irT1.rows.length + ")");
+        }
+
+        // insertRow(0) inserts before first row
+        if (irT1) {
+            var newRow = irT1.insertRow(0);
+            newRow.id = "ir1-inserted-0";
+            assert(irT1.rows[0].id === "ir1-inserted-0",
+                "insertRow(0) new row is first in rows (got: '" + irT1.rows[0].id + "')");
+        }
+
+        // insertRow(N) inserts at specific position
+        if (irT1) {
+            var before = irT1.rows.length;
+            var newRow = irT1.insertRow(2);
+            newRow.id = "ir1-inserted-2";
+            assert(irT1.rows[2].id === "ir1-inserted-2",
+                "insertRow(2) new row is at index 2 (got: '" + irT1.rows[2].id + "')");
+            assert(irT1.rows.length === before + 1,
+                "insertRow(2) increases row count by 1");
+        }
+
+        // insertRow on empty table creates tbody and row
+        if (irT2) {
+            var newRow = irT2.insertRow();
+            assert(newRow !== null && newRow !== undefined,
+                "insertRow() on empty table returns an element");
+            assert(newRow.tagName === "TR",
+                "insertRow() on empty table returns TR");
+            assert(irT2.rows.length === 1,
+                "empty table now has 1 row (got: " + irT2.rows.length + ")");
+            assert(irT2.tBodies.length === 1,
+                "insertRow() on empty table created a tbody (got: " + irT2.tBodies.length + ")");
+        }
+
+        // insertRow(rows.length) same as insertRow(-1)
+        if (irT3) {
+            var len = irT3.rows.length;
+            var newRow = irT3.insertRow(len);
+            assert(irT3.rows.length === len + 1,
+                "insertRow(rows.length) appends row (was: " + len + ", now: " + irT3.rows.length + ")");
+        }
+
+        info("Tests cover: insertRow(-1), insertRow(), insertRow(0), insertRow(N), empty table, insertRow(rows.length)");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

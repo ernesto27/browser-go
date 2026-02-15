@@ -84,7 +84,8 @@ https://html.spec.whatwg.org/
 - [x] `table.tBodies` - HTMLCollection of tbody elements
 - [x] `table.createTBody()` - Create and insert tbody
 - [x] `table.rows` - HTMLCollection of all tr elements (ordered: thead, tbody, tfoot)
-- [ ] `table.insertRow(index)` / `table.deleteRow(index)` - Insert/remove rows
+- [x] `table.insertRow(index)` - Insert row at index (WHATWG 4.9.1)
+- [ ] `table.deleteRow(index)` - Remove row at index
 
 ### HTMLTableRowElement (WHATWG 4.9.8)
 - [ ] `tr.cells` - HTMLCollection of td/th elements

@@ -923,6 +923,81 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}
 			return rt.wrapElement(newTBody)
 		}))
+
+		obj.Set("insertRow", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			index := int64(-1)
+			if len(call.Arguments) > 0 {
+				index = call.Argument(0).ToInteger()
+			}
+
+			// Collect all rows using same 3-phase ordering as table.rows
+			var allRows []*dom.Node
+			collectRows := func(section *dom.Node) {
+				for _, child := range section.Children {
+					if child.Type == dom.Element && child.TagName == "tr" {
+						allRows = append(allRows, child)
+					}
+				}
+			}
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "thead" {
+					collectRows(child)
+				}
+			}
+			for _, child := range node.Children {
+				if child.Type == dom.Element {
+					switch child.TagName {
+					case "tbody":
+						collectRows(child)
+					case "tr":
+						allRows = append(allRows, child)
+					}
+				}
+			}
+			for _, child := range node.Children {
+				if child.Type == dom.Element && child.TagName == "tfoot" {
+					collectRows(child)
+				}
+			}
+
+			newRow := dom.NewElement("tr", map[string]string{})
+
+			if index == -1 || index == int64(len(allRows)) {
+				// Append to parent of last row, or create tbody if no rows
+				if len(allRows) == 0 {
+					newTBody := dom.NewElement("tbody", map[string]string{})
+					newTBody.Parent = node
+					node.Children = append(node.Children, newTBody)
+					newRow.Parent = newTBody
+					newTBody.Children = append(newTBody.Children, newRow)
+				} else {
+					lastRow := allRows[len(allRows)-1]
+					parent := lastRow.Parent
+					newRow.Parent = parent
+					parent.Children = append(parent.Children, newRow)
+				}
+			} else if index >= 0 && index < int64(len(allRows)) {
+				// Insert before the row at the given index
+				targetRow := allRows[index]
+				parent := targetRow.Parent
+				newRow.Parent = parent
+				for i, child := range parent.Children {
+					if child == targetRow {
+						parent.Children = append(
+							parent.Children[:i],
+							append([]*dom.Node{newRow}, parent.Children[i:]...)...)
+						break
+					}
+				}
+			} else {
+				return goja.Undefined()
+			}
+
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			return rt.wrapElement(newRow)
+		}))
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {
