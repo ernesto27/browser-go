@@ -1617,6 +1617,193 @@
         info("Tests cover: direct table rows, thead/tbody/tfoot reset, multiple tbodies reset, single row in section");
     </script>
 
+    <h2>Visual Tests - tr.insertCell() / tr.deleteCell() (WHATWG 4.9.8)</h2>
+
+    <h3>Test: insertCell on existing row</h3>
+    <div class="test-box">
+        <table id="icT1">
+            <tr id="ic1-row">
+                <td>A</td>
+                <td>B</td>
+                <td>C</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Row with 3 cells to be modified by insertCell tests</p>
+
+    <h3>Test: insertCell on empty row</h3>
+    <div class="test-box">
+        <table id="icT2">
+            <tr id="ic2-empty"></tr>
+        </table>
+    </div>
+    <p>Expected: Empty row, insertCell adds first cell</p>
+
+    <h3>Test: deleteCell on existing row</h3>
+    <div class="test-box">
+        <table id="dcT1">
+            <tr id="dc1-row">
+                <td>X</td>
+                <td>Y</td>
+                <td>Z</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Row with 3 cells to be modified by deleteCell tests</p>
+
+    <h3>Test: deleteCell(-1) on row</h3>
+    <div class="test-box">
+        <table id="dcT2">
+            <tr id="dc2-row">
+                <td>P</td>
+                <td>Q</td>
+                <td>R</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: deleteCell(-1) removes last cell repeatedly</p>
+
+    <h3>Test: insertCell on row with mixed th/td</h3>
+    <div class="test-box">
+        <table id="icT3">
+            <tr id="ic3-mixed">
+                <th>Header</th>
+                <td>Data</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: insertCell always creates td, even among th cells</p>
+
+    <h2>JavaScript Tests - tr.insertCell() / tr.deleteCell() (WHATWG 4.9.8)</h2>
+    <script>
+        info("--- tr.insertCell() / tr.deleteCell() tests (WHATWG 4.9.8) ---");
+
+        // === insertCell tests ===
+
+        // insertCell() with no args appends at end
+        var ic1Row = document.getElementById('ic1-row');
+        if (ic1Row) {
+            var before = ic1Row.cells.length;
+            var newCell = ic1Row.insertCell();
+            newCell.textContent = "D";
+            assert(ic1Row.cells.length === before + 1,
+                "insertCell() increases cells.length (was: " + before + ", now: " + ic1Row.cells.length + ")");
+            assert(ic1Row.cells[ic1Row.cells.length - 1].textContent === "D",
+                "insertCell() appends at end (last cell is 'D', got: '" + ic1Row.cells[ic1Row.cells.length - 1].textContent + "')");
+        }
+
+        // insertCell(-1) appends at end
+        if (ic1Row) {
+            var before = ic1Row.cells.length;
+            var newCell = ic1Row.insertCell(-1);
+            newCell.textContent = "E";
+            assert(ic1Row.cells.length === before + 1,
+                "insertCell(-1) increases cells.length (was: " + before + ", now: " + ic1Row.cells.length + ")");
+            assert(ic1Row.cells[ic1Row.cells.length - 1].textContent === "E",
+                "insertCell(-1) appends at end (last cell is 'E', got: '" + ic1Row.cells[ic1Row.cells.length - 1].textContent + "')");
+        }
+
+        // insertCell(0) inserts at beginning
+        if (ic1Row) {
+            var before = ic1Row.cells.length;
+            var newCell = ic1Row.insertCell(0);
+            newCell.textContent = "FIRST";
+            assert(ic1Row.cells.length === before + 1,
+                "insertCell(0) increases cells.length (was: " + before + ", now: " + ic1Row.cells.length + ")");
+            assert(ic1Row.cells[0].textContent === "FIRST",
+                "insertCell(0) inserts at beginning (cells[0] is 'FIRST', got: '" + ic1Row.cells[0].textContent + "')");
+        }
+
+        // insertCell returns a TD element
+        if (ic1Row) {
+            var newCell = ic1Row.insertCell();
+            assert(newCell.tagName === "TD",
+                "insertCell() returns element with tagName 'TD' (got: '" + newCell.tagName + "')");
+        }
+
+        // insertCell on empty row
+        var ic2Empty = document.getElementById('ic2-empty');
+        if (ic2Empty) {
+            assert(ic2Empty.cells.length === 0,
+                "empty row starts with 0 cells");
+            var newCell = ic2Empty.insertCell();
+            newCell.textContent = "First!";
+            assert(ic2Empty.cells.length === 1,
+                "insertCell on empty row gives cells.length === 1 (got: " + ic2Empty.cells.length + ")");
+            assert(ic2Empty.cells[0].textContent === "First!",
+                "insertCell on empty row: cells[0].textContent is 'First!' (got: '" + ic2Empty.cells[0].textContent + "')");
+        }
+
+        // insertCell(index) inserts before cell at that index
+        if (ic2Empty) {
+            var newCell = ic2Empty.insertCell(0);
+            newCell.textContent = "Before";
+            assert(ic2Empty.cells[0].textContent === "Before",
+                "insertCell(0) on 1-cell row: new cell is at [0] (got: '" + ic2Empty.cells[0].textContent + "')");
+            assert(ic2Empty.cells[1].textContent === "First!",
+                "insertCell(0) on 1-cell row: old cell moved to [1] (got: '" + ic2Empty.cells[1].textContent + "')");
+        }
+
+        // insertCell among mixed th/td — always creates td
+        var ic3Mixed = document.getElementById('ic3-mixed');
+        if (ic3Mixed) {
+            var newCell = ic3Mixed.insertCell(1);
+            newCell.textContent = "Inserted";
+            assert(newCell.tagName === "TD",
+                "insertCell among th/td creates TD (got: '" + newCell.tagName + "')");
+            assert(ic3Mixed.cells[1].textContent === "Inserted",
+                "insertCell(1) in mixed row: cells[1] is 'Inserted' (got: '" + ic3Mixed.cells[1].textContent + "')");
+            assert(ic3Mixed.cells.length === 3,
+                "mixed row now has 3 cells (got: " + ic3Mixed.cells.length + ")");
+        }
+
+        // === deleteCell tests ===
+
+        // deleteCell(0) removes first cell
+        var dc1Row = document.getElementById('dc1-row');
+        if (dc1Row) {
+            assert(dc1Row.cells.length === 3,
+                "deleteCell row starts with 3 cells");
+            dc1Row.deleteCell(0);
+            assert(dc1Row.cells.length === 2,
+                "deleteCell(0) decreases cells.length to 2 (got: " + dc1Row.cells.length + ")");
+            assert(dc1Row.cells[0].textContent === "Y",
+                "deleteCell(0) removed 'X', first cell is now 'Y' (got: '" + dc1Row.cells[0].textContent + "')");
+        }
+
+        // deleteCell(index) removes cell at that index
+        if (dc1Row) {
+            dc1Row.deleteCell(1);
+            assert(dc1Row.cells.length === 1,
+                "deleteCell(1) decreases cells.length to 1 (got: " + dc1Row.cells.length + ")");
+            assert(dc1Row.cells[0].textContent === "Y",
+                "deleteCell(1) removed 'Z', remaining cell is 'Y' (got: '" + dc1Row.cells[0].textContent + "')");
+        }
+
+        // deleteCell(-1) removes last cell
+        var dc2Row = document.getElementById('dc2-row');
+        if (dc2Row) {
+            assert(dc2Row.cells.length === 3,
+                "deleteCell(-1) row starts with 3 cells");
+            dc2Row.deleteCell(-1);
+            assert(dc2Row.cells.length === 2,
+                "deleteCell(-1) decreases cells.length to 2 (got: " + dc2Row.cells.length + ")");
+            assert(dc2Row.cells[1].textContent === "Q",
+                "deleteCell(-1) removed 'R', last cell is now 'Q' (got: '" + dc2Row.cells[1].textContent + "')");
+        }
+
+        // deleteCell(-1) again removes new last cell
+        if (dc2Row) {
+            dc2Row.deleteCell(-1);
+            assert(dc2Row.cells.length === 1,
+                "second deleteCell(-1) leaves 1 cell (got: " + dc2Row.cells.length + ")");
+            assert(dc2Row.cells[0].textContent === "P",
+                "remaining cell is 'P' (got: '" + dc2Row.cells[0].textContent + "')");
+        }
+
+        info("Tests cover: insertCell() no-arg, insertCell(-1), insertCell(0), insertCell(index), empty row, mixed th/td, deleteCell(0), deleteCell(index), deleteCell(-1), repeated deletion");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

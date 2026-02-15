@@ -1060,6 +1060,77 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		// tr.insertCell(index) - inserts a new td cell at the given index, returns the new cell
+		obj.Set("insertCell", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			index := int64(-1)
+			if len(call.Arguments) > 0 {
+				index = call.Argument(0).ToInteger()
+			}
+
+			// Collect current cells (td/th only)
+			var cells []*dom.Node
+			for _, child := range node.Children {
+				if child.Type == dom.Element && (child.TagName == "td" || child.TagName == "th") {
+					cells = append(cells, child)
+				}
+			}
+
+			newCell := dom.NewElement("td", map[string]string{})
+			newCell.Parent = node
+
+			if index == -1 || index == int64(len(cells)) {
+				// Append at end
+				node.Children = append(node.Children, newCell)
+			} else if index >= 0 && index < int64(len(cells)) {
+				// Insert before the cell at the given index
+				targetCell := cells[index]
+				for i, child := range node.Children {
+					if child == targetCell {
+						node.Children = append(
+							node.Children[:i],
+							append([]*dom.Node{newCell}, node.Children[i:]...)...)
+						break
+					}
+				}
+			} else {
+				return goja.Undefined()
+			}
+
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			return rt.wrapElement(newCell)
+		}))
+
+		// tr.deleteCell(index) - removes the cell at the given index
+		obj.Set("deleteCell", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			index := int64(-1)
+			if len(call.Arguments) > 0 {
+				index = call.Argument(0).ToInteger()
+			}
+
+			// Collect current cells (td/th only)
+			var cells []*dom.Node
+			for _, child := range node.Children {
+				if child.Type == dom.Element && (child.TagName == "td" || child.TagName == "th") {
+					cells = append(cells, child)
+				}
+			}
+
+			if index == -1 && len(cells) > 0 {
+				index = int64(len(cells) - 1)
+			}
+
+			if index >= 0 && index < int64(len(cells)) {
+				node.RemoveChild(cells[index])
+				if rt.onReflow != nil {
+					rt.onReflow()
+				}
+			}
+
+			return goja.Undefined()
+		}))
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {

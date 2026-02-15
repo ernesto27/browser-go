@@ -91,7 +91,7 @@ https://html.spec.whatwg.org/
 - [x] `tr.cells` - HTMLCollection of td/th elements
 - [x] `tr.rowIndex` - Row position in table
 - [x] `tr.sectionRowIndex` - Row position in section
-- [ ] `tr.insertCell(index)` / `tr.deleteCell(index)` - Insert/remove cells
+- [x] `tr.insertCell(index)` / `tr.deleteCell(index)` - Insert/remove cells
 
 ### HTMLTableCellElement (WHATWG 4.9.11)
 - [ ] `td.colSpan` / `td.rowSpan` - Span attributes
