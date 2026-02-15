@@ -1317,6 +1317,156 @@
         info("Tests cover: existence, length, tagName (TH/TD), textContent order, empty row, thead/tbody/tfoot rows");
     </script>
 
+    <h2>Visual Tests - tr.rowIndex (WHATWG 4.9.8)</h2>
+
+    <h3>Test: Simple table with no sections</h3>
+    <div class="test-box">
+        <table id="riT1">
+            <tr id="ri1-r0"><td>Row 0</td></tr>
+            <tr id="ri1-r1"><td>Row 1</td></tr>
+            <tr id="ri1-r2"><td>Row 2</td></tr>
+        </table>
+    </div>
+    <p>Expected: 3 direct rows, rowIndex 0, 1, 2</p>
+
+    <h3>Test: Table with thead, tbody, tfoot</h3>
+    <div class="test-box">
+        <table id="riT2">
+            <thead>
+                <tr id="ri2-head"><th>Header</th></tr>
+            </thead>
+            <tbody>
+                <tr id="ri2-body1"><td>Data 1</td></tr>
+                <tr id="ri2-body2"><td>Data 2</td></tr>
+            </tbody>
+            <tfoot>
+                <tr id="ri2-foot"><td>Footer</td></tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: rowIndex counts across all sections: head=0, body1=1, body2=2, foot=3</p>
+
+    <h3>Test: Table with multiple tbodies</h3>
+    <div class="test-box">
+        <table id="riT3">
+            <tbody>
+                <tr id="ri3-a"><td>A</td></tr>
+            </tbody>
+            <tbody>
+                <tr id="ri3-b"><td>B</td></tr>
+                <tr id="ri3-c"><td>C</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: rowIndex continues across multiple tbody sections: a=0, b=1, c=2</p>
+
+    <h3>Test: Single-row table</h3>
+    <div class="test-box">
+        <table id="riT4">
+            <tr id="ri4-only"><td>Only row</td></tr>
+        </table>
+    </div>
+    <p>Expected: Single row has rowIndex 0</p>
+
+    <h3>Test: thead + tfoot, no tbody</h3>
+    <div class="test-box">
+        <table id="riT5">
+            <thead>
+                <tr id="ri5-head"><th>Head</th></tr>
+            </thead>
+            <tfoot>
+                <tr id="ri5-foot"><td>Foot</td></tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: head=0, foot=1 (tfoot comes after thead even with no tbody)</p>
+
+    <h2>JavaScript Tests - tr.rowIndex (WHATWG 4.9.8)</h2>
+    <script>
+        info("--- tr.rowIndex tests (WHATWG 4.9.8) ---");
+
+        // Simple table - no sections
+        var ri1R0 = document.getElementById('ri1-r0');
+        var ri1R1 = document.getElementById('ri1-r1');
+        var ri1R2 = document.getElementById('ri1-r2');
+
+        if (ri1R0) {
+            assert(ri1R0.rowIndex === 0,
+                "simple table: first row has rowIndex === 0 (got: " + ri1R0.rowIndex + ")");
+        }
+        if (ri1R1) {
+            assert(ri1R1.rowIndex === 1,
+                "simple table: second row has rowIndex === 1 (got: " + ri1R1.rowIndex + ")");
+        }
+        if (ri1R2) {
+            assert(ri1R2.rowIndex === 2,
+                "simple table: third row has rowIndex === 2 (got: " + ri1R2.rowIndex + ")");
+        }
+
+        // Table with thead/tbody/tfoot
+        var ri2Head  = document.getElementById('ri2-head');
+        var ri2Body1 = document.getElementById('ri2-body1');
+        var ri2Body2 = document.getElementById('ri2-body2');
+        var ri2Foot  = document.getElementById('ri2-foot');
+
+        if (ri2Head) {
+            assert(ri2Head.rowIndex === 0,
+                "sectioned table: thead row has rowIndex === 0 (got: " + ri2Head.rowIndex + ")");
+        }
+        if (ri2Body1) {
+            assert(ri2Body1.rowIndex === 1,
+                "sectioned table: first tbody row has rowIndex === 1 (got: " + ri2Body1.rowIndex + ")");
+        }
+        if (ri2Body2) {
+            assert(ri2Body2.rowIndex === 2,
+                "sectioned table: second tbody row has rowIndex === 2 (got: " + ri2Body2.rowIndex + ")");
+        }
+        if (ri2Foot) {
+            assert(ri2Foot.rowIndex === 3,
+                "sectioned table: tfoot row has rowIndex === 3 (got: " + ri2Foot.rowIndex + ")");
+        }
+
+        // Multiple tbodies
+        var ri3A = document.getElementById('ri3-a');
+        var ri3B = document.getElementById('ri3-b');
+        var ri3C = document.getElementById('ri3-c');
+
+        if (ri3A) {
+            assert(ri3A.rowIndex === 0,
+                "multi-tbody: first tbody row has rowIndex === 0 (got: " + ri3A.rowIndex + ")");
+        }
+        if (ri3B) {
+            assert(ri3B.rowIndex === 1,
+                "multi-tbody: second tbody first row has rowIndex === 1 (got: " + ri3B.rowIndex + ")");
+        }
+        if (ri3C) {
+            assert(ri3C.rowIndex === 2,
+                "multi-tbody: second tbody second row has rowIndex === 2 (got: " + ri3C.rowIndex + ")");
+        }
+
+        // Single-row table
+        var ri4Only = document.getElementById('ri4-only');
+        if (ri4Only) {
+            assert(ri4Only.rowIndex === 0,
+                "single-row table: only row has rowIndex === 0 (got: " + ri4Only.rowIndex + ")");
+        }
+
+        // thead + tfoot, no tbody
+        var ri5Head = document.getElementById('ri5-head');
+        var ri5Foot = document.getElementById('ri5-foot');
+
+        if (ri5Head) {
+            assert(ri5Head.rowIndex === 0,
+                "thead+tfoot only: thead row has rowIndex === 0 (got: " + ri5Head.rowIndex + ")");
+        }
+        if (ri5Foot) {
+            assert(ri5Foot.rowIndex === 1,
+                "thead+tfoot only: tfoot row has rowIndex === 1 (got: " + ri5Foot.rowIndex + ")");
+        }
+
+        info("Tests cover: simple rows, thead/tbody/tfoot ordering, multiple tbodies, single-row table, thead+tfoot without tbody");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

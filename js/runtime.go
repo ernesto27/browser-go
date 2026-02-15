@@ -1014,6 +1014,31 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		// tr.rowIndex - returns the position of the row in the table's rows collection, or -1
+		obj.DefineAccessorProperty("rowIndex",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				// Walk up to find the parent <table>
+				var tableNode *dom.Node
+				for p := node.Parent; p != nil; p = p.Parent {
+					if p.Type == dom.Element && p.TagName == "table" {
+						tableNode = p
+						break
+					}
+				}
+				if tableNode == nil {
+					return rt.vm.ToValue(-1)
+				}
+				allRows := collectTableRows(tableNode)
+				for i, row := range allRows {
+					if row == node {
+						return rt.vm.ToValue(i)
+					}
+				}
+				return rt.vm.ToValue(-1)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {

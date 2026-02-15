@@ -89,7 +89,7 @@ https://html.spec.whatwg.org/
 
 ### HTMLTableRowElement (WHATWG 4.9.8)
 - [x] `tr.cells` - HTMLCollection of td/th elements
-- [ ] `tr.rowIndex` - Row position in table
+- [x] `tr.rowIndex` - Row position in table
 - [ ] `tr.sectionRowIndex` - Row position in section
 - [ ] `tr.insertCell(index)` / `tr.deleteCell(index)` - Insert/remove cells
 
