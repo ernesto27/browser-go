@@ -82,7 +82,7 @@ https://html.spec.whatwg.org/
 - [x] `table.tFoot` getter/setter - Get/set tfoot element (appends at end per spec)
 - [x] `table.createTFoot()` / `table.deleteTFoot()` - Create/remove tfoot
 - [x] `table.tBodies` - HTMLCollection of tbody elements
-- [ ] `table.createTBody()` - Create and insert tbody
+- [x] `table.createTBody()` - Create and insert tbody
 - [ ] `table.rows` - HTMLCollection of all tr elements (ordered: thead, tbody, tfoot)
 - [ ] `table.insertRow(index)` / `table.deleteRow(index)` - Insert/remove rows
 

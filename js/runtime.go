@@ -664,13 +664,8 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				}
 			}
 			// Create new caption and insert as first child
-			newCaption := &dom.Node{
-				Type:       dom.Element,
-				TagName:    "caption",
-				Children:   []*dom.Node{},
-				Attributes: map[string]string{},
-				Parent:     node,
-			}
+			newCaption := dom.NewElement("caption", map[string]string{})
+			newCaption.Parent = node
 			node.Children = append([]*dom.Node{newCaption}, node.Children...)
 			if rt.onReflow != nil {
 				rt.onReflow()
@@ -749,13 +744,8 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				}
 			}
 			// Create new thead and insert after caption/colgroup
-			newTHead := &dom.Node{
-				Type:       dom.Element,
-				TagName:    "thead",
-				Children:   []*dom.Node{},
-				Attributes: map[string]string{},
-				Parent:     node,
-			}
+			newTHead := dom.NewElement("thead", map[string]string{})
+			newTHead.Parent = node
 			insertIdx := 0
 			for _, child := range node.Children {
 				if child.Type == dom.Element && (child.TagName == "caption" || child.TagName == "colgroup") {
@@ -830,13 +820,8 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				}
 			}
 			// Create new tfoot and append at end
-			newTFoot := &dom.Node{
-				Type:       dom.Element,
-				TagName:    "tfoot",
-				Children:   []*dom.Node{},
-				Attributes: map[string]string{},
-				Parent:     node,
-			}
+			newTFoot := dom.NewElement("tfoot", map[string]string{})
+			newTFoot.Parent = node
 			node.Children = append(node.Children, newTFoot)
 			if rt.onReflow != nil {
 				rt.onReflow()
@@ -872,6 +857,27 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+		obj.Set("createTBody", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			newTBody := dom.NewElement("tbody", map[string]string{})
+			newTBody.Parent = node
+
+			insertIdx := len(node.Children)
+			for i := len(node.Children) - 1; i >= 0; i-- {
+				if node.Children[i].Type == dom.Element && node.Children[i].TagName == "tbody" {
+					insertIdx = i + 1
+					break
+				}
+			}
+
+			node.Children = append(
+				node.Children[:insertIdx],
+				append([]*dom.Node{newTBody}, node.Children[insertIdx:]...)...)
+
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			return rt.wrapElement(newTBody)
+		}))
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {

@@ -678,6 +678,93 @@
         info("Tests cover: tBodies (multiple, single, none, empty, ordering, excludes thead/tfoot)");
     </script>
 
+    <!-- ============================================ -->
+    <!-- table.createTBody() tests                    -->
+    <!-- ============================================ -->
+    <h2>table.createTBody()</h2>
+
+    <!-- Table with existing tbody -->
+    <table id="ctb-1">
+        <thead><tr><td>Head</td></tr></thead>
+        <tbody><tr><td>Existing Body</td></tr></tbody>
+        <tfoot><tr><td>Foot</td></tr></tfoot>
+    </table>
+
+    <!-- Empty table -->
+    <table id="ctb-2"></table>
+
+    <!-- Table with multiple tbodies -->
+    <table id="ctb-3">
+        <tbody id="ctb3-first"><tr><td>First</td></tr></tbody>
+        <tbody id="ctb3-second"><tr><td>Second</td></tr></tbody>
+    </table>
+
+    <script>
+        info("--- table.createTBody() tests ---");
+
+        var ctbTable1 = document.getElementById("ctb-1");
+        var ctbTable2 = document.getElementById("ctb-2");
+        var ctbTable3 = document.getElementById("ctb-3");
+
+        // createTBody always creates a new element (never returns existing)
+        if (ctbTable1) {
+            var beforeCount = ctbTable1.tBodies.length;
+            var newBody = ctbTable1.createTBody();
+            assert(newBody !== null && newBody !== undefined,
+                "createTBody() returns an element");
+            assert(newBody.tagName === "TBODY",
+                "createTBody() returns a TBODY element (got: '" + newBody.tagName + "')");
+            assert(ctbTable1.tBodies.length === beforeCount + 1,
+                "createTBody() adds a new tbody (count: " + beforeCount + " -> " + ctbTable1.tBodies.length + ")");
+        }
+
+        // createTBody inserts after the last tbody (before tfoot)
+        if (ctbTable1) {
+            var children = ctbTable1.children;
+            var tbodyIndices = [];
+            var tfootIdx = -1;
+            for (var i = 0; i < children.length; i++) {
+                if (children[i].tagName === "TBODY") tbodyIndices.push(i);
+                if (children[i].tagName === "TFOOT") tfootIdx = i;
+            }
+            var lastTbodyIdx = tbodyIndices[tbodyIndices.length - 1];
+            assert(tfootIdx > lastTbodyIdx,
+                "new tbody is inserted before tfoot (lastTbody: " + lastTbodyIdx + ", tfoot: " + tfootIdx + ")");
+        }
+
+        // createTBody on empty table
+        if (ctbTable2) {
+            var newBody2 = ctbTable2.createTBody();
+            assert(ctbTable2.tBodies.length === 1,
+                "createTBody() on empty table creates first tbody (count: " + ctbTable2.tBodies.length + ")");
+        }
+
+        // createTBody with multiple existing tbodies inserts after the last one
+        if (ctbTable3) {
+            var newBody3 = ctbTable3.createTBody();
+            var bodies = ctbTable3.tBodies;
+            assert(bodies.length === 3,
+                "createTBody() adds third tbody (count: " + bodies.length + ")");
+            assert(bodies[0].id === "ctb3-first",
+                "first tbody unchanged (id: '" + bodies[0].id + "')");
+            assert(bodies[1].id === "ctb3-second",
+                "second tbody unchanged (id: '" + bodies[1].id + "')");
+            assert(bodies[2] === newBody3,
+                "new tbody is last in tBodies collection");
+        }
+
+        // Calling createTBody multiple times creates multiple tbodies
+        if (ctbTable2) {
+            var before = ctbTable2.tBodies.length;
+            ctbTable2.createTBody();
+            ctbTable2.createTBody();
+            assert(ctbTable2.tBodies.length === before + 2,
+                "calling createTBody() twice adds 2 tbodies (count: " + ctbTable2.tBodies.length + ")");
+        }
+
+        info("Tests cover: createTBody (always new, insertion after last tbody, empty table, multiple calls)");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
