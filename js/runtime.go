@@ -1039,6 +1039,27 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		// tr.sectionRowIndex - position of the row within its parent section
+		obj.DefineAccessorProperty("sectionRowIndex",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				p := node.Parent
+				if p == nil {
+					return rt.vm.ToValue(-1)
+				}
+				indexCount := 0
+				for _, child := range p.Children {
+					if child.Type == dom.Element && child.TagName == "tr" {
+						if child == node {
+							return rt.vm.ToValue(indexCount)
+						}
+						indexCount++
+					}
+				}
+				return rt.vm.ToValue(-1)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {

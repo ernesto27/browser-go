@@ -1467,6 +1467,156 @@
         info("Tests cover: simple rows, thead/tbody/tfoot ordering, multiple tbodies, single-row table, thead+tfoot without tbody");
     </script>
 
+    <h2>Visual Tests - tr.sectionRowIndex (WHATWG 4.9.8)</h2>
+
+    <h3>Test: Direct rows in table (no sections)</h3>
+    <div class="test-box">
+        <table id="siT1">
+            <tr id="si1-r0"><td>Row 0</td></tr>
+            <tr id="si1-r1"><td>Row 1</td></tr>
+            <tr id="si1-r2"><td>Row 2</td></tr>
+        </table>
+    </div>
+    <p>Expected: Direct children of table, sectionRowIndex 0, 1, 2 (table acts as section)</p>
+
+    <h3>Test: Rows in thead, tbody, tfoot each reset</h3>
+    <div class="test-box">
+        <table id="siT2">
+            <thead>
+                <tr id="si2-h0"><th>Header 1</th></tr>
+                <tr id="si2-h1"><th>Header 2</th></tr>
+            </thead>
+            <tbody>
+                <tr id="si2-b0"><td>Body 1</td></tr>
+                <tr id="si2-b1"><td>Body 2</td></tr>
+                <tr id="si2-b2"><td>Body 3</td></tr>
+            </tbody>
+            <tfoot>
+                <tr id="si2-f0"><td>Foot 1</td></tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: thead resets (0,1), tbody resets (0,1,2), tfoot resets (0)</p>
+
+    <h3>Test: Multiple tbodies each reset independently</h3>
+    <div class="test-box">
+        <table id="siT3">
+            <tbody>
+                <tr id="si3-a0"><td>A1</td></tr>
+                <tr id="si3-a1"><td>A2</td></tr>
+            </tbody>
+            <tbody>
+                <tr id="si3-b0"><td>B1</td></tr>
+                <tr id="si3-b1"><td>B2</td></tr>
+                <tr id="si3-b2"><td>B3</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: First tbody (0,1), second tbody resets (0,1,2)</p>
+
+    <h3>Test: Single row in a section</h3>
+    <div class="test-box">
+        <table id="siT4">
+            <thead>
+                <tr id="si4-only"><th>Only</th></tr>
+            </thead>
+        </table>
+    </div>
+    <p>Expected: Single row in thead has sectionRowIndex 0</p>
+
+    <h2>JavaScript Tests - tr.sectionRowIndex (WHATWG 4.9.8)</h2>
+    <script>
+        info("--- tr.sectionRowIndex tests (WHATWG 4.9.8) ---");
+
+        // Direct rows in table (table acts as section)
+        var si1R0 = document.getElementById('si1-r0');
+        var si1R1 = document.getElementById('si1-r1');
+        var si1R2 = document.getElementById('si1-r2');
+
+        if (si1R0) {
+            assert(si1R0.sectionRowIndex === 0,
+                "direct rows: first row has sectionRowIndex === 0 (got: " + si1R0.sectionRowIndex + ")");
+        }
+        if (si1R1) {
+            assert(si1R1.sectionRowIndex === 1,
+                "direct rows: second row has sectionRowIndex === 1 (got: " + si1R1.sectionRowIndex + ")");
+        }
+        if (si1R2) {
+            assert(si1R2.sectionRowIndex === 2,
+                "direct rows: third row has sectionRowIndex === 2 (got: " + si1R2.sectionRowIndex + ")");
+        }
+
+        // Rows in thead, tbody, tfoot each reset
+        var si2H0 = document.getElementById('si2-h0');
+        var si2H1 = document.getElementById('si2-h1');
+        var si2B0 = document.getElementById('si2-b0');
+        var si2B1 = document.getElementById('si2-b1');
+        var si2B2 = document.getElementById('si2-b2');
+        var si2F0 = document.getElementById('si2-f0');
+
+        if (si2H0) {
+            assert(si2H0.sectionRowIndex === 0,
+                "thead: first row has sectionRowIndex === 0 (got: " + si2H0.sectionRowIndex + ")");
+        }
+        if (si2H1) {
+            assert(si2H1.sectionRowIndex === 1,
+                "thead: second row has sectionRowIndex === 1 (got: " + si2H1.sectionRowIndex + ")");
+        }
+        if (si2B0) {
+            assert(si2B0.sectionRowIndex === 0,
+                "tbody: first row resets to sectionRowIndex === 0 (got: " + si2B0.sectionRowIndex + ")");
+        }
+        if (si2B1) {
+            assert(si2B1.sectionRowIndex === 1,
+                "tbody: second row has sectionRowIndex === 1 (got: " + si2B1.sectionRowIndex + ")");
+        }
+        if (si2B2) {
+            assert(si2B2.sectionRowIndex === 2,
+                "tbody: third row has sectionRowIndex === 2 (got: " + si2B2.sectionRowIndex + ")");
+        }
+        if (si2F0) {
+            assert(si2F0.sectionRowIndex === 0,
+                "tfoot: first row resets to sectionRowIndex === 0 (got: " + si2F0.sectionRowIndex + ")");
+        }
+
+        // Multiple tbodies each reset
+        var si3A0 = document.getElementById('si3-a0');
+        var si3A1 = document.getElementById('si3-a1');
+        var si3B0 = document.getElementById('si3-b0');
+        var si3B1 = document.getElementById('si3-b1');
+        var si3B2 = document.getElementById('si3-b2');
+
+        if (si3A0) {
+            assert(si3A0.sectionRowIndex === 0,
+                "multi-tbody: first tbody row 0 has sectionRowIndex === 0 (got: " + si3A0.sectionRowIndex + ")");
+        }
+        if (si3A1) {
+            assert(si3A1.sectionRowIndex === 1,
+                "multi-tbody: first tbody row 1 has sectionRowIndex === 1 (got: " + si3A1.sectionRowIndex + ")");
+        }
+        if (si3B0) {
+            assert(si3B0.sectionRowIndex === 0,
+                "multi-tbody: second tbody resets to sectionRowIndex === 0 (got: " + si3B0.sectionRowIndex + ")");
+        }
+        if (si3B1) {
+            assert(si3B1.sectionRowIndex === 1,
+                "multi-tbody: second tbody row 1 has sectionRowIndex === 1 (got: " + si3B1.sectionRowIndex + ")");
+        }
+        if (si3B2) {
+            assert(si3B2.sectionRowIndex === 2,
+                "multi-tbody: second tbody row 2 has sectionRowIndex === 2 (got: " + si3B2.sectionRowIndex + ")");
+        }
+
+        // Single row in section
+        var si4Only = document.getElementById('si4-only');
+        if (si4Only) {
+            assert(si4Only.sectionRowIndex === 0,
+                "single row in thead has sectionRowIndex === 0 (got: " + si4Only.sectionRowIndex + ")");
+        }
+
+        info("Tests cover: direct table rows, thead/tbody/tfoot reset, multiple tbodies reset, single row in section");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
