@@ -88,7 +88,7 @@ https://html.spec.whatwg.org/
 - [x] `table.deleteRow(index)` - Remove row at index
 
 ### HTMLTableRowElement (WHATWG 4.9.8)
-- [ ] `tr.cells` - HTMLCollection of td/th elements
+- [x] `tr.cells` - HTMLCollection of td/th elements
 - [ ] `tr.rowIndex` - Row position in table
 - [ ] `tr.sectionRowIndex` - Row position in section
 - [ ] `tr.insertCell(index)` / `tr.deleteCell(index)` - Insert/remove cells

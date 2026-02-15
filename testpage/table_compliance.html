@@ -1157,6 +1157,166 @@
         info("Tests cover: deleteRow(index), deleteRow(0), deleteRow(-1), tfoot row deletion, repeated deletion, single-row table");
     </script>
 
+    <h2>Visual Tests - tr.cells (WHATWG 4.9.8)</h2>
+
+    <h3>Test: Row with mixed th and td cells</h3>
+    <div class="test-box">
+        <table id="cellsT1">
+            <tr id="c1-header">
+                <th>Name</th>
+                <th>Age</th>
+                <th>City</th>
+            </tr>
+            <tr id="c1-data">
+                <td>Alice</td>
+                <td>30</td>
+                <td>NYC</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Header row with 3 th cells, data row with 3 td cells</p>
+
+    <h3>Test: Row with only th cells</h3>
+    <div class="test-box">
+        <table id="cellsT2">
+            <tr id="c2-allth">
+                <th>Col A</th>
+                <th>Col B</th>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Row with 2 th cells</p>
+
+    <h3>Test: Empty row (no cells)</h3>
+    <div class="test-box">
+        <table id="cellsT3">
+            <tr id="c3-empty"></tr>
+        </table>
+    </div>
+    <p>Expected: Empty row with 0 cells</p>
+
+    <h3>Test: Row inside thead/tbody/tfoot sections</h3>
+    <div class="test-box">
+        <table id="cellsT4">
+            <thead>
+                <tr id="c4-thead">
+                    <th>Product</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="c4-tbody">
+                    <td>Widget</td>
+                    <td>$5.00</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr id="c4-tfoot">
+                    <td>Total</td>
+                    <td>$5.00</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: tr.cells works regardless of which section (thead/tbody/tfoot) the row is in</p>
+
+    <h2>JavaScript Tests - tr.cells (WHATWG 4.9.8)</h2>
+    <script>
+        info("--- tr.cells tests (WHATWG 4.9.8) ---");
+
+        var c1Header = document.getElementById('c1-header');
+        var c1Data   = document.getElementById('c1-data');
+        var c2AllTh  = document.getElementById('c2-allth');
+        var c3Empty  = document.getElementById('c3-empty');
+        var c4Thead  = document.getElementById('c4-thead');
+        var c4Tbody  = document.getElementById('c4-tbody');
+        var c4Tfoot  = document.getElementById('c4-tfoot');
+
+        // Basic existence
+        if (c1Header) {
+            assert(c1Header.cells !== null && c1Header.cells !== undefined,
+                "tr.cells is not null/undefined");
+        }
+
+        // Header row has 3 th cells
+        if (c1Header) {
+            assert(c1Header.cells.length === 3,
+                "header row has cells.length === 3 (got: " + c1Header.cells.length + ")");
+        }
+
+        // All cells in header row are TH
+        if (c1Header) {
+            var allTH = true;
+            for (var i = 0; i < c1Header.cells.length; i++) {
+                if (c1Header.cells[i].tagName !== "TH") allTH = false;
+            }
+            assert(allTH, "all cells in header row have tagName 'TH'");
+        }
+
+        // Data row has 3 td cells
+        if (c1Data) {
+            assert(c1Data.cells.length === 3,
+                "data row has cells.length === 3 (got: " + c1Data.cells.length + ")");
+        }
+
+        // All cells in data row are TD
+        if (c1Data) {
+            var allTD = true;
+            for (var i = 0; i < c1Data.cells.length; i++) {
+                if (c1Data.cells[i].tagName !== "TD") allTD = false;
+            }
+            assert(allTD, "all cells in data row have tagName 'TD'");
+        }
+
+        // Cell content in document order
+        if (c1Data) {
+            assert(c1Data.cells[0].textContent === "Alice",
+                "cells[0].textContent is 'Alice' (got: '" + c1Data.cells[0].textContent + "')");
+            assert(c1Data.cells[1].textContent === "30",
+                "cells[1].textContent is '30' (got: '" + c1Data.cells[1].textContent + "')");
+            assert(c1Data.cells[2].textContent === "NYC",
+                "cells[2].textContent is 'NYC' (got: '" + c1Data.cells[2].textContent + "')");
+        }
+
+        // Row with only th cells
+        if (c2AllTh) {
+            assert(c2AllTh.cells.length === 2,
+                "all-th row has cells.length === 2 (got: " + c2AllTh.cells.length + ")");
+        }
+
+        // Empty row has 0 cells
+        if (c3Empty) {
+            assert(c3Empty.cells.length === 0,
+                "empty row has cells.length === 0 (got: " + c3Empty.cells.length + ")");
+        }
+
+        // tr.cells works inside thead
+        if (c4Thead) {
+            assert(c4Thead.cells.length === 2,
+                "thead row has cells.length === 2 (got: " + c4Thead.cells.length + ")");
+            assert(c4Thead.cells[0].tagName === "TH",
+                "thead row cells are TH (got: '" + c4Thead.cells[0].tagName + "')");
+        }
+
+        // tr.cells works inside tbody
+        if (c4Tbody) {
+            assert(c4Tbody.cells.length === 2,
+                "tbody row has cells.length === 2 (got: " + c4Tbody.cells.length + ")");
+            assert(c4Tbody.cells[0].tagName === "TD",
+                "tbody row cells are TD (got: '" + c4Tbody.cells[0].tagName + "')");
+        }
+
+        // tr.cells works inside tfoot
+        if (c4Tfoot) {
+            assert(c4Tfoot.cells.length === 2,
+                "tfoot row has cells.length === 2 (got: " + c4Tfoot.cells.length + ")");
+            assert(c4Tfoot.cells[0].textContent === "Total",
+                "tfoot cells[0].textContent is 'Total' (got: '" + c4Tfoot.cells[0].textContent + "')");
+        }
+
+        info("Tests cover: existence, length, tagName (TH/TD), textContent order, empty row, thead/tbody/tfoot rows");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

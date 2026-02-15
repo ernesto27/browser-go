@@ -999,6 +999,23 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 
 	}
 
+	// HTMLTableRowElement properties (WHATWG 4.9.8)
+	if strings.ToUpper(node.TagName) == "TR" {
+		// tr.cells - returns HTMLCollection of td/th elements in document order
+		obj.DefineAccessorProperty("cells",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				var cells []any
+				for _, child := range node.Children {
+					if child.Type == dom.Element && (child.TagName == "td" || child.TagName == "th") {
+						cells = append(cells, rt.wrapElement(child))
+					}
+				}
+				return rt.vm.NewArray(cells...)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
 	if strings.ToUpper(node.TagName) == "OL" {
 		obj.DefineAccessorProperty("start",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
