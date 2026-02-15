@@ -857,6 +857,51 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+		// HTMLTableElement.rows (WHATWG 4.9.1) - returns HTMLCollection of all tr elements
+		// Order: thead rows first, then tbody/direct tr rows in tree order, then tfoot rows
+		obj.DefineAccessorProperty("rows",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				var rows []any
+
+				collectTRs := func(section *dom.Node) {
+					for _, child := range section.Children {
+						if child.Type == dom.Element && child.TagName == "tr" {
+							rows = append(rows, rt.wrapElement(child))
+						}
+					}
+				}
+
+				// Phase 1: thead rows
+				for _, child := range node.Children {
+					if child.Type == dom.Element && child.TagName == "thead" {
+						collectTRs(child)
+					}
+				}
+
+				// Phase 2: tbody rows and direct tr children
+				for _, child := range node.Children {
+					if child.Type == dom.Element {
+						switch child.TagName {
+						case "tbody":
+							collectTRs(child)
+						case "tr":
+							rows = append(rows, rt.wrapElement(child))
+						}
+					}
+				}
+
+				// Phase 3: tfoot rows
+				for _, child := range node.Children {
+					if child.Type == dom.Element && child.TagName == "tfoot" {
+						collectTRs(child)
+					}
+				}
+
+				return rt.vm.NewArray(rows...)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 		obj.Set("createTBody", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 			newTBody := dom.NewElement("tbody", map[string]string{})
 			newTBody.Parent = node

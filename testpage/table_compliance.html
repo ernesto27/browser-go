@@ -765,6 +765,183 @@
         info("Tests cover: createTBody (always new, insertion after last tbody, empty table, multiple calls)");
     </script>
 
+    <!-- ============================================ -->
+    <!-- table.rows tests                              -->
+    <!-- ============================================ -->
+    <h2>table.rows</h2>
+
+    <!-- Table with thead, tbody, tfoot -->
+    <table id="rows-1">
+        <thead><tr id="r1-h1"><td>Head 1</td></tr></thead>
+        <tbody>
+            <tr id="r1-b1"><td>Body 1</td></tr>
+            <tr id="r1-b2"><td>Body 2</td></tr>
+        </tbody>
+        <tfoot><tr id="r1-f1"><td>Foot 1</td></tr></tfoot>
+    </table>
+
+    <!-- Table with only tbody rows -->
+    <table id="rows-2">
+        <tbody>
+            <tr id="r2-b1"><td>Row 1</td></tr>
+            <tr id="r2-b2"><td>Row 2</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Table with implicit tbody (parser wraps tr in tbody) -->
+    <table id="rows-3">
+        <tr id="r3-1"><td>Implicit 1</td></tr>
+        <tr id="r3-2"><td>Implicit 2</td></tr>
+    </table>
+
+    <!-- Empty table -->
+    <table id="rows-4"></table>
+
+    <!-- Table with multiple tbodies -->
+    <table id="rows-5">
+        <thead><tr id="r5-h1"><td>Head</td></tr></thead>
+        <tbody>
+            <tr id="r5-b1"><td>Body A1</td></tr>
+        </tbody>
+        <tbody>
+            <tr id="r5-b2"><td>Body B1</td></tr>
+            <tr id="r5-b3"><td>Body B2</td></tr>
+        </tbody>
+        <tfoot><tr id="r5-f1"><td>Foot</td></tr></tfoot>
+    </table>
+
+    <!-- Table with tfoot before tbody in DOM (tests ordering) -->
+    <table id="rows-6">
+        <thead><tr id="r6-h1"><td>Head</td></tr></thead>
+        <tfoot><tr id="r6-f1"><td>Foot</td></tr></tfoot>
+        <tbody><tr id="r6-b1"><td>Body</td></tr></tbody>
+    </table>
+
+    <!-- Table with thead only -->
+    <table id="rows-7">
+        <thead>
+            <tr id="r7-h1"><td>Header 1</td></tr>
+            <tr id="r7-h2"><td>Header 2</td></tr>
+        </thead>
+    </table>
+
+    <script>
+        info("--- table.rows tests ---");
+
+        var rowsT1 = document.getElementById("rows-1");
+        var rowsT2 = document.getElementById("rows-2");
+        var rowsT3 = document.getElementById("rows-3");
+        var rowsT4 = document.getElementById("rows-4");
+        var rowsT5 = document.getElementById("rows-5");
+        var rowsT6 = document.getElementById("rows-6");
+        var rowsT7 = document.getElementById("rows-7");
+
+        // Basic: rows is not null/undefined
+        if (rowsT1) {
+            assert(rowsT1.rows !== null && rowsT1.rows !== undefined,
+                "table.rows is not null/undefined");
+        }
+
+        // Row count: thead(1) + tbody(2) + tfoot(1) = 4
+        if (rowsT1) {
+            assert(rowsT1.rows.length === 4,
+                "table with thead(1)+tbody(2)+tfoot(1) has rows.length === 4 (got: " + rowsT1.rows.length + ")");
+        }
+
+        // Ordering: thead rows come first
+        if (rowsT1 && rowsT1.rows.length === 4) {
+            assert(rowsT1.rows[0].id === "r1-h1",
+                "rows[0] is thead row (id: '" + rowsT1.rows[0].id + "')");
+        }
+
+        // Ordering: tbody rows come in the middle
+        if (rowsT1 && rowsT1.rows.length === 4) {
+            assert(rowsT1.rows[1].id === "r1-b1",
+                "rows[1] is first tbody row (id: '" + rowsT1.rows[1].id + "')");
+            assert(rowsT1.rows[2].id === "r1-b2",
+                "rows[2] is second tbody row (id: '" + rowsT1.rows[2].id + "')");
+        }
+
+        // Ordering: tfoot rows come last
+        if (rowsT1 && rowsT1.rows.length === 4) {
+            assert(rowsT1.rows[3].id === "r1-f1",
+                "rows[3] is tfoot row (id: '" + rowsT1.rows[3].id + "')");
+        }
+
+        // All rows have TR tagName
+        if (rowsT1) {
+            var allTR = true;
+            for (var i = 0; i < rowsT1.rows.length; i++) {
+                if (rowsT1.rows[i].tagName !== "TR") allTR = false;
+            }
+            assert(allTR, "all entries in rows have tagName 'TR'");
+        }
+
+        // Table with only tbody rows
+        if (rowsT2) {
+            assert(rowsT2.rows.length === 2,
+                "table with only tbody has rows.length === 2 (got: " + rowsT2.rows.length + ")");
+            assert(rowsT2.rows[0].id === "r2-b1",
+                "tbody-only rows[0] is correct (id: '" + rowsT2.rows[0].id + "')");
+            assert(rowsT2.rows[1].id === "r2-b2",
+                "tbody-only rows[1] is correct (id: '" + rowsT2.rows[1].id + "')");
+        }
+
+        // Table with implicit tbody (parser inserts tbody around bare tr)
+        if (rowsT3) {
+            assert(rowsT3.rows.length === 2,
+                "table with implicit tbody has rows.length === 2 (got: " + rowsT3.rows.length + ")");
+            assert(rowsT3.rows[0].id === "r3-1",
+                "implicit tbody rows[0] correct (id: '" + rowsT3.rows[0].id + "')");
+        }
+
+        // Empty table
+        if (rowsT4) {
+            assert(rowsT4.rows.length === 0,
+                "empty table has rows.length === 0 (got: " + rowsT4.rows.length + ")");
+        }
+
+        // Multiple tbodies: rows collected in tree order across all tbodies
+        if (rowsT5) {
+            assert(rowsT5.rows.length === 5,
+                "table with thead(1)+tbody(1)+tbody(2)+tfoot(1) has rows.length === 5 (got: " + rowsT5.rows.length + ")");
+            assert(rowsT5.rows[0].id === "r5-h1",
+                "multi-tbody rows[0] is thead row (id: '" + rowsT5.rows[0].id + "')");
+            assert(rowsT5.rows[1].id === "r5-b1",
+                "multi-tbody rows[1] is first tbody row (id: '" + rowsT5.rows[1].id + "')");
+            assert(rowsT5.rows[2].id === "r5-b2",
+                "multi-tbody rows[2] is second tbody first row (id: '" + rowsT5.rows[2].id + "')");
+            assert(rowsT5.rows[3].id === "r5-b3",
+                "multi-tbody rows[3] is second tbody second row (id: '" + rowsT5.rows[3].id + "')");
+            assert(rowsT5.rows[4].id === "r5-f1",
+                "multi-tbody rows[4] is tfoot row (id: '" + rowsT5.rows[4].id + "')");
+        }
+
+        // tfoot before tbody in DOM: rows still ordered thead -> tbody -> tfoot
+        if (rowsT6) {
+            assert(rowsT6.rows.length === 3,
+                "table with reordered sections has rows.length === 3 (got: " + rowsT6.rows.length + ")");
+            assert(rowsT6.rows[0].id === "r6-h1",
+                "reordered rows[0] is thead row (id: '" + rowsT6.rows[0].id + "')");
+            assert(rowsT6.rows[1].id === "r6-b1",
+                "reordered rows[1] is tbody row (id: '" + rowsT6.rows[1].id + "')");
+            assert(rowsT6.rows[2].id === "r6-f1",
+                "reordered rows[2] is tfoot row (id: '" + rowsT6.rows[2].id + "')");
+        }
+
+        // Table with only thead
+        if (rowsT7) {
+            assert(rowsT7.rows.length === 2,
+                "thead-only table has rows.length === 2 (got: " + rowsT7.rows.length + ")");
+            assert(rowsT7.rows[0].id === "r7-h1",
+                "thead-only rows[0] correct (id: '" + rowsT7.rows[0].id + "')");
+            assert(rowsT7.rows[1].id === "r7-h2",
+                "thead-only rows[1] correct (id: '" + rowsT7.rows[1].id + "')");
+        }
+
+        info("Tests cover: rows (count, ordering thead/tbody/tfoot, multiple tbodies, implicit tbody, empty, reordered DOM, thead-only)");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
