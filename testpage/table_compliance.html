@@ -1046,6 +1046,117 @@
         info("Tests cover: insertRow(-1), insertRow(), insertRow(0), insertRow(N), empty table, insertRow(rows.length)");
     </script>
 
+    <!-- ============================================ -->
+    <!-- table.deleteRow() tests                       -->
+    <!-- ============================================ -->
+    <h2>table.deleteRow()</h2>
+
+    <!-- Table with all sections for deleteRow -->
+    <table id="dr-1">
+        <thead><tr id="dr1-h1"><td>Head</td></tr></thead>
+        <tbody>
+            <tr id="dr1-b1"><td>Body 1</td></tr>
+            <tr id="dr1-b2"><td>Body 2</td></tr>
+            <tr id="dr1-b3"><td>Body 3</td></tr>
+        </tbody>
+        <tfoot><tr id="dr1-f1"><td>Foot</td></tr></tfoot>
+    </table>
+
+    <!-- Table for deleteRow(-1) -->
+    <table id="dr-2">
+        <tbody>
+            <tr id="dr2-b1"><td>Row 1</td></tr>
+            <tr id="dr2-b2"><td>Row 2</td></tr>
+            <tr id="dr2-b3"><td>Row 3</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Table with single row for deletion -->
+    <table id="dr-3">
+        <tbody><tr id="dr3-b1"><td>Only Row</td></tr></tbody>
+    </table>
+
+    <script>
+        info("--- table.deleteRow() tests ---");
+
+        var drT1 = document.getElementById("dr-1");
+        var drT2 = document.getElementById("dr-2");
+        var drT3 = document.getElementById("dr-3");
+
+        // deleteRow(index) removes the correct row
+        if (drT1) {
+            var before = drT1.rows.length;
+            drT1.deleteRow(1);
+            assert(drT1.rows.length === before - 1,
+                "deleteRow(1) decreases row count (was: " + before + ", now: " + drT1.rows.length + ")");
+            var found = false;
+            for (var i = 0; i < drT1.rows.length; i++) {
+                if (drT1.rows[i].id === "dr1-b1") found = true;
+            }
+            assert(!found,
+                "deleteRow(1) removed row 'dr1-b1' from collection");
+        }
+
+        // deleteRow(0) removes first row (thead row)
+        if (drT1) {
+            var before = drT1.rows.length;
+            drT1.deleteRow(0);
+            assert(drT1.rows.length === before - 1,
+                "deleteRow(0) removes first row");
+            assert(drT1.rows[0].id === "dr1-b2",
+                "after deleteRow(0), new first row is 'dr1-b2' (got: '" + drT1.rows[0].id + "')");
+        }
+
+        // deleteRow removes tfoot row by index
+        if (drT1) {
+            var lastIdx = drT1.rows.length - 1;
+            var lastId = drT1.rows[lastIdx].id;
+            assert(lastId === "dr1-f1",
+                "last row is tfoot row before deletion (got: '" + lastId + "')");
+            drT1.deleteRow(lastIdx);
+            var found = false;
+            for (var i = 0; i < drT1.rows.length; i++) {
+                if (drT1.rows[i].id === "dr1-f1") found = true;
+            }
+            assert(!found,
+                "deleteRow(lastIdx) removed tfoot row 'dr1-f1'");
+        }
+
+        // deleteRow(-1) removes last row
+        if (drT2) {
+            var before = drT2.rows.length;
+            drT2.deleteRow(-1);
+            assert(drT2.rows.length === before - 1,
+                "deleteRow(-1) decreases row count (was: " + before + ", now: " + drT2.rows.length + ")");
+            var found = false;
+            for (var i = 0; i < drT2.rows.length; i++) {
+                if (drT2.rows[i].id === "dr2-b3") found = true;
+            }
+            assert(!found,
+                "deleteRow(-1) removed last row 'dr2-b3'");
+        }
+
+        // deleteRow(-1) again removes new last row
+        if (drT2) {
+            drT2.deleteRow(-1);
+            assert(drT2.rows.length === 1,
+                "second deleteRow(-1) leaves 1 row (got: " + drT2.rows.length + ")");
+            assert(drT2.rows[0].id === "dr2-b1",
+                "remaining row is 'dr2-b1' (got: '" + drT2.rows[0].id + "')");
+        }
+
+        // deleteRow on single-row table empties it
+        if (drT3) {
+            assert(drT3.rows.length === 1,
+                "single-row table starts with 1 row");
+            drT3.deleteRow(0);
+            assert(drT3.rows.length === 0,
+                "deleteRow(0) on single-row table leaves 0 rows (got: " + drT3.rows.length + ")");
+        }
+
+        info("Tests cover: deleteRow(index), deleteRow(0), deleteRow(-1), tfoot row deletion, repeated deletion, single-row table");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

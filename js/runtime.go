@@ -25,6 +25,40 @@ type JSRuntime struct {
 	beforeUnloadHandler goja.Callable
 }
 
+// collectTableRows returns all tr elements in a table node in WHATWG 4.9.1 order:
+// thead rows first, then tbody/direct tr rows in tree order, then tfoot rows.
+func collectTableRows(tableNode *dom.Node) []*dom.Node {
+	var rows []*dom.Node
+	collectTRs := func(section *dom.Node) {
+		for _, child := range section.Children {
+			if child.Type == dom.Element && child.TagName == "tr" {
+				rows = append(rows, child)
+			}
+		}
+	}
+	for _, child := range tableNode.Children {
+		if child.Type == dom.Element && child.TagName == "thead" {
+			collectTRs(child)
+		}
+	}
+	for _, child := range tableNode.Children {
+		if child.Type == dom.Element {
+			switch child.TagName {
+			case "tbody":
+				collectTRs(child)
+			case "tr":
+				rows = append(rows, child)
+			}
+		}
+	}
+	for _, child := range tableNode.Children {
+		if child.Type == dom.Element && child.TagName == "tfoot" {
+			collectTRs(child)
+		}
+	}
+	return rows
+}
+
 func NewJSRuntime(document *dom.Node, onReflow func()) *JSRuntime {
 	rt := &JSRuntime{
 		vm:           goja.New(),
@@ -861,42 +895,11 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		// Order: thead rows first, then tbody/direct tr rows in tree order, then tfoot rows
 		obj.DefineAccessorProperty("rows",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				allRows := collectTableRows(node)
 				var rows []any
-
-				collectTRs := func(section *dom.Node) {
-					for _, child := range section.Children {
-						if child.Type == dom.Element && child.TagName == "tr" {
-							rows = append(rows, rt.wrapElement(child))
-						}
-					}
+				for _, row := range allRows {
+					rows = append(rows, rt.wrapElement(row))
 				}
-
-				// Phase 1: thead rows
-				for _, child := range node.Children {
-					if child.Type == dom.Element && child.TagName == "thead" {
-						collectTRs(child)
-					}
-				}
-
-				// Phase 2: tbody rows and direct tr children
-				for _, child := range node.Children {
-					if child.Type == dom.Element {
-						switch child.TagName {
-						case "tbody":
-							collectTRs(child)
-						case "tr":
-							rows = append(rows, rt.wrapElement(child))
-						}
-					}
-				}
-
-				// Phase 3: tfoot rows
-				for _, child := range node.Children {
-					if child.Type == dom.Element && child.TagName == "tfoot" {
-						collectTRs(child)
-					}
-				}
-
 				return rt.vm.NewArray(rows...)
 			}),
 			nil,
@@ -930,36 +933,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				index = call.Argument(0).ToInteger()
 			}
 
-			// Collect all rows using same 3-phase ordering as table.rows
-			var allRows []*dom.Node
-			collectRows := func(section *dom.Node) {
-				for _, child := range section.Children {
-					if child.Type == dom.Element && child.TagName == "tr" {
-						allRows = append(allRows, child)
-					}
-				}
-			}
-			for _, child := range node.Children {
-				if child.Type == dom.Element && child.TagName == "thead" {
-					collectRows(child)
-				}
-			}
-			for _, child := range node.Children {
-				if child.Type == dom.Element {
-					switch child.TagName {
-					case "tbody":
-						collectRows(child)
-					case "tr":
-						allRows = append(allRows, child)
-					}
-				}
-			}
-			for _, child := range node.Children {
-				if child.Type == dom.Element && child.TagName == "tfoot" {
-					collectRows(child)
-				}
-			}
-
+			allRows := collectTableRows(node)
 			newRow := dom.NewElement("tr", map[string]string{})
 
 			if index == -1 || index == int64(len(allRows)) {
@@ -998,6 +972,31 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}
 			return rt.wrapElement(newRow)
 		}))
+
+		obj.Set("deleteRow", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			index := int64(-1)
+			if len(call.Arguments) > 0 {
+				index = call.Argument(0).ToInteger()
+			}
+
+			allRows := collectTableRows(node)
+
+			if index == -1 && len(allRows) > 0 {
+				index = int64(len(allRows) - 1)
+			}
+
+			if index >= 0 && index < int64(len(allRows)) {
+				targetRow := allRows[index]
+				targetRow.Parent.RemoveChild(targetRow)
+				if rt.onReflow != nil {
+					rt.onReflow()
+				}
+				return goja.Undefined()
+			}
+
+			return goja.Undefined()
+		}))
+
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {
