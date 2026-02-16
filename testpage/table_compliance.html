@@ -1157,6 +1157,117 @@
         info("Tests cover: deleteRow(index), deleteRow(0), deleteRow(-1), tfoot row deletion, repeated deletion, single-row table");
     </script>
 
+    <!-- ============================================ -->
+    <!-- td.colSpan / td.rowSpan tests (WHATWG 4.9.11) -->
+    <!-- ============================================ -->
+    <h2>HTMLTableCellElement - colSpan / rowSpan (WHATWG 4.9.11)</h2>
+
+    <table id="span-1">
+        <tr>
+            <td id="sp-a" colspan="2" rowspan="3">A</td>
+            <td id="sp-b">B</td>
+        </tr>
+        <tr><td id="sp-c">C</td></tr>
+        <tr><td id="sp-d">D</td></tr>
+    </table>
+
+    <table id="span-2">
+        <tr>
+            <td id="sp-default">No span attrs</td>
+            <td id="sp-one" colspan="1" rowspan="1">Explicit 1</td>
+        </tr>
+    </table>
+
+    <script>
+        info("--- td.colSpan / td.rowSpan property tests (WHATWG 4.9.11) ---");
+
+        var spA = document.getElementById("sp-a");
+        var spB = document.getElementById("sp-b");
+        var spDefault = document.getElementById("sp-default");
+        var spOne = document.getElementById("sp-one");
+
+        // colSpan getter returns number
+        if (spA) {
+            assert(spA.colSpan === 2,
+                "td.colSpan getter returns 2 (got: " + spA.colSpan + ")");
+        }
+
+        // rowSpan getter returns number
+        if (spA) {
+            assert(spA.rowSpan === 3,
+                "td.rowSpan getter returns 3 (got: " + spA.rowSpan + ")");
+        }
+
+        // Default colSpan is 1 when no attribute
+        if (spDefault) {
+            assert(spDefault.colSpan === 1,
+                "td.colSpan defaults to 1 when no attribute (got: " + spDefault.colSpan + ")");
+        }
+
+        // Default rowSpan is 1 when no attribute
+        if (spDefault) {
+            assert(spDefault.rowSpan === 1,
+                "td.rowSpan defaults to 1 when no attribute (got: " + spDefault.rowSpan + ")");
+        }
+
+        // Explicit colspan="1" returns 1
+        if (spOne) {
+            assert(spOne.colSpan === 1,
+                "td.colSpan returns 1 for explicit colspan='1' (got: " + spOne.colSpan + ")");
+            assert(spOne.rowSpan === 1,
+                "td.rowSpan returns 1 for explicit rowspan='1' (got: " + spOne.rowSpan + ")");
+        }
+
+        // colSpan is a number, not a string
+        if (spA) {
+            assert(typeof spA.colSpan === "number",
+                "td.colSpan is typeof number (got: " + typeof spA.colSpan + ")");
+            assert(typeof spA.rowSpan === "number",
+                "td.rowSpan is typeof number (got: " + typeof spA.rowSpan + ")");
+        }
+
+        // colSpan setter
+        if (spB) {
+            spB.colSpan = 4;
+            assert(spB.colSpan === 4,
+                "td.colSpan setter works (set 4, got: " + spB.colSpan + ")");
+            assert(spB.getAttribute("colspan") === "4",
+                "td.colSpan setter reflects to attribute (got: '" + spB.getAttribute("colspan") + "')");
+        }
+
+        // rowSpan setter
+        if (spB) {
+            spB.rowSpan = 5;
+            assert(spB.rowSpan === 5,
+                "td.rowSpan setter works (set 5, got: " + spB.rowSpan + ")");
+            assert(spB.getAttribute("rowspan") === "5",
+                "td.rowSpan setter reflects to attribute (got: '" + spB.getAttribute("rowspan") + "')");
+        }
+
+        // colSpan clamped to minimum 1
+        if (spB) {
+            spB.colSpan = 0;
+            assert(spB.colSpan >= 1,
+                "td.colSpan clamped to >= 1 when set to 0 (got: " + spB.colSpan + ")");
+        }
+
+        // colSpan clamped to maximum 1000
+        if (spB) {
+            spB.colSpan = 2000;
+            assert(spB.colSpan <= 1000,
+                "td.colSpan clamped to <= 1000 when set to 2000 (got: " + spB.colSpan + ")");
+        }
+
+        // rowSpan clamped to maximum 65534
+        if (spB) {
+            spB.rowSpan = 99999;
+            assert(spB.rowSpan <= 65534,
+                "td.rowSpan clamped to <= 65534 when set to 99999 (got: " + spB.rowSpan + ")");
+        }
+
+        info("Tests cover: colSpan/rowSpan getter (with/without attr), type check, setter, attribute reflection, clamping");
+    </script>
+
     <h2>Visual Tests - tr.cells (WHATWG 4.9.8)</h2>
 
     <h3>Test: Row with mixed th and td cells</h3>
@@ -2073,6 +2184,130 @@
         </table>
     </div>
     <p>Expected: Row 1 has A/B/C all spanning into row 2. Row 2 has no explicit cells (all occupied). Row 3 has D/E/F.</p>
+
+    <h2>Visual Tests - CSS width on Table Cells</h2>
+
+    <h3>Test: Explicit pixel width on td</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td style="width: 200px;">200px wide</td>
+                <td>Auto</td>
+                <td>Auto</td>
+            </tr>
+            <tr>
+                <td>Row 2 Col 1</td>
+                <td>Row 2 Col 2</td>
+                <td>Row 2 Col 3</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: First column is 200px wide. Remaining columns share the leftover space equally.</p>
+
+    <h3>Test: Explicit pixel width on th</h3>
+    <div class="test-box">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th style="width: 150px;">Name (150px)</th>
+                    <th style="width: 300px;">Description (300px)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Widget</td>
+                    <td>A useful widget for things</td>
+                    <td>Edit</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: "Name" column is 150px, "Description" column is 300px, "Actions" gets remaining space.</p>
+
+    <h3>Test: All cells with explicit width</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td style="width: 100px;">100px</td>
+                <td style="width: 200px;">200px</td>
+                <td style="width: 150px;">150px</td>
+            </tr>
+            <tr>
+                <td>A</td>
+                <td>B</td>
+                <td>C</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Columns are 100px, 200px, and 150px wide respectively.</p>
+
+    <h3>Test: Width on one row affects entire column</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>No width set</td>
+                <td>No width set</td>
+            </tr>
+            <tr>
+                <td style="width: 250px;">250px (set here)</td>
+                <td>Auto</td>
+            </tr>
+            <tr>
+                <td>Inherits column width</td>
+                <td>Inherits column width</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: First column is 250px wide across ALL rows, even though width is only set on row 2.</p>
+
+    <h3>Test: Percentage width on td</h3>
+    <div class="test-box">
+        <table border="1" style="width: 600px;">
+            <tr>
+                <td style="width: 25%;">25%</td>
+                <td style="width: 50%;">50%</td>
+                <td style="width: 25%;">25%</td>
+            </tr>
+            <tr>
+                <td>A</td>
+                <td>B</td>
+                <td>C</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Table is 600px wide. Columns are 150px (25%), 300px (50%), 150px (25%).</p>
+
+    <h3>Test: Mixed pixel and auto widths</h3>
+    <div class="test-box">
+        <table border="1" style="width: 500px;">
+            <tr>
+                <td style="width: 100px;">100px fixed</td>
+                <td>Auto (fills remaining)</td>
+            </tr>
+            <tr>
+                <td>Row 2 Col 1</td>
+                <td>Row 2 Col 2</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Table is 500px. First column is 100px, second column fills the remaining 400px.</p>
+
+    <h3>Test: Width with colspan</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td style="width: 120px;">120px</td>
+                <td style="width: 120px;">120px</td>
+                <td style="width: 120px;">120px</td>
+            </tr>
+            <tr>
+                <td colspan="2">Spans 2 cols (should be 240px)</td>
+                <td>120px</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Three 120px columns. Second row first cell spans 2 columns (240px total).</p>
 
     <hr>
     <p><a href="index.html">Back to Index</a></p>

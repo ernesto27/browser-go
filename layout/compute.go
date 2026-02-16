@@ -763,9 +763,79 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		return
 	}
 
-	// Simple approach: equal column widths
 	cellPadding := 8.0
-	colWidth := containerWidth / float64(numCols)
+
+	// Determine per-column widths: scan all cells for explicit CSS width values.
+	// For each logical column, use the maximum explicit width found across rows.
+	colWidths := make([]float64, numCols)
+	{
+		occupied := make(map[int]map[int]bool)
+		for rowIdx, row := range rows {
+			colIdx := 0
+			for _, cell := range row.Children {
+				if cell.Type != TableCellBox {
+					continue
+				}
+				for occupied[rowIdx] != nil && occupied[rowIdx][colIdx] {
+					colIdx++
+				}
+				cs := getCellColSpan(cell)
+				rs := getCellRowSpan(cell)
+				if rs > 1 {
+					for r := rowIdx + 1; r < rowIdx+rs && r < len(rows); r++ {
+						if occupied[r] == nil {
+							occupied[r] = make(map[int]bool)
+						}
+						for c := colIdx; c < colIdx+cs; c++ {
+							occupied[r][c] = true
+						}
+					}
+				}
+				// Only use width from non-spanning cells for column sizing
+				if cs == 1 && colIdx < numCols {
+					w := cell.Style.Width
+					if w == 0 && cell.Style.WidthPercent > 0 {
+						w = containerWidth * cell.Style.WidthPercent / 100.0
+					}
+					if w > colWidths[colIdx] {
+						colWidths[colIdx] = w
+					}
+				}
+				colIdx += cs
+			}
+		}
+	}
+
+	// Distribute remaining space equally among auto (width=0) columns
+	usedWidth := 0.0
+	autoCount := 0
+	for _, w := range colWidths {
+		if w > 0 {
+			usedWidth += w
+		} else {
+			autoCount++
+		}
+	}
+	autoWidth := 0.0
+	if autoCount > 0 {
+		remaining := containerWidth - usedWidth
+		if remaining < 0 {
+			remaining = 0
+		}
+		autoWidth = remaining / float64(autoCount)
+	}
+	for i, w := range colWidths {
+		if w == 0 {
+			colWidths[i] = autoWidth
+		}
+	}
+
+	// Precompute cumulative X offsets per column
+	colXOffsets := make([]float64, numCols)
+	colXOffsets[0] = 0
+	for i := 1; i < numCols; i++ {
+		colXOffsets[i] = colXOffsets[i-1] + colWidths[i-1]
+	}
 
 	yOffset := startY
 
@@ -824,8 +894,15 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 			cs := getCellColSpan(cell)
 			rs := getCellRowSpan(cell)
 
-			cellWidth := colWidth * float64(cs)
-			xPos := startX + float64(colIdx)*colWidth
+			// Sum widths of spanned columns
+			cellWidth := 0.0
+			for c := colIdx; c < colIdx+cs && c < numCols; c++ {
+				cellWidth += colWidths[c]
+			}
+			xPos := startX
+			if colIdx < numCols {
+				xPos += colXOffsets[colIdx]
+			}
 
 			cell.Rect.X = xPos
 			cell.Rect.Y = yOffset

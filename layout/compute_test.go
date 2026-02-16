@@ -623,3 +623,103 @@ func TestRowspanLayout(t *testing.T) {
 		})
 	}
 }
+
+func TestTableCellCSSWidth(t *testing.T) {
+	tests := []struct {
+		name           string
+		html           string
+		containerWidth float64
+		verify         func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			name:           "explicit pixel width on td",
+			html:           `<table><tr><td style="width: 200px;">A</td><td>B</td><td>C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				cellA := findCellByText(tree, "A")
+				cellB := findCellByText(tree, "B")
+				cellC := findCellByText(tree, "C")
+				assert.Equal(t, 200.0, cellA.Rect.Width)
+				autoWidth := (table.Rect.Width - 200.0) / 2
+				assert.Equal(t, autoWidth, cellB.Rect.Width)
+				assert.Equal(t, autoWidth, cellC.Rect.Width)
+			},
+		},
+		{
+			name:           "all cells with explicit width",
+			html:           `<table><tr><td style="width: 100px;">A</td><td style="width: 200px;">B</td><td style="width: 150px;">C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cellA := findCellByText(tree, "A")
+				cellB := findCellByText(tree, "B")
+				cellC := findCellByText(tree, "C")
+				assert.Equal(t, 100.0, cellA.Rect.Width)
+				assert.Equal(t, 200.0, cellB.Rect.Width)
+				assert.Equal(t, 150.0, cellC.Rect.Width)
+			},
+		},
+		{
+			name:           "width set in second row affects column",
+			html:           `<table><tr><td>A</td><td>B</td></tr><tr><td style="width: 250px;">C</td><td>D</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cellA := findCellByText(tree, "A")
+				cellC := findCellByText(tree, "C")
+				assert.Equal(t, 250.0, cellA.Rect.Width)
+				assert.Equal(t, 250.0, cellC.Rect.Width)
+			},
+		},
+		{
+			name:           "percentage width on td",
+			html:           `<table><tr><td style="width: 25%;">A</td><td style="width: 50%;">B</td><td style="width: 25%;">C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				tw := table.Rect.Width
+				cellA := findCellByText(tree, "A")
+				cellB := findCellByText(tree, "B")
+				cellC := findCellByText(tree, "C")
+				assert.Equal(t, tw*0.25, cellA.Rect.Width)
+				assert.Equal(t, tw*0.50, cellB.Rect.Width)
+				assert.Equal(t, tw*0.25, cellC.Rect.Width)
+			},
+		},
+		{
+			name:           "width with colspan uses summed column widths",
+			html:           `<table><tr><td style="width: 120px;">A</td><td style="width: 120px;">B</td><td style="width: 120px;">C</td></tr><tr><td colspan="2">D</td><td>E</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cellA := findCellByText(tree, "A")
+				cellD := findCellByText(tree, "D")
+				cellE := findCellByText(tree, "E")
+				assert.Equal(t, 120.0, cellA.Rect.Width)
+				assert.Equal(t, 240.0, cellD.Rect.Width)
+				assert.Equal(t, 120.0, cellE.Rect.Width)
+			},
+		},
+		{
+			name:           "no explicit widths falls back to equal distribution",
+			html:           `<table><tr><td>A</td><td>B</td><td>C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				eqWidth := table.Rect.Width / 3
+				cellA := findCellByText(tree, "A")
+				cellB := findCellByText(tree, "B")
+				cellC := findCellByText(tree, "C")
+				assert.Equal(t, eqWidth, cellA.Rect.Width)
+				assert.Equal(t, eqWidth, cellB.Rect.Width)
+				assert.Equal(t, eqWidth, cellC.Rect.Width)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, tt.containerWidth)
+			tt.verify(t, tree)
+		})
+	}
+}

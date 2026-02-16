@@ -44,6 +44,7 @@ type Style struct {
 	Cursor          string
 	TextTransform   string
 	Width           float64
+	WidthPercent    float64 // percentage width (e.g., 25 means 25%)
 	Height          float64
 	MinWidth        float64
 	MaxWidth        float64
@@ -536,7 +537,12 @@ func applyDeclaration(style *Style, property, value string) {
 		style.BorderLeftStyle = s
 		style.BorderLeftColor = c
 	case "width":
-		if w := ParseSize(value); w > 0 {
+		if strings.HasSuffix(strings.TrimSpace(value), "%") {
+			num := strings.TrimSuffix(strings.TrimSpace(value), "%")
+			if pct, err := strconv.ParseFloat(num, 64); err == nil && pct > 0 {
+				style.WidthPercent = pct
+			}
+		} else if w := ParseSize(value); w > 0 {
 			style.Width = w
 		}
 	case "height":
@@ -687,7 +693,12 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 	case "padding-right":
 		style.PaddingRight = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
 	case "width":
-		if w := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight); w > 0 {
+		if strings.HasSuffix(strings.TrimSpace(value), "%") {
+			num := strings.TrimSuffix(strings.TrimSpace(value), "%")
+			if pct, err := strconv.ParseFloat(num, 64); err == nil && pct > 0 {
+				style.WidthPercent = pct
+			}
+		} else if w := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight); w > 0 {
 			style.Width = w
 		}
 	case "height":

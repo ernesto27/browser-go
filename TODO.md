@@ -94,7 +94,7 @@ https://html.spec.whatwg.org/
 - [x] `tr.insertCell(index)` / `tr.deleteCell(index)` - Insert/remove cells
 
 ### HTMLTableCellElement (WHATWG 4.9.11)
-- [ ] `td.colSpan` / `td.rowSpan` - Span attributes
+- [x] `td.colSpan` / `td.rowSpan` - Span attributes (getter/setter with clamping per spec)
 - [ ] `td.cellIndex` - Cell position in row
 - [ ] `td.headers` - Associated header cells
 - [ ] `td.scope` - Header cell scope (th only)
@@ -103,7 +103,7 @@ https://html.spec.whatwg.org/
 - [x] `colspan` attribute support in layout
 - [x] `rowspan` attribute support in layout
 - [ ] Content-based column width calculation
-- [ ] CSS `width` on table cells
+- [x] CSS `width` on table cells (px and % widths on td/th)
 - [ ] `thead`/`tfoot` ordering (thead first, tfoot last per spec)
 - [ ] Text wrapping inside cells
 - [ ] `vertical-align` in cells

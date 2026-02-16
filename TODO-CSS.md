@@ -111,6 +111,7 @@
 - [ ] `list-style-image` - custom marker
 
 ### Table
+- [x] `width` on table cells - px and % widths on td/th
 - [ ] `border-collapse` - collapse/separate
 - [ ] `border-spacing` - cell spacing
 - [ ] `table-layout` - auto/fixed
@@ -124,7 +125,7 @@
 ### Units (parsing)
 - [x] `em` - relative to font size
 - [ ] `rem` - relative to root font size
-- [ ] `%` - percentage
+- [ ] `%` - percentage (partial: works for table cell width)
 - [x] `vw` - viewport width
 - [x] `vh` - viewport height
 - [ ] `calc()` - calculations

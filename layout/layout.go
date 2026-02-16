@@ -309,6 +309,9 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	if inline.Width > 0 {
 		base.Width = inline.Width
 	}
+	if inline.WidthPercent > 0 {
+		base.WidthPercent = inline.WidthPercent
+	}
 
 	if inline.MinWidth > 0 {
 		base.MinWidth = inline.MinWidth

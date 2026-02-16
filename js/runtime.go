@@ -1133,6 +1133,75 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		}))
 	}
 
+	if strings.ToUpper(node.TagName) == "TD" {
+		obj.DefineAccessorProperty("colSpan",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				colspanAttr := node.Attributes["colspan"]
+				if colspanAttr == "" {
+					return rt.vm.ToValue(1)
+				}
+				colspan, err := strconv.Atoi(colspanAttr)
+				if err != nil {
+					return rt.vm.ToValue(1)
+				}
+
+				if colspan < 1 {
+					return rt.vm.ToValue(1)
+				}
+
+				return rt.vm.ToValue(colspan)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					v, err := strconv.Atoi(call.Arguments[0].String())
+					if err == nil {
+						if v < 1 {
+							v = 1
+						} else if v > 1000 {
+							v = 1000
+						}
+						node.Attributes["colspan"] = strconv.Itoa(v)
+					}
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("rowSpan",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				rowspanAttr := node.Attributes["rowspan"]
+				if rowspanAttr == "" {
+					return rt.vm.ToValue(1)
+				}
+				rowspan, err := strconv.Atoi(rowspanAttr)
+				if err != nil {
+					return rt.vm.ToValue(1)
+				}
+				return rt.vm.ToValue(rowspan)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					v, err := strconv.Atoi(call.Arguments[0].String())
+					if err == nil {
+						if v < 0 {
+							v = 0
+						} else if v > 65534 {
+							v = 65534
+						}
+						node.Attributes["rowspan"] = strconv.Itoa(v)
+					}
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
 	if strings.ToUpper(node.TagName) == "OL" {
 		obj.DefineAccessorProperty("start",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
