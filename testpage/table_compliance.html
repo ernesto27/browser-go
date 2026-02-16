@@ -1804,6 +1804,120 @@
         info("Tests cover: insertCell() no-arg, insertCell(-1), insertCell(0), insertCell(index), empty row, mixed th/td, deleteCell(0), deleteCell(index), deleteCell(-1), repeated deletion");
     </script>
 
+    <h2>Visual Tests - colspan Layout Support</h2>
+
+    <h3>Test: Basic colspan=2 in header row</h3>
+    <div class="test-box">
+        <table id="csT1" border="1">
+            <tr>
+                <th colspan="2">Name</th>
+                <th>Age</th>
+            </tr>
+            <tr>
+                <td>First</td>
+                <td>Last</td>
+                <td>30</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: "Name" header spans 2 columns, aligning over "First" and "Last". Table has 3 logical columns.</p>
+
+    <h3>Test: colspan=3 spanning full row</h3>
+    <div class="test-box">
+        <table id="csT2" border="1">
+            <tr>
+                <td>A</td>
+                <td>B</td>
+                <td>C</td>
+            </tr>
+            <tr>
+                <td colspan="3">This cell spans all 3 columns</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Second row has one cell spanning the full table width (3 columns).</p>
+
+    <h3>Test: Multiple colspans in same row</h3>
+    <div class="test-box">
+        <table id="csT3" border="1">
+            <tr>
+                <td>1</td>
+                <td>2</td>
+                <td>3</td>
+                <td>4</td>
+            </tr>
+            <tr>
+                <td colspan="2">Spans 1-2</td>
+                <td colspan="2">Spans 3-4</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Second row has 2 cells, each spanning 2 columns. 4 logical columns total.</p>
+
+    <h3>Test: colspan with no-colspan rows mixed</h3>
+    <div class="test-box">
+        <table id="csT4" border="1">
+            <tr>
+                <td colspan="3">Title spanning all</td>
+            </tr>
+            <tr>
+                <td>A</td>
+                <td>B</td>
+                <td>C</td>
+            </tr>
+            <tr>
+                <td>D</td>
+                <td colspan="2">E spans 2</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Row 1 spans all 3 cols. Row 2 has 3 normal cells. Row 3 has "D" (1 col) + "E spans 2" (2 cols).</p>
+
+    <h3>Test: colspan=1 (explicit, same as default)</h3>
+    <div class="test-box">
+        <table id="csT5" border="1">
+            <tr>
+                <td colspan="1">A</td>
+                <td colspan="1">B</td>
+            </tr>
+            <tr>
+                <td>C</td>
+                <td>D</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: colspan=1 behaves identically to no colspan. Both rows look the same.</p>
+
+    <h3>Test: Table inside thead/tbody with colspan</h3>
+    <div class="test-box">
+        <table id="csT6" border="1">
+            <thead>
+                <tr>
+                    <th colspan="3">Report Header</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Q1</td>
+                    <td>Q2</td>
+                    <td>Q3</td>
+                </tr>
+                <tr>
+                    <td>100</td>
+                    <td>200</td>
+                    <td>300</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Total</td>
+                    <td colspan="2">600</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: Header spans all 3 cols. Body has 3-col rows. Footer has "Total" (1 col) + "600" (2 cols).</p>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

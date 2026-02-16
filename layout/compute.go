@@ -666,6 +666,19 @@ func layoutInlineChildren(box *LayoutBox, parentTag string) {
 	}
 }
 
+// getCellColSpan returns the colspan value for a table cell, defaulting to 1.
+func getCellColSpan(cell *LayoutBox) int {
+	if cell.Node == nil || cell.Node.Attributes == nil {
+		return 1
+	}
+	if val, ok := cell.Node.Attributes["colspan"]; ok {
+		if n, err := strconv.Atoi(val); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 1
+}
+
 // computeTableLayout handles table, row, and cell positioning
 func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY float64) {
 	table.Rect.X = startX
@@ -692,17 +705,17 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		}
 	}
 
-	// Count max columns in any row
+	// Count max logical columns in any row (respecting colspan)
 	numCols := 0
 	for _, row := range rows {
-		cellCount := 0
+		colCount := 0
 		for _, cell := range row.Children {
 			if cell.Type == TableCellBox {
-				cellCount++
+				colCount += getCellColSpan(cell)
 			}
 		}
-		if cellCount > numCols {
-			numCols = cellCount
+		if colCount > numCols {
+			numCols = colCount
 		}
 	}
 
@@ -756,19 +769,22 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 				continue
 			}
 
+			span := getCellColSpan(cell)
+			cellWidth := colWidth * float64(span)
+
 			cell.Rect.X = xOffset
 			cell.Rect.Y = yOffset
-			cell.Rect.Width = colWidth
+			cell.Rect.Width = cellWidth
 
 			// Compute cell content height
-			cellHeight := computeCellContent(cell, colWidth-cellPadding*2, xOffset+cellPadding, yOffset+cellPadding)
+			cellHeight := computeCellContent(cell, cellWidth-cellPadding*2, xOffset+cellPadding, yOffset+cellPadding)
 			cell.Rect.Height = cellHeight + cellPadding*2
 
 			if cell.Rect.Height > rowHeight {
 				rowHeight = cell.Rect.Height
 			}
 
-			xOffset += colWidth
+			xOffset += cellWidth
 		}
 
 		// Set all cells to same height (tallest cell)

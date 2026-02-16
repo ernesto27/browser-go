@@ -100,7 +100,8 @@ https://html.spec.whatwg.org/
 - [ ] `td.scope` - Header cell scope (th only)
 
 ### Table Layout Gaps
-- [ ] `colspan` / `rowspan` attribute support in layout
+- [x] `colspan` attribute support in layout
+- [ ] `rowspan` attribute support in layout
 - [ ] Content-based column width calculation
 - [ ] CSS `width` on table cells
 - [ ] `thead`/`tfoot` ordering (thead first, tfoot last per spec)
