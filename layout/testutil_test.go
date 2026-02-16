@@ -116,3 +116,53 @@ func addChild(parent, child *LayoutBox) {
 	child.Parent = parent
 	parent.Children = append(parent.Children, child)
 }
+
+// findTableRows collects all TableRowBox children from a table,
+// unwrapping tbody/thead/tfoot wrappers (same logic as computeTableLayout).
+func findTableRows(table *LayoutBox) []*LayoutBox {
+	var rows []*LayoutBox
+	for _, child := range table.Children {
+		switch child.Type {
+		case TableRowBox:
+			rows = append(rows, child)
+		case TableBox:
+			for _, grandchild := range child.Children {
+				if grandchild.Type == TableRowBox {
+					rows = append(rows, grandchild)
+				}
+			}
+		}
+	}
+	return rows
+}
+
+// findCellByText finds the first TableCellBox whose subtree contains
+// a TextBox matching the given text (useful for locating cells in tests).
+func findCellByText(root *LayoutBox, text string) *LayoutBox {
+	if root == nil {
+		return nil
+	}
+	if root.Type == TableCellBox {
+		if cellContainsText(root, text) {
+			return root
+		}
+	}
+	for _, child := range root.Children {
+		if found := findCellByText(child, text); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+func cellContainsText(box *LayoutBox, text string) bool {
+	if box.Type == TextBox && box.Text == text {
+		return true
+	}
+	for _, child := range box.Children {
+		if cellContainsText(child, text) {
+			return true
+		}
+	}
+	return false
+}

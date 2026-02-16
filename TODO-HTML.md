@@ -120,7 +120,7 @@
 - [x] Inline elements (links, spans, formatting) inside cells
 - [ ] `<colgroup>` - column group
 - [ ] `<col>` - column properties
-- [ ] `colspan` / `rowspan` attributes
+- [x] `colspan` / `rowspan` attributes
 - [ ] Content-based column width calculation
 - [ ] CSS `width` style on table cells (currently all cells get equal width)
 
@@ -195,8 +195,8 @@
 - [ ] `:valid` / `:invalid` pseudo-classes
 
 ### Table Features
-- [ ] `colspan` - cell column span
-- [ ] `rowspan` - cell row span
+- [x] `colspan` - cell column span
+- [x] `rowspan` - cell row span
 - [ ] `scope` - header cell scope
 
 ### Link Features

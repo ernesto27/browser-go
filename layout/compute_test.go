@@ -419,3 +419,207 @@ func TestComputeLayout(t *testing.T) {
 		})
 	}
 }
+
+func TestGetCellRowSpan(t *testing.T) {
+	tests := []struct {
+		name     string
+		attrs    map[string]string
+		expected int
+	}{
+		{"no attribute", nil, 1},
+		{"rowspan=1", map[string]string{"rowspan": "1"}, 1},
+		{"rowspan=2", map[string]string{"rowspan": "2"}, 2},
+		{"rowspan=5", map[string]string{"rowspan": "5"}, 5},
+		{"rowspan=0 defaults to 1", map[string]string{"rowspan": "0"}, 1},
+		{"negative defaults to 1", map[string]string{"rowspan": "-1"}, 1},
+		{"invalid defaults to 1", map[string]string{"rowspan": "abc"}, 1},
+		{"empty defaults to 1", map[string]string{"rowspan": ""}, 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cell := &LayoutBox{
+				Type: TableCellBox,
+				Node: dom.NewElement("td", tt.attrs),
+			}
+			assert.Equal(t, tt.expected, getCellRowSpan(cell))
+		})
+	}
+}
+
+func TestRowspanLayout(t *testing.T) {
+	tests := []struct {
+		name           string
+		html           string
+		containerWidth float64
+		verify         func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			name:           "basic rowspan=2 cell spans two rows",
+			html:           `<table><tr><td rowspan="2">A</td><td>B</td><td>C</td></tr><tr><td>D</td><td>E</td></tr></table>`,
+			containerWidth: 300,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				rows := findTableRows(table)
+				assert.Equal(t, 2, len(rows))
+
+				colWidth := table.Rect.Width / 3 // 3 logical columns
+
+				cellA := findCellByText(table, "A")
+				cellB := findCellByText(table, "B")
+				cellD := findCellByText(table, "D")
+				cellE := findCellByText(table, "E")
+
+				// A at col 0, B at col 1
+				assert.Equal(t, table.Rect.X, cellA.Rect.X)
+				assert.Equal(t, table.Rect.X+colWidth, cellB.Rect.X)
+
+				// Row 1: col 0 occupied by A → D at col 1, E at col 2
+				assert.Equal(t, table.Rect.X+colWidth, cellD.Rect.X)
+				assert.Equal(t, table.Rect.X+2*colWidth, cellE.Rect.X)
+
+				// A spans both rows
+				assert.Equal(t, rows[0].Rect.Height+rows[1].Rect.Height, cellA.Rect.Height)
+				assert.Equal(t, rows[0].Rect.Y, cellA.Rect.Y)
+			},
+		},
+		{
+			name:           "rowspan=3 spanning all rows",
+			html:           `<table><tr><td>A</td><td rowspan="3">Side</td><td>C1</td></tr><tr><td>B</td><td>C2</td></tr><tr><td>C</td><td>C3</td></tr></table>`,
+			containerWidth: 300,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				rows := findTableRows(table)
+				assert.Equal(t, 3, len(rows))
+
+				colWidth := table.Rect.Width / 3
+
+				cellSide := findCellByText(table, "Side")
+
+				// Side spans all 3 rows
+				totalHeight := rows[0].Rect.Height + rows[1].Rect.Height + rows[2].Rect.Height
+				assert.Equal(t, totalHeight, cellSide.Rect.Height)
+				assert.Equal(t, rows[0].Rect.Y, cellSide.Rect.Y)
+
+				// Side is at col 1
+				assert.Equal(t, table.Rect.X+colWidth, cellSide.Rect.X)
+			},
+		},
+		{
+			name:           "rowspan + colspan combined",
+			html:           `<table><tr><td rowspan="2" colspan="2">Big</td><td>C1</td></tr><tr><td>C2</td></tr><tr><td>A3</td><td>B3</td><td>C3</td></tr></table>`,
+			containerWidth: 300,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				rows := findTableRows(table)
+				assert.Equal(t, 3, len(rows))
+
+				colWidth := table.Rect.Width / 3
+
+				cellBig := findCellByText(table, "Big")
+				cellC1 := findCellByText(table, "C1")
+				cellC2 := findCellByText(table, "C2")
+				cellA3 := findCellByText(table, "A3")
+
+				// Big takes 2 columns wide
+				assert.Equal(t, 2*colWidth, cellBig.Rect.Width)
+
+				// C1 and C2 are at col 2
+				assert.Equal(t, table.Rect.X+2*colWidth, cellC1.Rect.X)
+				assert.Equal(t, table.Rect.X+2*colWidth, cellC2.Rect.X)
+
+				// Row 2: normal — A3 at col 0
+				assert.Equal(t, table.Rect.X, cellA3.Rect.X)
+
+				// Big spans 2 rows vertically
+				assert.Equal(t, rows[0].Rect.Height+rows[1].Rect.Height, cellBig.Rect.Height)
+			},
+		},
+		{
+			name:           "rowspan exceeding available rows is clamped",
+			html:           `<table><tr><td rowspan="10">A</td><td>B</td></tr><tr><td>C</td></tr></table>`,
+			containerWidth: 200,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				rows := findTableRows(table)
+
+				cellA := findCellByText(table, "A")
+
+				// A claims 10 rows but only 2 exist — clamped
+				assert.Equal(t, rows[0].Rect.Height+rows[1].Rect.Height, cellA.Rect.Height)
+				assert.Equal(t, rows[0].Rect.Height+rows[1].Rect.Height, table.Rect.Height)
+			},
+		},
+		{
+			name:           "rowspan=1 behaves like no rowspan",
+			html:           `<table><tr><td rowspan="1">A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr></table>`,
+			containerWidth: 200,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				rows := findTableRows(table)
+
+				cellA := findCellByText(table, "A")
+				cellC := findCellByText(table, "C")
+
+				// A only spans row 0
+				assert.Equal(t, rows[0].Rect.Height, cellA.Rect.Height)
+
+				// C is at col 0 (not pushed)
+				assert.Equal(t, table.Rect.X, cellC.Rect.X)
+			},
+		},
+		{
+			name:           "row with all columns occupied by rowspan",
+			html:           `<table><tr><td rowspan="2">A</td><td rowspan="2">B</td></tr><tr></tr><tr><td>C</td><td>D</td></tr></table>`,
+			containerWidth: 200,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				rows := findTableRows(table)
+
+				colWidth := table.Rect.Width / 2
+
+				cellA := findCellByText(table, "A")
+				cellB := findCellByText(table, "B")
+
+				// A and B each span rows 0+1
+				assert.Equal(t, rows[0].Rect.Height+rows[1].Rect.Height, cellA.Rect.Height)
+				assert.Equal(t, rows[0].Rect.Height+rows[1].Rect.Height, cellB.Rect.Height)
+
+				// Row 2: C at col 0, D at col 1
+				cellC := findCellByText(table, "C")
+				cellD := findCellByText(table, "D")
+				assert.Equal(t, table.Rect.X, cellC.Rect.X)
+				assert.Equal(t, table.Rect.X+colWidth, cellD.Rect.X)
+			},
+		},
+		{
+			name:           "rowspan with extra columns from rowspan push",
+			html:           `<table><tr><td rowspan="2">A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr></table>`,
+			containerWidth: 300,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+
+				// Row 0: A(rs=2) + B → 2 direct cells
+				// Row 1: skip col 0, C at col 1, D at col 2 → 3 columns!
+				colWidth := table.Rect.Width / 3
+
+				cellA := findCellByText(table, "A")
+				cellC := findCellByText(table, "C")
+				cellD := findCellByText(table, "D")
+
+				assert.Equal(t, table.Rect.X, cellA.Rect.X)
+				assert.Equal(t, table.Rect.X+colWidth, cellC.Rect.X)
+				assert.Equal(t, table.Rect.X+2*colWidth, cellD.Rect.X)
+				assert.Equal(t, colWidth, cellC.Rect.Width)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, tt.containerWidth)
+			tt.verify(t, tree)
+		})
+	}
+}

@@ -101,7 +101,7 @@ https://html.spec.whatwg.org/
 
 ### Table Layout Gaps
 - [x] `colspan` attribute support in layout
-- [ ] `rowspan` attribute support in layout
+- [x] `rowspan` attribute support in layout
 - [ ] Content-based column width calculation
 - [ ] CSS `width` on table cells
 - [ ] `thead`/`tfoot` ordering (thead first, tfoot last per spec)

@@ -679,6 +679,19 @@ func getCellColSpan(cell *LayoutBox) int {
 	return 1
 }
 
+func getCellRowSpan(cell *LayoutBox) int {
+	if cell.Node == nil || cell.Node.Attributes == nil {
+		return 1
+	}
+
+	if val, ok := cell.Node.Attributes["rowspan"]; ok {
+		if n, err := strconv.Atoi(val); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 1
+}
+
 // computeTableLayout handles table, row, and cell positioning
 func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY float64) {
 	table.Rect.X = startX
@@ -705,17 +718,43 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		}
 	}
 
-	// Count max logical columns in any row (respecting colspan)
+	// Count max logical columns (respecting both colspan and rowspan).
+	// A cell with rowspan>1 occupies grid positions in future rows,
+	// which may push those rows' cells into higher column indices.
 	numCols := 0
-	for _, row := range rows {
-		colCount := 0
-		for _, cell := range row.Children {
-			if cell.Type == TableCellBox {
-				colCount += getCellColSpan(cell)
+	{
+		occupied := make(map[int]map[int]bool)
+		for rowIdx, row := range rows {
+			colIdx := 0
+			for _, cell := range row.Children {
+				if cell.Type != TableCellBox {
+					continue
+				}
+
+				for occupied[rowIdx] != nil && occupied[rowIdx][colIdx] {
+					colIdx++
+				}
+
+				cs := getCellColSpan(cell)
+				rs := getCellRowSpan(cell)
+
+				if rs > 1 {
+					for r := rowIdx + 1; r < rowIdx+rs && r < len(rows); r++ {
+						if occupied[r] == nil {
+							occupied[r] = make(map[int]bool)
+						}
+
+						for c := colIdx; c < colIdx+cs; c++ {
+							occupied[r][c] = true
+						}
+					}
+				}
+				colIdx += cs
 			}
-		}
-		if colCount > numCols {
-			numCols = colCount
+
+			if colIdx > numCols {
+				numCols = colIdx
+			}
 		}
 	}
 
@@ -754,48 +793,144 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		}
 	}
 
-	// Layout each row
-	for _, row := range rows {
+	// Layout each row (grid-aware for rowspan support)
+	type rowspanEntry struct {
+		cell     *LayoutBox
+		startRow int
+		rowspan  int
+	}
+	var rowspanCells []rowspanEntry
+	gridOccupied := make(map[int]map[int]bool)
+	rowHeights := make([]float64, len(rows))
+
+	for rowIdx, row := range rows {
 		row.Rect.X = startX
 		row.Rect.Y = yOffset
 		row.Rect.Width = containerWidth
 
-		// Layout cells in this row
 		rowHeight := 24.0 // minimum row height
-		xOffset := startX
+		colIdx := 0
 
 		for _, cell := range row.Children {
 			if cell.Type != TableCellBox {
 				continue
 			}
 
-			span := getCellColSpan(cell)
-			cellWidth := colWidth * float64(span)
+			// Skip columns reserved by rowspan cells from above
+			for gridOccupied[rowIdx] != nil && gridOccupied[rowIdx][colIdx] {
+				colIdx++
+			}
 
-			cell.Rect.X = xOffset
+			cs := getCellColSpan(cell)
+			rs := getCellRowSpan(cell)
+
+			cellWidth := colWidth * float64(cs)
+			xPos := startX + float64(colIdx)*colWidth
+
+			cell.Rect.X = xPos
 			cell.Rect.Y = yOffset
 			cell.Rect.Width = cellWidth
 
 			// Compute cell content height
-			cellHeight := computeCellContent(cell, cellWidth-cellPadding*2, xOffset+cellPadding, yOffset+cellPadding)
+			cellHeight := computeCellContent(cell, cellWidth-cellPadding*2, xPos+cellPadding, yOffset+cellPadding)
 			cell.Rect.Height = cellHeight + cellPadding*2
 
-			if cell.Rect.Height > rowHeight {
-				rowHeight = cell.Rect.Height
+			// Only rowspan=1 cells count toward this row's height
+			if rs == 1 {
+				if cell.Rect.Height > rowHeight {
+					rowHeight = cell.Rect.Height
+				}
 			}
 
-			xOffset += cellWidth
+			// Reserve grid positions for rowspan > 1
+			if rs > 1 {
+				for r := rowIdx + 1; r < rowIdx+rs && r < len(rows); r++ {
+					if gridOccupied[r] == nil {
+						gridOccupied[r] = make(map[int]bool)
+					}
+					for c := colIdx; c < colIdx+cs; c++ {
+						gridOccupied[r][c] = true
+					}
+				}
+				rowspanCells = append(rowspanCells, rowspanEntry{
+					cell:     cell,
+					startRow: rowIdx,
+					rowspan:  rs,
+				})
+			}
+
+			colIdx += cs
 		}
 
-		// Set all cells to same height (tallest cell)
+		// Set all rowspan=1 cells to same height (tallest in row)
 		for _, cell := range row.Children {
-			if cell.Type == TableCellBox {
+			if cell.Type == TableCellBox && getCellRowSpan(cell) == 1 {
 				cell.Rect.Height = rowHeight
 			}
 		}
 
 		row.Rect.Height = rowHeight
+		rowHeights[rowIdx] = rowHeight
 		yOffset += rowHeight
+	}
+
+	// Resolve rowspan cell heights.
+	// If a rowspan cell's content is taller than the combined spanned rows,
+	// distribute the extra height to the last spanned row.
+	needsReposition := false
+	for _, rs := range rowspanCells {
+		endRow := rs.startRow + rs.rowspan
+		if endRow > len(rows) {
+			endRow = len(rows)
+		}
+		totalHeight := 0.0
+		for r := rs.startRow; r < endRow; r++ {
+			totalHeight += rowHeights[r]
+		}
+		if rs.cell.Rect.Height > totalHeight {
+			extra := rs.cell.Rect.Height - totalHeight
+			rowHeights[endRow-1] += extra
+			needsReposition = true
+		}
+	}
+
+	// Reposition rows and cells if row heights changed due to rowspan overflow
+	if needsReposition {
+		yOffset = startY
+		for _, child := range table.Children {
+			if child.Type == TableCaptionBox {
+				yOffset += child.Rect.Height + 4
+			}
+		}
+		for rowIdx, row := range rows {
+			row.Rect.Y = yOffset
+			row.Rect.Height = rowHeights[rowIdx]
+			for _, cell := range row.Children {
+				if cell.Type == TableCellBox {
+					cell.Rect.Y = yOffset
+					if getCellRowSpan(cell) == 1 {
+						cell.Rect.Height = rowHeights[rowIdx]
+					}
+					// Re-layout cell content at new position
+					computeCellContent(cell, cell.Rect.Width-cellPadding*2, cell.Rect.X+cellPadding, yOffset+cellPadding)
+				}
+			}
+			yOffset += rowHeights[rowIdx]
+		}
+	}
+
+	// Set final heights for rowspan cells (sum of all spanned rows)
+	for _, rs := range rowspanCells {
+		endRow := rs.startRow + rs.rowspan
+		if endRow > len(rows) {
+			endRow = len(rows)
+		}
+		totalHeight := 0.0
+		for r := rs.startRow; r < endRow; r++ {
+			totalHeight += rowHeights[r]
+		}
+		rs.cell.Rect.Height = totalHeight
+		rs.cell.Rect.Y = rows[rs.startRow].Rect.Y
 	}
 
 	table.Rect.Height = yOffset - startY

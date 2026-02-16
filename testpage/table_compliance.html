@@ -1918,6 +1918,162 @@
     </div>
     <p>Expected: Header spans all 3 cols. Body has 3-col rows. Footer has "Total" (1 col) + "600" (2 cols).</p>
 
+    <h2>Visual Tests - rowspan Layout Support</h2>
+
+    <h3>Test: Basic rowspan=2</h3>
+    <div class="test-box">
+        <table id="rsT1" border="1">
+            <tr>
+                <td rowspan="2">Spans 2 rows</td>
+                <td>B1</td>
+                <td>C1</td>
+            </tr>
+            <tr>
+                <td>B2</td>
+                <td>C2</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: First column cell spans both rows vertically. B1/C1 in row 1, B2/C2 in row 2. Table has 3 columns.</p>
+
+    <h3>Test: rowspan=3 spanning all rows</h3>
+    <div class="test-box">
+        <table id="rsT2" border="1">
+            <tr>
+                <td>A</td>
+                <td rowspan="3">Sidebar</td>
+                <td>C1</td>
+            </tr>
+            <tr>
+                <td>B</td>
+                <td>C2</td>
+            </tr>
+            <tr>
+                <td>C</td>
+                <td>C3</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Middle column "Sidebar" spans all 3 rows. Left column has A/B/C, right column has C1/C2/C3.</p>
+
+    <h3>Test: Multiple rowspan cells in same column</h3>
+    <div class="test-box">
+        <table id="rsT3" border="1">
+            <tr>
+                <td rowspan="2">Top pair</td>
+                <td>B1</td>
+            </tr>
+            <tr>
+                <td>B2</td>
+            </tr>
+            <tr>
+                <td rowspan="2">Bottom pair</td>
+                <td>B3</td>
+            </tr>
+            <tr>
+                <td>B4</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Column 1 has two stacked rowspan cells: "Top pair" spans rows 1-2, "Bottom pair" spans rows 3-4.</p>
+
+    <h3>Test: rowspan + colspan combined</h3>
+    <div class="test-box">
+        <table id="rsT4" border="1">
+            <tr>
+                <td rowspan="2" colspan="2">Big cell (2x2)</td>
+                <td>C1</td>
+            </tr>
+            <tr>
+                <td>C2</td>
+            </tr>
+            <tr>
+                <td>A3</td>
+                <td>B3</td>
+                <td>C3</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: "Big cell" occupies a 2-column x 2-row area in the top-left. C1 and C2 on the right. Row 3 has 3 normal cells.</p>
+
+    <h3>Test: rowspan exceeding available rows (clamped)</h3>
+    <div class="test-box">
+        <table id="rsT5" border="1">
+            <tr>
+                <td rowspan="10">Claims 10 rows</td>
+                <td>B1</td>
+            </tr>
+            <tr>
+                <td>B2</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Left cell claims rowspan=10 but only 2 rows exist. It should span both rows and be clamped to the table height.</p>
+
+    <h3>Test: rowspan=1 (explicit, same as default)</h3>
+    <div class="test-box">
+        <table id="rsT6" border="1">
+            <tr>
+                <td rowspan="1">A</td>
+                <td rowspan="1">B</td>
+            </tr>
+            <tr>
+                <td>C</td>
+                <td>D</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: rowspan=1 behaves identically to no rowspan. Both rows look the same as a normal table.</p>
+
+    <h3>Test: rowspan within thead/tbody/tfoot</h3>
+    <div class="test-box">
+        <table id="rsT7" border="1">
+            <thead>
+                <tr>
+                    <th rowspan="2">Category</th>
+                    <th>Q1</th>
+                    <th>Q2</th>
+                </tr>
+                <tr>
+                    <th>Jan-Mar</th>
+                    <th>Apr-Jun</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="2">Sales</td>
+                    <td>100</td>
+                    <td>200</td>
+                </tr>
+                <tr>
+                    <td>150</td>
+                    <td>250</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: "Category" spans 2 header rows. "Sales" spans 2 body rows. Each rowspan cell is left-aligned in column 1.</p>
+
+    <h3>Test: Row with all columns occupied by rowspan</h3>
+    <div class="test-box">
+        <table id="rsT8" border="1">
+            <tr>
+                <td rowspan="2">A</td>
+                <td rowspan="2">B</td>
+                <td rowspan="2">C</td>
+            </tr>
+            <tr>
+                <!-- all columns occupied by rowspans above -->
+            </tr>
+            <tr>
+                <td>D</td>
+                <td>E</td>
+                <td>F</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Row 1 has A/B/C all spanning into row 2. Row 2 has no explicit cells (all occupied). Row 3 has D/E/F.</p>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
