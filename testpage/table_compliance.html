@@ -1268,6 +1268,100 @@
         info("Tests cover: colSpan/rowSpan getter (with/without attr), type check, setter, attribute reflection, clamping");
     </script>
 
+    <!-- ============================================ -->
+    <!-- td.cellIndex tests (WHATWG 4.9.11)           -->
+    <!-- ============================================ -->
+    <h2>HTMLTableCellElement - cellIndex (WHATWG 4.9.11)</h2>
+
+    <table id="ci-1">
+        <tr id="ci-row1">
+            <td id="ci-a">A</td>
+            <td id="ci-b">B</td>
+            <td id="ci-c">C</td>
+        </tr>
+    </table>
+
+    <table id="ci-2">
+        <tr id="ci-row2">
+            <th id="ci-h1">Name</th>
+            <th id="ci-h2">Age</th>
+            <td id="ci-d">Data</td>
+        </tr>
+    </table>
+
+    <table id="ci-3">
+        <tr id="ci-row3">
+            <td id="ci-only">Only cell</td>
+        </tr>
+    </table>
+
+    <script>
+        info("--- td.cellIndex property tests (WHATWG 4.9.11) ---");
+
+        var ciA = document.getElementById("ci-a");
+        var ciB = document.getElementById("ci-b");
+        var ciC = document.getElementById("ci-c");
+        var ciH1 = document.getElementById("ci-h1");
+        var ciH2 = document.getElementById("ci-h2");
+        var ciD = document.getElementById("ci-d");
+        var ciOnly = document.getElementById("ci-only");
+
+        // cellIndex returns 0 for first cell
+        if (ciA) {
+            assert(ciA.cellIndex === 0,
+                "first td.cellIndex === 0 (got: " + ciA.cellIndex + ")");
+        }
+
+        // cellIndex returns 1 for second cell
+        if (ciB) {
+            assert(ciB.cellIndex === 1,
+                "second td.cellIndex === 1 (got: " + ciB.cellIndex + ")");
+        }
+
+        // cellIndex returns 2 for third cell
+        if (ciC) {
+            assert(ciC.cellIndex === 2,
+                "third td.cellIndex === 2 (got: " + ciC.cellIndex + ")");
+        }
+
+        // cellIndex works on th elements too
+        if (ciH1) {
+            assert(ciH1.cellIndex === 0,
+                "first th.cellIndex === 0 (got: " + ciH1.cellIndex + ")");
+        }
+        if (ciH2) {
+            assert(ciH2.cellIndex === 1,
+                "second th.cellIndex === 1 (got: " + ciH2.cellIndex + ")");
+        }
+
+        // cellIndex for td after th elements
+        if (ciD) {
+            assert(ciD.cellIndex === 2,
+                "td after 2 th elements has cellIndex === 2 (got: " + ciD.cellIndex + ")");
+        }
+
+        // cellIndex is a number
+        if (ciA) {
+            assert(typeof ciA.cellIndex === "number",
+                "cellIndex is typeof number (got: " + typeof ciA.cellIndex + ")");
+        }
+
+        // cellIndex for only cell in row
+        if (ciOnly) {
+            assert(ciOnly.cellIndex === 0,
+                "only cell in row has cellIndex === 0 (got: " + ciOnly.cellIndex + ")");
+        }
+
+        // cellIndex is read-only (setting it should not change value)
+        if (ciA) {
+            ciA.cellIndex = 99;
+            assert(ciA.cellIndex === 0,
+                "cellIndex is read-only (still 0 after setting to 99, got: " + ciA.cellIndex + ")");
+        }
+
+        info("Tests cover: cellIndex (position, mixed td/th, type check, single cell, read-only)");
+    </script>
+
     <h2>Visual Tests - tr.cells (WHATWG 4.9.8)</h2>
 
     <h3>Test: Row with mixed th and td cells</h3>

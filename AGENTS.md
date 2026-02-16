@@ -1,5 +1,7 @@
 # AGENTS.md
 
+**Always ask for confirmation before editing or creating any file. Show the proposed change first.**
+
 Instructions for AI coding agents working in this Go browser codebase.
 
 ## Project Overview

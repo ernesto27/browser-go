@@ -1133,7 +1133,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		}))
 	}
 
-	if strings.ToUpper(node.TagName) == "TD" {
+	if strings.ToUpper(node.TagName) == "TD" || strings.ToUpper(node.TagName) == "TH" {
 		obj.DefineAccessorProperty("colSpan",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				colspanAttr := node.Attributes["colspan"]
@@ -1199,6 +1199,25 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				}
 				return goja.Undefined()
 			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("cellIndex",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if node.Parent == nil || (node.Parent.TagName != "tr") {
+					return rt.vm.ToValue(-1)
+				}
+				idx := 0
+				for _, sibling := range node.Parent.Children {
+					if sibling == node {
+						return rt.vm.ToValue(idx)
+					}
+					if sibling.Type == dom.Element && (sibling.TagName == "td" || sibling.TagName == "th") {
+						idx++
+					}
+				}
+				return rt.vm.ToValue(-1)
+			}),
+			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
