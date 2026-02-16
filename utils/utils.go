@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -78,4 +79,27 @@ func DoRequest(
 	}
 
 	return http.DefaultClient.Do(httpReq)
+}
+
+// ParseHTMLSizeAttribute parses width/height attributes.
+// Supports percent (relative to containerWidth), px, and raw numbers.
+func ParseHTMLSizeAttribute(value string, containerWidth float64) float64 {
+	v := strings.TrimSpace(value)
+	if strings.HasSuffix(v, "%") {
+		num := strings.TrimSuffix(v, "%")
+		if pct, err := strconv.ParseFloat(num, 64); err == nil && pct >= 0 {
+			return containerWidth * pct / 100.0
+		}
+		return 0
+	}
+
+	lower := strings.ToLower(v)
+	if strings.HasSuffix(lower, "px") {
+		v = strings.TrimSuffix(lower, "px")
+	}
+	if n, err := strconv.ParseFloat(v, 64); err == nil && n > 0 {
+		return n
+	}
+
+	return 0
 }

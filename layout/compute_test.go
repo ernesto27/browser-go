@@ -713,6 +713,26 @@ func TestTableCellCSSWidth(t *testing.T) {
 				assert.Equal(t, eqWidth, cellC.Rect.Width)
 			},
 		},
+		{
+			name:           "table width attribute percent",
+			html:           `<table width="85%"><tr><td>A</td><td>B</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				body := findBoxByTag(tree, "body")
+				availableWidth := 600.0 - body.Margin.Left - body.Margin.Right
+				assert.InDelta(t, availableWidth*0.85, table.Rect.Width, 0.1)
+			},
+		},
+		{
+			name:           "table width attribute pixels",
+			html:           `<table width="400"><tr><td>A</td><td>B</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				assert.InDelta(t, 400.0, table.Rect.Width, 0.1)
+			},
+		},
 	}
 
 	for _, tt := range tests {

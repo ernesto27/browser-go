@@ -3,6 +3,7 @@ package layout
 import (
 	"browser/css"
 	"browser/dom"
+	"browser/utils"
 	"fmt"
 	"strconv"
 	"strings"
@@ -694,9 +695,22 @@ func getCellRowSpan(cell *LayoutBox) int {
 
 // computeTableLayout handles table, row, and cell positioning
 func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY float64) {
+	tableWidth := containerWidth
+	if table.Style.Width > 0 {
+		tableWidth = table.Style.Width
+	} else if table.Style.WidthPercent > 0 {
+		tableWidth = containerWidth * table.Style.WidthPercent / 100.0
+	} else if table.Node != nil {
+		if w, ok := table.Node.Attributes["width"]; ok {
+			if parsed := utils.ParseHTMLSizeAttribute(w, containerWidth); parsed > 0 {
+				tableWidth = parsed
+			}
+		}
+	}
+
 	table.Rect.X = startX
 	table.Rect.Y = startY
-	table.Rect.Width = containerWidth
+	table.Rect.Width = tableWidth
 
 	// Track tbody/thead/tfoot wrappers to set their dimensions later
 	var wrappers []*LayoutBox
@@ -1120,13 +1134,13 @@ func getImageSize(node *dom.Node) (float64, float64) {
 	height := DefaultImageHeight
 
 	if w, ok := node.Attributes["width"]; ok {
-		if parsed, err := strconv.ParseFloat(strings.TrimSuffix(w, "px"), 64); err == nil {
+		if parsed := utils.ParseHTMLSizeAttribute(w, 0); parsed > 0 {
 			width = parsed
 		}
 	}
 
 	if h, ok := node.Attributes["height"]; ok {
-		if parsed, err := strconv.ParseFloat(strings.TrimSuffix(h, "px"), 64); err == nil {
+		if parsed := utils.ParseHTMLSizeAttribute(h, 0); parsed > 0 {
 			height = parsed
 		}
 	}
