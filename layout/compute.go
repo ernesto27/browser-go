@@ -840,6 +840,14 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 
 	cellPadding := 8.0
 
+	if table.Node != nil {
+		if p, ok := table.Node.Attributes["cellpadding"]; ok {
+			if parsed, err := strconv.Atoi(p); err == nil && parsed >= 0 {
+				cellPadding = float64(parsed)
+			}
+		}
+	}
+
 	// Seed per-column widths from <col>/<colgroup> elements, then let
 	// individual cell explicit widths override via max() in the scan below.
 	colWidths := make([]float64, numCols)

@@ -1016,3 +1016,47 @@ func TestTableCellVerticalAlign(t *testing.T) {
 		})
 	}
 }
+
+func TestTableCellPaddingAttribute(t *testing.T) {
+	const lineHeight = 24.0
+
+	tests := []struct {
+		name        string
+		html        string
+		wantPadding float64
+	}{
+		{
+			name:        "default padding is 8px when no attribute",
+			html:        `<table><tr><td>X</td></tr></table>`,
+			wantPadding: 8.0,
+		},
+		{
+			name:        "cellpadding attribute overrides default",
+			html:        `<table cellpadding="4"><tr><td>X</td></tr></table>`,
+			wantPadding: 4.0,
+		},
+		{
+			name:        "cellpadding zero removes padding",
+			html:        `<table cellpadding="0"><tr><td>X</td></tr></table>`,
+			wantPadding: 0.0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, 600)
+
+			cell := findCellByText(tree, "X")
+			assert.NotNil(t, cell)
+
+			// Cell height = content height + top padding + bottom padding
+			assert.Equal(t, lineHeight+tt.wantPadding*2, cell.Rect.Height)
+
+			// Content starts at cell top + padding
+			textBox := findTextBoxInSubtree(cell, "X")
+			assert.NotNil(t, textBox)
+			assert.Equal(t, cell.Rect.Y+tt.wantPadding, textBox.Rect.Y)
+		})
+	}
+}

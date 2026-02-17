@@ -108,7 +108,7 @@ https://html.spec.whatwg.org/
 - [x] Text wrapping inside cells
 - [x] `vertical-align` in cells
 - [x] `<colgroup>` / `<col>` elements
-- [ ] `cellpadding` attribute - read from table element (currently hardcoded to 8px)
+- [x] `cellpadding` attribute - read from table element (currently hardcoded to 8px)
 - [ ] `cellspacing` attribute - gap between cells
 - [x] HTML `width` attribute on `<table>` - e.g., width="85%"
 - [ ] `bgcolor` attribute on `<td>`/`<tr>` - background color via HTML attr
