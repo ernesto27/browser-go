@@ -8,6 +8,151 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestColWidth tests the getColWidth helper that reads width from a DOM node.
+func TestColWidth(t *testing.T) {
+	tests := []struct {
+		name       string
+		attributes map[string]string
+		tableWidth float64
+		expected   float64
+	}{
+		{"pixel width attr", map[string]string{"width": "150"}, 600, 150},
+		{"percent width attr", map[string]string{"width": "50%"}, 600, 300},
+		{"CSS style width px", map[string]string{"style": "width: 200px"}, 600, 200},
+		{"CSS style width percent", map[string]string{"style": "width: 25%"}, 600, 150},
+		{"CSS style overrides attr", map[string]string{"width": "100", "style": "width: 300px"}, 600, 300},
+		{"no width", map[string]string{}, 600, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			node := &dom.Node{Type: dom.Element, TagName: dom.TagCol, Attributes: tt.attributes}
+			result := getColWidth(node, tt.tableWidth)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestExtractColWidths tests extracting column widths from a table DOM node.
+func TestExtractColWidths(t *testing.T) {
+	tests := []struct {
+		name       string
+		html       string
+		tableWidth float64
+		expected   []float64
+	}{
+		{
+			name:       "single col with width",
+			html:       `<table><colgroup><col width="100"><col width="200"></colgroup><tr><td>A</td><td>B</td></tr></table>`,
+			tableWidth: 600,
+			expected:   []float64{100, 200},
+		},
+		{
+			name:       "col with span",
+			html:       `<table><colgroup><col width="80"><col span="2" width="150"></colgroup><tr><td>A</td><td>B</td><td>C</td></tr></table>`,
+			tableWidth: 600,
+			expected:   []float64{80, 150, 150},
+		},
+		{
+			name:       "colgroup with span no col children",
+			html:       `<table><colgroup span="2" width="120"></colgroup><tr><td>A</td><td>B</td></tr></table>`,
+			tableWidth: 600,
+			expected:   []float64{120, 120},
+		},
+		{
+			name:       "no colgroup",
+			html:       `<table><tr><td>A</td></tr></table>`,
+			tableWidth: 600,
+			expected:   nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			tableNode := findBoxByTag(tree, "table")
+			result := extractColWidths(tableNode.Node, tt.tableWidth)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestColWidthLayout tests that <col> widths drive the table column layout.
+func TestColWidthLayout(t *testing.T) {
+	tests := []struct {
+		name           string
+		html           string
+		containerWidth float64
+		verify         func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			name:           "col pixel width applied to cells",
+			html:           `<table><colgroup><col width="100"><col width="250"><col width="150"></colgroup><tr><td>A</td><td>B</td><td>C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				assert.Equal(t, 100.0, findCellByText(tree, "A").Rect.Width)
+				assert.Equal(t, 250.0, findCellByText(tree, "B").Rect.Width)
+				assert.Equal(t, 150.0, findCellByText(tree, "C").Rect.Width)
+			},
+		},
+		{
+			name:           "col span applies width to multiple columns",
+			html:           `<table><colgroup><col width="80"><col span="2" width="200"></colgroup><tr><td>A</td><td>B</td><td>C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				assert.Equal(t, 80.0, findCellByText(tree, "A").Rect.Width)
+				assert.Equal(t, 200.0, findCellByText(tree, "B").Rect.Width)
+				assert.Equal(t, 200.0, findCellByText(tree, "C").Rect.Width)
+			},
+		},
+		{
+			name:           "cell explicit width overrides col width",
+			html:           `<table><colgroup><col width="80"><col width="80"><col width="80"></colgroup><tr><td>A</td><td style="width: 300px;">B</td><td>C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				assert.Equal(t, 80.0, findCellByText(tree, "A").Rect.Width)
+				assert.Equal(t, 300.0, findCellByText(tree, "B").Rect.Width)
+				assert.Equal(t, 80.0, findCellByText(tree, "C").Rect.Width)
+			},
+		},
+		{
+			name:           "col width mixes with auto columns",
+			html:           `<table><colgroup><col width="200"><col><col></colgroup><tr><td>A</td><td>B</td><td>C</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				assert.Equal(t, 200.0, findCellByText(tree, "A").Rect.Width)
+				autoWidth := (table.Rect.Width - 200.0) / 2
+				assert.Equal(t, autoWidth, findCellByText(tree, "B").Rect.Width)
+				assert.Equal(t, autoWidth, findCellByText(tree, "C").Rect.Width)
+			},
+		},
+		{
+			name:           "col CSS style width",
+			html:           `<table><colgroup><col style="width: 180px;"><col style="width: 120px;"></colgroup><tr><td>A</td><td>B</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				assert.Equal(t, 180.0, findCellByText(tree, "A").Rect.Width)
+				assert.Equal(t, 120.0, findCellByText(tree, "B").Rect.Width)
+			},
+		},
+		{
+			name:           "colgroup span no col children",
+			html:           `<table><colgroup span="2" width="150"></colgroup><tr><td>A</td><td>B</td></tr></table>`,
+			containerWidth: 600,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				assert.Equal(t, 150.0, findCellByText(tree, "A").Rect.Width)
+				assert.Equal(t, 150.0, findCellByText(tree, "B").Rect.Width)
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, tt.containerWidth)
+			tt.verify(t, tree)
+		})
+	}
+}
+
 func TestGetLineHeight(t *testing.T) {
 	tests := []struct {
 		tag      string

@@ -2509,6 +2509,116 @@
     </div>
     <p>Expected: Inline CSS overrides the valign attribute. Content should be at the bottom, not the top.</p>
 
+    <h2>Visual Tests - &lt;colgroup&gt; / &lt;col&gt; Width Support</h2>
+
+    <h3>Test: col with pixel width attribute</h3>
+    <div class="test-box">
+        <table border="1">
+            <colgroup>
+                <col width="100">
+                <col width="250">
+                <col width="150">
+            </colgroup>
+            <tr>
+                <td>100px</td>
+                <td>250px</td>
+                <td>150px</td>
+            </tr>
+            <tr>
+                <td>Row 2</td>
+                <td>Row 2</td>
+                <td>Row 2</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Columns are 100px, 250px, and 150px wide respectively, driven by the &lt;col width&gt; attributes.</p>
+
+    <h3>Test: col with CSS style width</h3>
+    <div class="test-box">
+        <table border="1">
+            <colgroup>
+                <col style="width: 200px;">
+                <col style="width: 100px;">
+                <col>
+            </colgroup>
+            <tr>
+                <td>200px (CSS)</td>
+                <td>100px (CSS)</td>
+                <td>Auto</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: First column 200px, second 100px via inline CSS on &lt;col&gt;, third takes remaining space.</p>
+
+    <h3>Test: col with span attribute</h3>
+    <div class="test-box">
+        <table border="1">
+            <colgroup>
+                <col width="80">
+                <col span="2" width="200">
+                <col width="80">
+            </colgroup>
+            <tr>
+                <td>80px</td>
+                <td>200px</td>
+                <td>200px</td>
+                <td>80px</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: 4 columns. Col 1 and 4 are 80px. Cols 2 and 3 are 200px each — set by a single &lt;col span="2"&gt;.</p>
+
+    <h3>Test: colgroup with no col children (colgroup span)</h3>
+    <div class="test-box">
+        <table border="1">
+            <colgroup span="2" width="150">
+            </colgroup>
+            <colgroup>
+                <col width="250">
+            </colgroup>
+            <tr>
+                <td>150px</td>
+                <td>150px</td>
+                <td>250px</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: First two columns are 150px (set by colgroup span=2). Third is 250px.</p>
+
+    <h3>Test: cell width overrides col width</h3>
+    <div class="test-box">
+        <table border="1">
+            <colgroup>
+                <col width="80">
+                <col width="80">
+                <col width="80">
+            </colgroup>
+            <tr>
+                <td>80px (col)</td>
+                <td style="width: 300px;">300px (cell wins)</td>
+                <td>80px (col)</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Col sets 80px for all columns, but the middle cell's explicit 300px style overrides it.</p>
+
+    <h3>Test: col width with auto fallback</h3>
+    <div class="test-box">
+        <table border="1">
+            <colgroup>
+                <col width="200">
+                <col>
+                <col>
+            </colgroup>
+            <tr>
+                <td>200px (col)</td>
+                <td>Auto</td>
+                <td>Auto</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: First column 200px from col. The other two share the remaining space equally (auto).</p>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

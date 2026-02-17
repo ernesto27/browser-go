@@ -59,6 +59,7 @@ var transparentElements = map[string]bool{
 var skipElements = map[string]bool{
 	"script": true, "style": true, "head": true,
 	"meta": true, "link": true, "option": true,
+	"colgroup": true, "col": true,
 }
 
 var imageElements = map[string]bool{

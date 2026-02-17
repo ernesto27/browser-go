@@ -693,6 +693,67 @@ func getCellRowSpan(cell *LayoutBox) int {
 	return 1
 }
 
+// getColWidth reads the width from a <col> or <colgroup> DOM node via
+// inline CSS style (higher priority) or the HTML width attribute.
+func getColWidth(node *dom.Node, tableWidth float64) float64 {
+	if styleAttr, ok := node.Attributes["style"]; ok {
+		style := css.ParseInlineStyle(styleAttr)
+		if style.Width > 0 {
+			return style.Width
+		}
+		if style.WidthPercent > 0 {
+			return tableWidth * style.WidthPercent / 100.0
+		}
+	}
+	if w, ok := node.Attributes["width"]; ok {
+		if parsed := utils.ParseHTMLSizeAttribute(w, tableWidth); parsed > 0 {
+			return parsed
+		}
+	}
+	return 0
+}
+
+// extractColWidths scans a table DOM node for <colgroup>/<col> children and
+// returns a slice of per-column widths (0 = auto), expanding span attributes.
+func extractColWidths(tableNode *dom.Node, tableWidth float64) []float64 {
+	var widths []float64
+	for _, child := range tableNode.Children {
+		if child.Type != dom.Element || child.TagName != dom.TagColgroup {
+			continue
+		}
+		if len(child.Children) == 0 {
+			// Spanless colgroup — covers span= columns uniformly
+			span := 1
+			if s, ok := child.Attributes["span"]; ok {
+				if n, err := strconv.Atoi(s); err == nil && n > 0 {
+					span = n
+				}
+			}
+			w := getColWidth(child, tableWidth)
+			for i := 0; i < span; i++ {
+				widths = append(widths, w)
+			}
+		} else {
+			for _, col := range child.Children {
+				if col.Type != dom.Element || col.TagName != dom.TagCol {
+					continue
+				}
+				span := 1
+				if s, ok := col.Attributes["span"]; ok {
+					if n, err := strconv.Atoi(s); err == nil && n > 0 {
+						span = n
+					}
+				}
+				w := getColWidth(col, tableWidth)
+				for i := 0; i < span; i++ {
+					widths = append(widths, w)
+				}
+			}
+		}
+	}
+	return widths
+}
+
 // computeTableLayout handles table, row, and cell positioning
 func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY float64) {
 	tableWidth := containerWidth
@@ -779,9 +840,19 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 
 	cellPadding := 8.0
 
+	// Seed per-column widths from <col>/<colgroup> elements, then let
+	// individual cell explicit widths override via max() in the scan below.
+	colWidths := make([]float64, numCols)
+	if table.Node != nil {
+		for i, w := range extractColWidths(table.Node, table.Rect.Width) {
+			if i < numCols {
+				colWidths[i] = w
+			}
+		}
+	}
+
 	// Determine per-column widths: scan all cells for explicit CSS width values.
 	// For each logical column, use the maximum explicit width found across rows.
-	colWidths := make([]float64, numCols)
 	{
 		occupied := make(map[int]map[int]bool)
 		for rowIdx, row := range rows {

@@ -107,7 +107,7 @@ https://html.spec.whatwg.org/
 - [ ] `thead`/`tfoot` ordering (thead first, tfoot last per spec)
 - [x] Text wrapping inside cells
 - [x] `vertical-align` in cells
-- [ ] `<colgroup>` / `<col>` elements
+- [x] `<colgroup>` / `<col>` elements
 - [ ] `cellpadding` attribute - read from table element (currently hardcoded to 8px)
 - [ ] `cellspacing` attribute - gap between cells
 - [x] HTML `width` attribute on `<table>` - e.g., width="85%"
