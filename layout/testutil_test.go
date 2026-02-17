@@ -155,6 +155,22 @@ func findCellByText(root *LayoutBox, text string) *LayoutBox {
 	return nil
 }
 
+// findTextBoxInSubtree finds the first TextBox in the subtree whose Text matches.
+func findTextBoxInSubtree(root *LayoutBox, text string) *LayoutBox {
+	if root == nil {
+		return nil
+	}
+	if root.Type == TextBox && root.Text == text {
+		return root
+	}
+	for _, child := range root.Children {
+		if found := findTextBoxInSubtree(child, text); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
 func cellContainsText(box *LayoutBox, text string) bool {
 	if box.Type == TextBox && box.Text == text {
 		return true

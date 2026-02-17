@@ -1047,14 +1047,27 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 		switch box.Type {
 		case TextBox:
 			fontSize := 16.0
-			textWidth := MeasureText(box.Text, fontSize)
+			lines := WrapText(box.Text, fontSize, width)
 			box.Rect.X = currentX
 			box.Rect.Y = currentY
-			box.Rect.Width = textWidth
-			box.Rect.Height = lineHeight
-			currentX += textWidth
-			if currentY+lineHeight > maxY {
-				maxY = currentY + lineHeight
+			if len(lines) > 1 {
+				box.WrappedLines = lines
+				box.Rect.Width = width
+				totalHeight := float64(len(lines)) * lineHeight
+				box.Rect.Height = totalHeight
+				currentY += totalHeight
+				currentX = startX
+				if currentY > maxY {
+					maxY = currentY
+				}
+			} else {
+				textWidth := MeasureText(box.Text, fontSize)
+				box.Rect.Width = textWidth
+				box.Rect.Height = lineHeight
+				currentX += textWidth
+				if currentY+lineHeight > maxY {
+					maxY = currentY + lineHeight
+				}
 			}
 
 		case InlineBox:

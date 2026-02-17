@@ -743,3 +743,72 @@ func TestTableCellCSSWidth(t *testing.T) {
 		})
 	}
 }
+
+func TestTableCellTextWrapping(t *testing.T) {
+	// MeasureText estimation: fontSize(16) * 0.5 * len(text) = 8 * len(text) pixels.
+	// cellPadding = 8, so inner width = cellWidth - 16.
+	// "Hello World" in a 100px cell: inner = 84px.
+	//   "Hello" = 40px fits; "Hello World" = 88px > 84px → wraps to ["Hello", "World"].
+	tests := []struct {
+		name   string
+		html   string
+		verify func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			name: "short text does not wrap",
+			html: `<table><tr><td style="width: 300px;">Hi</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cell := findCellByText(tree, "Hi")
+				assert.NotNil(t, cell)
+				textBox := findTextBoxInSubtree(cell, "Hi")
+				assert.NotNil(t, textBox)
+				assert.True(t, len(textBox.WrappedLines) <= 1, "short text should not have multiple wrapped lines")
+				assert.Equal(t, 24.0, textBox.Rect.Height)
+			},
+		},
+		{
+			name: "long text wraps in narrow cell",
+			html: `<table><tr><td style="width: 100px;">Hello World</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cell := findCellByText(tree, "Hello World")
+				assert.NotNil(t, cell)
+				textBox := findTextBoxInSubtree(cell, "Hello World")
+				assert.NotNil(t, textBox)
+				assert.Greater(t, len(textBox.WrappedLines), 1, "text should wrap to multiple lines")
+				assert.Equal(t, []string{"Hello", "World"}, textBox.WrappedLines)
+			},
+		},
+		{
+			name: "wrapped text increases cell height",
+			html: `<table><tr><td style="width: 100px;">Hello World</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cell := findCellByText(tree, "Hello World")
+				assert.NotNil(t, cell)
+				lineHeight := 24.0
+				cellPadding := 8.0
+				// 2 wrapped lines + top and bottom padding
+				assert.Equal(t, 2*lineHeight+2*cellPadding, cell.Rect.Height)
+			},
+		},
+		{
+			name: "wrapped text box height spans all lines",
+			html: `<table><tr><td style="width: 100px;">Hello World</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cell := findCellByText(tree, "Hello World")
+				assert.NotNil(t, cell)
+				textBox := findTextBoxInSubtree(cell, "Hello World")
+				assert.NotNil(t, textBox)
+				lineHeight := 24.0
+				assert.Equal(t, 2*lineHeight, textBox.Rect.Height)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, 600)
+			tt.verify(t, tree)
+		})
+	}
+}
