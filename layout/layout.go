@@ -105,6 +105,13 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 			}
 		}
 
+		if valign, ok := node.Attributes["valign"]; ok {
+			switch strings.ToLower(valign) {
+			case "top", "middle", "bottom", "baseline":
+				box.Style.VerticalAlign = strings.ToLower(valign)
+			}
+		}
+
 		if bgcolor, ok := node.Attributes["bgcolor"]; ok {
 			if c := css.ParseColor(bgcolor); c != nil {
 				box.Style.BackgroundColor = c
@@ -249,6 +256,9 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	}
 	if inline.TextAlign != "" {
 		base.TextAlign = inline.TextAlign
+	}
+	if inline.VerticalAlign != "" {
+		base.VerticalAlign = inline.VerticalAlign
 	}
 	if inline.Display != "" {
 		base.Display = inline.Display

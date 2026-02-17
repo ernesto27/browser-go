@@ -105,8 +105,8 @@ https://html.spec.whatwg.org/
 - [ ] Content-based column width calculation
 - [x] CSS `width` on table cells (px and % widths on td/th)
 - [ ] `thead`/`tfoot` ordering (thead first, tfoot last per spec)
-- [ ] Text wrapping inside cells
-- [ ] `vertical-align` in cells
+- [x] Text wrapping inside cells
+- [x] `vertical-align` in cells
 - [ ] `<colgroup>` / `<col>` elements
 - [ ] `cellpadding` attribute - read from table element (currently hardcoded to 8px)
 - [ ] `cellspacing` attribute - gap between cells

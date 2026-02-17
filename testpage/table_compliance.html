@@ -2414,6 +2414,101 @@
     </div>
     <p>Expected: Table width is 85% of the test box container</p>
 
+    <h2>Visual Tests - vertical-align in Table Cells</h2>
+
+    <h3>Test: CSS vertical-align top (default)</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td style="vertical-align: top;">Top<br>aligned<br>cell</td>
+                <td style="vertical-align: top;">Short</td>
+                <td style="vertical-align: top;">Also<br>top</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: All cells top-aligned. "Short" and "Also top" content hugs the top edge of the row.</p>
+
+    <h3>Test: CSS vertical-align middle</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Tall cell<br>with extra<br>lines<br>to push height</td>
+                <td style="vertical-align: middle;">Middle</td>
+                <td style="vertical-align: middle;">Also<br>middle</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Left cell sets the row height. "Middle" and "Also middle" are vertically centered within the tall row.</p>
+
+    <h3>Test: CSS vertical-align bottom</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Tall cell<br>with extra<br>lines<br>to push height</td>
+                <td style="vertical-align: bottom;">Bottom</td>
+                <td style="vertical-align: bottom;">Also<br>bottom</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Left cell sets the row height. "Bottom" and "Also bottom" content hugs the bottom edge of the row.</p>
+
+    <h3>Test: HTML valign attribute - top</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Tall cell<br>with extra<br>lines<br>to push height</td>
+                <td valign="top">valign top</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: "valign top" content is at the top of the row, same as CSS vertical-align: top.</p>
+
+    <h3>Test: HTML valign attribute - middle</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Tall cell<br>with extra<br>lines<br>to push height</td>
+                <td valign="middle">valign middle</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: "valign middle" content is vertically centered in the row.</p>
+
+    <h3>Test: HTML valign attribute - bottom</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Tall cell<br>with extra<br>lines<br>to push height</td>
+                <td valign="bottom">valign bottom</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: "valign bottom" content is at the bottom of the row.</p>
+
+    <h3>Test: Mixed vertical-align in same row</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td style="vertical-align: top;">Top</td>
+                <td>Tall<br>reference<br>cell<br>sets height</td>
+                <td style="vertical-align: middle;">Middle</td>
+                <td style="vertical-align: bottom;">Bottom</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Four cells in one row — "Top" at top, tall cell sets height, "Middle" centered, "Bottom" at bottom.</p>
+
+    <h3>Test: CSS vertical-align overrides valign attribute</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Tall cell<br>with extra<br>lines<br>to push height</td>
+                <td valign="top" style="vertical-align: bottom;">CSS wins (bottom)</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Inline CSS overrides the valign attribute. Content should be at the bottom, not the top.</p>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

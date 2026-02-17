@@ -886,6 +886,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 	var rowspanCells []rowspanEntry
 	gridOccupied := make(map[int]map[int]bool)
 	rowHeights := make([]float64, len(rows))
+	cellContentH := make(map[*LayoutBox]float64)
 
 	for rowIdx, row := range rows {
 		row.Rect.X = startX
@@ -925,6 +926,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 			// Compute cell content height
 			cellHeight := computeCellContent(cell, cellWidth-cellPadding*2, xPos+cellPadding, yOffset+cellPadding)
 			cell.Rect.Height = cellHeight + cellPadding*2
+			cellContentH[cell] = cellHeight
 
 			// Only rowspan=1 cells count toward this row's height
 			if rs == 1 {
@@ -957,6 +959,30 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		for _, cell := range row.Children {
 			if cell.Type == TableCellBox && getCellRowSpan(cell) == 1 {
 				cell.Rect.Height = rowHeight
+			}
+		}
+
+		for _, cell := range row.Children {
+			if cell.Type != TableCellBox || getCellRowSpan(cell) != 1 {
+				continue
+			}
+			va := getCellVerticalAlign(cell)
+			if va == "top" || va == "baseline" || va == "" {
+				continue
+			}
+			contentHeight := cellContentH[cell]
+			innerHeight := cell.Rect.Height - cellPadding*2
+			var dy float64
+			switch va {
+			case "middle":
+				dy = (innerHeight - contentHeight) / 2
+			case "bottom":
+				dy = innerHeight - contentHeight
+			}
+			if dy > 0 {
+				for _, child := range cell.Children {
+					shiftBoxTree(child, dy)
+				}
 			}
 		}
 
@@ -1081,6 +1107,13 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 			box.Rect.Height = lineHeight
 			if currentY+lineHeight > maxY {
 				maxY = currentY + lineHeight
+			}
+
+		case BRBox:
+			currentY += lineHeight
+			currentX = startX
+			if currentY > maxY {
+				maxY = currentY
 			}
 
 		case BlockBox:
@@ -1260,4 +1293,18 @@ func getLineHeightFromStyle(style css.Style, tagName string) float64 {
 		return style.LineHeight
 	}
 	return getDefaultLineHeight(tagName)
+}
+
+func getCellVerticalAlign(cell *LayoutBox) string {
+	if cell.Style.VerticalAlign != "" {
+		return cell.Style.VerticalAlign
+	}
+	return "top"
+}
+
+func shiftBoxTree(box *LayoutBox, dy float64) {
+	box.Rect.Y += dy
+	for _, child := range box.Children {
+		shiftBoxTree(child, dy)
+	}
 }

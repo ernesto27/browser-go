@@ -812,3 +812,62 @@ func TestTableCellTextWrapping(t *testing.T) {
 		})
 	}
 }
+
+func TestTableCellVerticalAlign(t *testing.T) {
+	// "Hello World" in a 100px cell wraps to 2 lines:
+	//   content height = 2 * 24 = 48px
+	//   cell height    = 48 + 16 = 64px  (+ 2 * cellPadding)
+	//   innerHeight    = 64 - 16 = 48px
+	// Short cell has 1 line = 24px content.
+	// Empty space = 48 - 24 = 24px.
+	const cellPadding = 8.0
+	const lineHeight = 24.0
+	const rowH = 2*lineHeight + 2*cellPadding // 64
+
+	tests := []struct {
+		name   string
+		html   string
+		wantDY float64
+	}{
+		{
+			name:   "top - no shift",
+			html:   `<table><tr><td style="width:100px;">Hello World</td><td style="vertical-align:top;">X</td></tr></table>`,
+			wantDY: 0,
+		},
+		{
+			name:   "middle - centered",
+			html:   `<table><tr><td style="width:100px;">Hello World</td><td style="vertical-align:middle;">X</td></tr></table>`,
+			wantDY: (rowH - 2*cellPadding - lineHeight) / 2, // 12
+		},
+		{
+			name:   "bottom - full shift",
+			html:   `<table><tr><td style="width:100px;">Hello World</td><td style="vertical-align:bottom;">X</td></tr></table>`,
+			wantDY: rowH - 2*cellPadding - lineHeight, // 24
+		},
+		{
+			name:   "valign middle attribute",
+			html:   `<table><tr><td style="width:100px;">Hello World</td><td valign="middle">X</td></tr></table>`,
+			wantDY: (rowH - 2*cellPadding - lineHeight) / 2,
+		},
+		{
+			name:   "valign bottom attribute",
+			html:   `<table><tr><td style="width:100px;">Hello World</td><td valign="bottom">X</td></tr></table>`,
+			wantDY: rowH - 2*cellPadding - lineHeight,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, 600)
+
+			cell := findCellByText(tree, "X")
+			assert.NotNil(t, cell)
+			textBox := findTextBoxInSubtree(cell, "X")
+			assert.NotNil(t, textBox)
+
+			expectedY := cell.Rect.Y + cellPadding + tt.wantDY
+			assert.Equal(t, expectedY, textBox.Rect.Y)
+		})
+	}
+}
