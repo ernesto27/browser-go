@@ -97,7 +97,7 @@ https://html.spec.whatwg.org/
 - [x] `td.colSpan` / `td.rowSpan` - Span attributes (getter/setter with clamping per spec)
 - [x] `td.cellIndex` - Cell position in row
 - [x] `td.headers` - Associated header cells
-- [ ] `td.scope` - Header cell scope (th only)
+- [x] `td.scope` - Header cell scope (enumerated: row/col/rowgroup/colgroup, invalid → "")
 
 ### Table Layout Gaps
 - [x] `colspan` attribute support in layout

@@ -2858,6 +2858,178 @@
         info("Tests cover: headers getter (single, multiple, absent), type check, setter (update, clear), th element");
     </script>
 
+    <!-- ============================================ -->
+    <!-- th.scope tests (WHATWG 4.9.11)               -->
+    <!-- ============================================ -->
+    <hr>
+    <h2>Visual Tests - HTMLTableCellElement.scope (WHATWG 4.9.11)</h2>
+
+    <h3>Test: th with scope="col"</h3>
+    <div class="test-box">
+        <table id="sc-1">
+            <tr>
+                <th id="sc-col1" scope="col">Name</th>
+                <th id="sc-col2" scope="col">Age</th>
+            </tr>
+            <tr>
+                <td>Alice</td>
+                <td>30</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Column headers — each th declares it is a header for its column</p>
+
+    <h3>Test: th with scope="row"</h3>
+    <div class="test-box">
+        <table id="sc-2">
+            <tr>
+                <th id="sc-row1" scope="row">Alice</th>
+                <td>30</td>
+                <td>Engineering</td>
+            </tr>
+            <tr>
+                <th id="sc-row2" scope="row">Bob</th>
+                <td>25</td>
+                <td>Design</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Row headers — each th declares it is a header for its row</p>
+
+    <h3>Test: th with scope="colgroup"</h3>
+    <div class="test-box">
+        <table id="sc-3">
+            <colgroup><col><col></colgroup>
+            <colgroup><col><col></colgroup>
+            <tr>
+                <th id="sc-cg1" scope="colgroup" colspan="2">Q1</th>
+                <th id="sc-cg2" scope="colgroup" colspan="2">Q2</th>
+            </tr>
+            <tr>
+                <td>Jan</td><td>Feb</td>
+                <td>Apr</td><td>May</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Group headers — each th spans and labels a column group</p>
+
+    <h3>Test: th with scope="rowgroup"</h3>
+    <div class="test-box">
+        <table id="sc-4">
+            <tbody>
+                <tr>
+                    <th id="sc-rg1" scope="rowgroup" rowspan="2">North</th>
+                    <td>Oslo</td>
+                </tr>
+                <tr>
+                    <td>Stockholm</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: Row group header — th spans rows and labels the group</p>
+
+    <h3>Test: th with no scope attribute</h3>
+    <div class="test-box">
+        <table id="sc-5">
+            <tr>
+                <th id="sc-none">No scope</th>
+                <td>Value</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: th with no scope attribute — getter returns "" (auto)</p>
+
+    <h3>Test: td with scope attribute (invalid per spec, th only)</h3>
+    <div class="test-box">
+        <table id="sc-6">
+            <tr>
+                <td id="sc-td" scope="col">Data cell with scope</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: td.scope reads the attribute (scope is on HTMLTableCellElement, both td and th)</p>
+
+    <h2>JavaScript Tests - HTMLTableCellElement.scope (WHATWG 4.9.11)</h2>
+    <script>
+        info("--- th.scope property tests (WHATWG 4.9.11) ---");
+
+        var scCol1  = document.getElementById("sc-col1");
+        var scCol2  = document.getElementById("sc-col2");
+        var scRow1  = document.getElementById("sc-row1");
+        var scCg1   = document.getElementById("sc-cg1");
+        var scRg1   = document.getElementById("sc-rg1");
+        var scNone  = document.getElementById("sc-none");
+        var scTd    = document.getElementById("sc-td");
+
+        // scope getter returns "col"
+        if (scCol1) {
+            assert(scCol1.scope === "col",
+                "th.scope returns 'col' (got: '" + scCol1.scope + "')");
+        }
+
+        // scope getter returns "row"
+        if (scRow1) {
+            assert(scRow1.scope === "row",
+                "th.scope returns 'row' (got: '" + scRow1.scope + "')");
+        }
+
+        // scope getter returns "colgroup"
+        if (scCg1) {
+            assert(scCg1.scope === "colgroup",
+                "th.scope returns 'colgroup' (got: '" + scCg1.scope + "')");
+        }
+
+        // scope getter returns "rowgroup"
+        if (scRg1) {
+            assert(scRg1.scope === "rowgroup",
+                "th.scope returns 'rowgroup' (got: '" + scRg1.scope + "')");
+        }
+
+        // scope returns "" when no attribute (missing value default = auto = "")
+        if (scNone) {
+            assert(scNone.scope === "",
+                "th.scope returns '' when no attribute (got: '" + scNone.scope + "')");
+        }
+
+        // scope is a string
+        if (scCol1) {
+            assert(typeof scCol1.scope === "string",
+                "th.scope is typeof string (got: " + typeof scCol1.scope + ")");
+        }
+
+        // scope setter updates the value
+        if (scCol2) {
+            scCol2.scope = "colgroup";
+            assert(scCol2.scope === "colgroup",
+                "th.scope setter updates to 'colgroup' (got: '" + scCol2.scope + "')");
+            assert(scCol2.getAttribute("scope") === "colgroup",
+                "th.scope setter reflects to attribute (got: '" + scCol2.getAttribute("scope") + "')");
+        }
+
+        // scope getter returns "" for invalid values (limited to known values per spec)
+        if (scCol2) {
+            scCol2.scope = "invalid-value";
+            assert(scCol2.scope === "",
+                "th.scope returns '' for invalid attribute value (got: '" + scCol2.scope + "')");
+        }
+
+        // scope setter with "" clears to auto state
+        if (scRow1) {
+            scRow1.scope = "";
+            assert(scRow1.scope === "",
+                "th.scope setter with '' results in '' (got: '" + scRow1.scope + "')");
+        }
+
+        // scope works on td elements too (HTMLTableCellElement covers both)
+        if (scTd) {
+            assert(scTd.scope === "col",
+                "td.scope reads attribute value (got: '" + scTd.scope + "')");
+        }
+
+        info("Tests cover: scope getter (col, row, colgroup, rowgroup, absent), type check, setter, invalid value → '', td element");
+    </script>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

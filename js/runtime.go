@@ -1236,6 +1236,25 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 
+		// scope - enumerated attribute, limited to known values per WHATWG 4.9.11
+		// valid values: "row", "col", "rowgroup", "colgroup"; invalid/missing → ""
+		obj.DefineAccessorProperty("scope",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				switch node.Attributes["scope"] {
+				case "row", "col", "rowgroup", "colgroup":
+					return rt.vm.ToValue(node.Attributes["scope"])
+				default:
+					return rt.vm.ToValue("")
+				}
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					node.Attributes["scope"] = call.Arguments[0].String()
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {
