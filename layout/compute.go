@@ -754,17 +754,34 @@ func extractColWidths(tableNode *dom.Node, tableWidth float64) []float64 {
 	return widths
 }
 
+// measureTextWidth returns the natural (unwrapped) text width of a layout subtree
+// by recursively summing all text node widths. Used for shrink-to-fit table sizing.
+func measureTextWidth(box *LayoutBox) float64 {
+	if box.Type == TextBox {
+		return MeasureText(box.Text, 16.0)
+	}
+	total := 0.0
+	for _, child := range box.Children {
+		total += measureTextWidth(child)
+	}
+	return total
+}
+
 // computeTableLayout handles table, row, and cell positioning
 func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY float64) {
 	tableWidth := containerWidth
+	hasExplicitWidth := false
 	if table.Style.Width > 0 {
 		tableWidth = table.Style.Width
+		hasExplicitWidth = true
 	} else if table.Style.WidthPercent > 0 {
 		tableWidth = containerWidth * table.Style.WidthPercent / 100.0
+		hasExplicitWidth = true
 	} else if table.Node != nil {
 		if w, ok := table.Node.Attributes["width"]; ok {
 			if parsed := utils.ParseHTMLSizeAttribute(w, containerWidth); parsed > 0 {
 				tableWidth = parsed
+				hasExplicitWidth = true
 			}
 		}
 	}
@@ -860,6 +877,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 	// Seed per-column widths from <col>/<colgroup> elements, then let
 	// individual cell explicit widths override via max() in the scan below.
 	colWidths := make([]float64, numCols)
+	naturalColWidths := make([]float64, numCols)
 	if table.Node != nil {
 		for i, w := range extractColWidths(table.Node, table.Rect.Width) {
 			if i < numCols {
@@ -902,33 +920,56 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 					if w > colWidths[colIdx] {
 						colWidths[colIdx] = w
 					}
+					// Natural content width for shrink-to-fit tables
+					natural := measureTextWidth(cell) + cellPadding*2
+					if natural > naturalColWidths[colIdx] {
+						naturalColWidths[colIdx] = natural
+					}
 				}
 				colIdx += cs
 			}
 		}
 	}
 
-	// Distribute remaining space equally among auto (width=0) columns
-	usedWidth := 0.0
-	autoCount := 0
-	for _, w := range colWidths {
-		if w > 0 {
-			usedWidth += w
-		} else {
-			autoCount++
+	if !hasExplicitWidth {
+		// Shrink-to-fit: use natural content widths for auto (width=0) columns
+		for i, w := range colWidths {
+			if w == 0 {
+				nat := naturalColWidths[i]
+				if nat < 24 {
+					nat = 24
+				}
+				colWidths[i] = nat
+			}
 		}
-	}
-	autoWidth := 0.0
-	if autoCount > 0 {
-		remaining := containerWidth - usedWidth - float64(numCols+1)*cellSpacing
-		if remaining < 0 {
-			remaining = 0
+		total := 0.0
+		for _, w := range colWidths {
+			total += w
 		}
-		autoWidth = remaining / float64(autoCount)
-	}
-	for i, w := range colWidths {
-		if w == 0 {
-			colWidths[i] = autoWidth
+		tableWidth = total + float64(numCols+1)*cellSpacing
+		table.Rect.Width = tableWidth
+	} else {
+		// Explicit table width: distribute remaining space among auto columns
+		usedWidth := 0.0
+		autoCount := 0
+		for _, w := range colWidths {
+			if w > 0 {
+				usedWidth += w
+			} else {
+				autoCount++
+			}
+		}
+		if autoCount > 0 {
+			remaining := tableWidth - usedWidth - float64(numCols+1)*cellSpacing
+			if remaining < 0 {
+				remaining = 0
+			}
+			autoWidth := remaining / float64(autoCount)
+			for i, w := range colWidths {
+				if w == 0 {
+					colWidths[i] = autoWidth
+				}
+			}
 		}
 	}
 
@@ -946,7 +987,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		if child.Type == TableCaptionBox {
 			child.Rect.X = startX
 			child.Rect.Y = yOffset
-			child.Rect.Width = containerWidth
+			child.Rect.Width = tableWidth
 
 			// Center the caption text
 			captionHeight := 24.0
@@ -954,7 +995,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 				if textChild.Type == TextBox {
 					fontSize := 16.0
 					textWidth := MeasureText(textChild.Text, fontSize)
-					textChild.Rect.X = startX + (containerWidth-textWidth)/2 // centered
+					textChild.Rect.X = startX + (tableWidth-textWidth)/2 // centered
 					textChild.Rect.Y = yOffset
 					textChild.Rect.Width = textWidth
 					textChild.Rect.Height = 24.0
@@ -980,7 +1021,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 	for rowIdx, row := range rows {
 		row.Rect.X = startX
 		row.Rect.Y = yOffset
-		row.Rect.Width = containerWidth
+		row.Rect.Width = tableWidth
 
 		rowHeight := 24.0 // minimum row height
 		colIdx := 0
@@ -1149,7 +1190,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 	for _, wrapper := range wrappers {
 		wrapper.Rect.X = startX
 		wrapper.Rect.Y = startY
-		wrapper.Rect.Width = containerWidth
+		wrapper.Rect.Width = tableWidth
 		wrapper.Rect.Height = table.Rect.Height
 	}
 }

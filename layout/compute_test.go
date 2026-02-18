@@ -637,17 +637,23 @@ func TestRowspanLayout(t *testing.T) {
 				rows := findTableRows(table)
 				assert.Equal(t, 3, len(rows))
 
-				colWidth := table.Rect.Width / 3
-
+				cellA := findCellByText(table, "A")
 				cellSide := findCellByText(table, "Side")
+				cellC1 := findCellByText(table, "C1")
+				cellC2 := findCellByText(table, "C2")
+				cellC3 := findCellByText(table, "C3")
 
 				// Side spans all 3 rows
 				totalHeight := rows[0].Rect.Height + rows[1].Rect.Height + rows[2].Rect.Height
 				assert.Equal(t, totalHeight, cellSide.Rect.Height)
 				assert.Equal(t, rows[0].Rect.Y, cellSide.Rect.Y)
 
-				// Side is at col 1
-				assert.Equal(t, table.Rect.X+colWidth, cellSide.Rect.X)
+				// Column ordering: A (col 0) < Side (col 1) < C1/C2/C3 (col 2)
+				assert.Equal(t, table.Rect.X, cellA.Rect.X)
+				assert.Greater(t, cellSide.Rect.X, cellA.Rect.X)
+				assert.Equal(t, cellC1.Rect.X, cellC2.Rect.X)
+				assert.Equal(t, cellC1.Rect.X, cellC3.Rect.X)
+				assert.Greater(t, cellC1.Rect.X, cellSide.Rect.X)
 			},
 		},
 		{
@@ -1129,6 +1135,71 @@ func TestTableCellSpacingAttribute(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tree := buildTree(tt.html)
 			ComputeLayout(tree, 600)
+			tt.verify(t, tree)
+		})
+	}
+}
+
+func TestTableShrinkToFit(t *testing.T) {
+	tests := []struct {
+		name           string
+		html           string
+		containerWidth float64
+		verify         func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			name:           "table without explicit width is narrower than container",
+			html:           `<table><tr><td>Hi</td><td>OK</td></tr></table>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				assert.Less(t, table.Rect.Width, 800.0,
+					"shrink-to-fit table should not fill the full container width")
+			},
+		},
+		{
+			name:           "table with explicit width uses full stated width",
+			html:           `<table width="600"><tr><td>Hi</td><td>OK</td></tr></table>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				assert.Equal(t, 600.0, table.Rect.Width,
+					"explicit width attribute must be respected")
+			},
+		},
+		{
+			name:           "wider text produces wider table",
+			html:           `<table><tr><td>Short</td></tr></table>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				tableShort := findBoxByTag(tree, "table")
+				shortWidth := tableShort.Rect.Width
+
+				tree2 := buildTree(`<table><tr><td>A much longer cell value</td></tr></table>`)
+				ComputeLayout(tree2, 800)
+				tableLong := findBoxByTag(tree2, "table")
+
+				assert.Less(t, shortWidth, tableLong.Rect.Width,
+					"longer text content should produce a wider table")
+			},
+		},
+		{
+			name:           "row and wrapper widths match table width",
+			html:           `<table><tbody><tr><td>X</td></tr></tbody></table>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				rows := findTableRows(table)
+				assert.Equal(t, table.Rect.Width, rows[0].Rect.Width,
+					"row width must equal the shrunk table width")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, tt.containerWidth)
 			tt.verify(t, tree)
 		})
 	}
