@@ -1060,3 +1060,76 @@ func TestTableCellPaddingAttribute(t *testing.T) {
 		})
 	}
 }
+
+func TestTableCellSpacingAttribute(t *testing.T) {
+	// cellPadding default = 8, lineHeight = 24
+	// With cellspacing=S and N columns: each col gets (tableWidth - (N+1)*S) / N
+	// colXOffsets[0] = S, colXOffsets[1] = S + colWidth + S
+	tests := []struct {
+		name   string
+		html   string
+		verify func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			name: "default spacing: adjacent cells touch",
+			html: `<table><tr><td style="width:100px;">A</td><td style="width:100px;">B</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cellA := findCellByText(tree, "A")
+				cellB := findCellByText(tree, "B")
+				assert.NotNil(t, cellA)
+				assert.NotNil(t, cellB)
+				assert.Equal(t, cellA.Rect.X+cellA.Rect.Width, cellB.Rect.X)
+			},
+		},
+		{
+			name: "cellspacing=6: first cell offset from table left by spacing",
+			html: `<table cellspacing="6"><tr><td style="width:100px;">A</td><td style="width:100px;">B</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				table := findBoxByTag(tree, "table")
+				cellA := findCellByText(tree, "A")
+				assert.NotNil(t, table)
+				assert.NotNil(t, cellA)
+				assert.Equal(t, table.Rect.X+6.0, cellA.Rect.X)
+			},
+		},
+		{
+			name: "cellspacing=6: gap between adjacent cells",
+			html: `<table cellspacing="6"><tr><td style="width:100px;">A</td><td style="width:100px;">B</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cellA := findCellByText(tree, "A")
+				cellB := findCellByText(tree, "B")
+				assert.NotNil(t, cellA)
+				assert.NotNil(t, cellB)
+				assert.Equal(t, cellA.Rect.X+cellA.Rect.Width+6.0, cellB.Rect.X)
+			},
+		},
+		{
+			name: "cellspacing=6: gap between rows",
+			html: `<table cellspacing="6"><tr><td>Row1</td></tr><tr><td>Row2</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				row1 := findCellByText(tree, "Row1")
+				row2 := findCellByText(tree, "Row2")
+				assert.NotNil(t, row1)
+				assert.NotNil(t, row2)
+				assert.Equal(t, row1.Rect.Y+row1.Rect.Height+6.0, row2.Rect.Y)
+			},
+		},
+		{
+			name: "cellspacing does not affect cell height",
+			html: `<table cellspacing="10"><tr><td>X</td></tr></table>`,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				cell := findCellByText(tree, "X")
+				assert.NotNil(t, cell)
+				assert.Equal(t, 24.0+8.0*2, cell.Rect.Height) // lineHeight + 2*cellPadding
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, 600)
+			tt.verify(t, tree)
+		})
+	}
+}

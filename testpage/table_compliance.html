@@ -2619,6 +2619,113 @@
     </div>
     <p>Expected: First column 200px from col. The other two share the remaining space equally (auto).</p>
 
+    <h2>Visual Tests - cellspacing attribute</h2>
+
+    <h3>Test: Default spacing (no attribute)</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr><td>A</td><td>B</td><td>C</td></tr>
+            <tr><td>D</td><td>E</td><td>F</td></tr>
+        </table>
+    </div>
+    <p>Expected: No gap between cells (borders touch)</p>
+
+    <h3>Test: cellspacing="0"</h3>
+    <div class="test-box">
+        <table border="1" cellspacing="0">
+            <tr><td>A</td><td>B</td><td>C</td></tr>
+            <tr><td>D</td><td>E</td><td>F</td></tr>
+        </table>
+    </div>
+    <p>Expected: Same as default — no gap between cells</p>
+
+    <h3>Test: cellspacing="6"</h3>
+    <div class="test-box">
+        <table border="1" cellspacing="6">
+            <tr><td>A</td><td>B</td><td>C</td></tr>
+            <tr><td>D</td><td>E</td><td>F</td></tr>
+        </table>
+    </div>
+    <p>Expected: 6px gap between all cells horizontally and vertically</p>
+
+    <h3>Test: cellspacing="16"</h3>
+    <div class="test-box">
+        <table border="1" cellspacing="16">
+            <tr><td>A</td><td>B</td><td>C</td></tr>
+            <tr><td>D</td><td>E</td><td>F</td></tr>
+        </table>
+    </div>
+    <p>Expected: Large gap between cells — clearly wider than cellspacing=6</p>
+
+    <h2>Visual Tests - cellpadding attribute</h2>
+
+    <h3>Test: Default padding (no attribute)</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Default</td>
+                <td>Padding</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Cells with 8px padding (default)</p>
+
+    <h3>Test: cellpadding="0" — no padding</h3>
+    <div class="test-box">
+        <table border="1" cellpadding="0">
+            <tr>
+                <td>Zero</td>
+                <td>Padding</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Text sits flush against cell borders, no inner spacing</p>
+
+    <h3>Test: cellpadding="4" — reduced padding</h3>
+    <div class="test-box">
+        <table border="1" cellpadding="4">
+            <tr>
+                <td>Small</td>
+                <td>Padding</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Cells with 4px padding — visibly tighter than the default</p>
+
+    <h3>Test: cellpadding="16" — generous padding</h3>
+    <div class="test-box">
+        <table border="1" cellpadding="16">
+            <tr>
+                <td>Large</td>
+                <td>Padding</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Cells with 16px padding — noticeably more spacious than the default</p>
+
+    <h3>Test: cellpadding with multirow table</h3>
+    <div class="test-box">
+        <table border="1" cellpadding="12">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Widget</td>
+                    <td>$5.00</td>
+                </tr>
+                <tr>
+                    <td>Gadget</td>
+                    <td>$8.00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: All cells (th and td) have 12px padding uniformly applied</p>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

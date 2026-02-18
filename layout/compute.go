@@ -848,6 +848,15 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		}
 	}
 
+	cellSpacing := 0.0
+	if table.Node != nil {
+		if s, ok := table.Node.Attributes["cellspacing"]; ok {
+			if parsed, err := strconv.Atoi(s); err == nil && parsed >= 0 {
+				cellSpacing = float64(parsed)
+			}
+		}
+	}
+
 	// Seed per-column widths from <col>/<colgroup> elements, then let
 	// individual cell explicit widths override via max() in the scan below.
 	colWidths := make([]float64, numCols)
@@ -911,7 +920,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 	}
 	autoWidth := 0.0
 	if autoCount > 0 {
-		remaining := containerWidth - usedWidth
+		remaining := containerWidth - usedWidth - float64(numCols+1)*cellSpacing
 		if remaining < 0 {
 			remaining = 0
 		}
@@ -923,11 +932,11 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		}
 	}
 
-	// Precompute cumulative X offsets per column
+	// Precompute cumulative X offsets per column (accounting for cellspacing)
 	colXOffsets := make([]float64, numCols)
-	colXOffsets[0] = 0
+	colXOffsets[0] = cellSpacing
 	for i := 1; i < numCols; i++ {
-		colXOffsets[i] = colXOffsets[i-1] + colWidths[i-1]
+		colXOffsets[i] = colXOffsets[i-1] + colWidths[i-1] + cellSpacing
 	}
 
 	yOffset := startY
@@ -955,6 +964,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 			yOffset += captionHeight + 4
 		}
 	}
+	yOffset += cellSpacing
 
 	// Layout each row (grid-aware for rowspan support)
 	type rowspanEntry struct {
@@ -988,10 +998,13 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 			cs := getCellColSpan(cell)
 			rs := getCellRowSpan(cell)
 
-			// Sum widths of spanned columns
+			// Sum widths of spanned columns (interior gaps absorbed by the spanning cell)
 			cellWidth := 0.0
 			for c := colIdx; c < colIdx+cs && c < numCols; c++ {
 				cellWidth += colWidths[c]
+			}
+			if cs > 1 {
+				cellWidth += float64(cs-1) * cellSpacing
 			}
 			xPos := startX
 			if colIdx < numCols {
@@ -1067,7 +1080,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 
 		row.Rect.Height = rowHeight
 		rowHeights[rowIdx] = rowHeight
-		yOffset += rowHeight
+		yOffset += rowHeight + cellSpacing
 	}
 
 	// Resolve rowspan cell heights.
@@ -1098,6 +1111,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 				yOffset += child.Rect.Height + 4
 			}
 		}
+		yOffset += cellSpacing
 		for rowIdx, row := range rows {
 			row.Rect.Y = yOffset
 			row.Rect.Height = rowHeights[rowIdx]
@@ -1111,7 +1125,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 					computeCellContent(cell, cell.Rect.Width-cellPadding*2, cell.Rect.X+cellPadding, yOffset+cellPadding)
 				}
 			}
-			yOffset += rowHeights[rowIdx]
+			yOffset += rowHeights[rowIdx] + cellSpacing
 		}
 	}
 
