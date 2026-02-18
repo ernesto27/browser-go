@@ -1271,29 +1271,43 @@
     <!-- ============================================ -->
     <!-- td.cellIndex tests (WHATWG 4.9.11)           -->
     <!-- ============================================ -->
-    <h2>HTMLTableCellElement - cellIndex (WHATWG 4.9.11)</h2>
+    <h2>Visual Tests - HTMLTableCellElement.cellIndex (WHATWG 4.9.11)</h2>
 
-    <table id="ci-1">
-        <tr id="ci-row1">
-            <td id="ci-a">A</td>
-            <td id="ci-b">B</td>
-            <td id="ci-c">C</td>
-        </tr>
-    </table>
+    <h3>Test: Three td cells in a row</h3>
+    <div class="test-box">
+        <table id="ci-1">
+            <tr id="ci-row1">
+                <td id="ci-a">A</td>
+                <td id="ci-b">B</td>
+                <td id="ci-c">C</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: cellIndex 0, 1, 2 for cells A, B, C respectively</p>
 
-    <table id="ci-2">
-        <tr id="ci-row2">
-            <th id="ci-h1">Name</th>
-            <th id="ci-h2">Age</th>
-            <td id="ci-d">Data</td>
-        </tr>
-    </table>
+    <h3>Test: Mixed th and td cells in a row</h3>
+    <div class="test-box">
+        <table id="ci-2">
+            <tr id="ci-row2">
+                <th id="ci-h1">Name</th>
+                <th id="ci-h2">Age</th>
+                <td id="ci-d">Data</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: cellIndex counts th and td together — Name=0, Age=1, Data=2</p>
 
-    <table id="ci-3">
-        <tr id="ci-row3">
-            <td id="ci-only">Only cell</td>
-        </tr>
-    </table>
+    <h3>Test: Single cell in a row</h3>
+    <div class="test-box">
+        <table id="ci-3">
+            <tr id="ci-row3">
+                <td id="ci-only">Only cell</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Only cell has cellIndex 0</p>
+
+    <h2>JavaScript Tests - HTMLTableCellElement.cellIndex (WHATWG 4.9.11)</h2>
 
     <script>
         info("--- td.cellIndex property tests (WHATWG 4.9.11) ---");
@@ -2725,6 +2739,124 @@
         </table>
     </div>
     <p>Expected: All cells (th and td) have 12px padding uniformly applied</p>
+
+    <!-- ============================================ -->
+    <!-- td.headers tests (WHATWG 4.9.11)             -->
+    <!-- ============================================ -->
+    <hr>
+    <h2>Visual Tests - HTMLTableCellElement.headers (WHATWG 4.9.11)</h2>
+
+    <h3>Test: td with single header reference</h3>
+    <div class="test-box">
+        <table id="hdr-1">
+            <tr>
+                <th id="hdr-name">Name</th>
+                <th id="hdr-dept">Department</th>
+            </tr>
+            <tr>
+                <td id="hdr-a" headers="hdr-name">Alice</td>
+                <td id="hdr-b" headers="hdr-dept">Engineering</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Each td references one th by id via the headers attribute</p>
+
+    <h3>Test: td with multiple header references</h3>
+    <div class="test-box">
+        <table id="hdr-2">
+            <tr>
+                <th id="hdr-q">Quarter</th>
+                <th id="hdr-r">Region</th>
+                <th id="hdr-t">Total</th>
+            </tr>
+            <tr>
+                <td id="hdr-multi" headers="hdr-q hdr-r hdr-t">$42,000</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: td references three th ids (space-separated list in headers attribute)</p>
+
+    <h3>Test: td with no headers attribute</h3>
+    <div class="test-box">
+        <table id="hdr-3">
+            <tr>
+                <td id="hdr-none">No headers attr</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: td has no headers attribute — getter returns empty string ""</p>
+
+    <h3>Test: th with headers attribute (applies to th too)</h3>
+    <div class="test-box">
+        <table id="hdr-4">
+            <tr>
+                <th id="hdr-col-group">Q1 Sales</th>
+            </tr>
+            <tr>
+                <th id="hdr-sub" headers="hdr-col-group">Jan</th>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: headers attribute works on th elements, not just td</p>
+
+    <h2>JavaScript Tests - HTMLTableCellElement.headers (WHATWG 4.9.11)</h2>
+    <script>
+        info("--- td.headers property tests (WHATWG 4.9.11) ---");
+
+        var hdrA    = document.getElementById("hdr-a");
+        var hdrB    = document.getElementById("hdr-b");
+        var hdrMulti = document.getElementById("hdr-multi");
+        var hdrNone = document.getElementById("hdr-none");
+        var hdrSub  = document.getElementById("hdr-sub");
+
+        // headers getter returns the attribute string for single reference
+        if (hdrA) {
+            assert(hdrA.headers === "hdr-name",
+                "td.headers returns single id (got: '" + hdrA.headers + "')");
+        }
+
+        // headers getter returns full space-separated string for multiple references
+        if (hdrMulti) {
+            assert(hdrMulti.headers === "hdr-q hdr-r hdr-t",
+                "td.headers returns space-separated ids (got: '" + hdrMulti.headers + "')");
+        }
+
+        // headers getter returns "" when no attribute present
+        if (hdrNone) {
+            assert(hdrNone.headers === "",
+                "td.headers returns '' when no attribute (got: '" + hdrNone.headers + "')");
+        }
+
+        // headers is a string type
+        if (hdrA) {
+            assert(typeof hdrA.headers === "string",
+                "td.headers is typeof string (got: " + typeof hdrA.headers + ")");
+        }
+
+        // headers setter updates the attribute
+        if (hdrB) {
+            hdrB.headers = "hdr-name hdr-dept";
+            assert(hdrB.headers === "hdr-name hdr-dept",
+                "td.headers setter updates value (got: '" + hdrB.headers + "')");
+            assert(hdrB.getAttribute("headers") === "hdr-name hdr-dept",
+                "td.headers setter reflects to attribute (got: '" + hdrB.getAttribute("headers") + "')");
+        }
+
+        // headers setter with empty string clears the attribute
+        if (hdrA) {
+            hdrA.headers = "";
+            assert(hdrA.headers === "",
+                "td.headers setter can clear to empty string (got: '" + hdrA.headers + "')");
+        }
+
+        // headers works on th elements too
+        if (hdrSub) {
+            assert(hdrSub.headers === "hdr-col-group",
+                "th.headers getter works (got: '" + hdrSub.headers + "')");
+        }
+
+        info("Tests cover: headers getter (single, multiple, absent), type check, setter (update, clear), th element");
+    </script>
 
     <hr>
     <p><a href="index.html">Back to Index</a></p>

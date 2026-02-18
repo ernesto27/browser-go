@@ -1219,6 +1219,23 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("headers",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				headersAttr := node.Attributes["headers"]
+				if headersAttr == "" {
+					return rt.vm.ToValue("")
+				}
+				return rt.vm.ToValue(headersAttr)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					node.Attributes["headers"] = call.Arguments[0].String()
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	}
 
 	if strings.ToUpper(node.TagName) == "OL" {
@@ -1278,6 +1295,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				return goja.Undefined()
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	}
 
 	obj.DefineAccessorProperty("title",

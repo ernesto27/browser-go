@@ -95,8 +95,8 @@ https://html.spec.whatwg.org/
 
 ### HTMLTableCellElement (WHATWG 4.9.11)
 - [x] `td.colSpan` / `td.rowSpan` - Span attributes (getter/setter with clamping per spec)
-- [ ] `td.cellIndex` - Cell position in row
-- [ ] `td.headers` - Associated header cells
+- [x] `td.cellIndex` - Cell position in row
+- [x] `td.headers` - Associated header cells
 - [ ] `td.scope` - Header cell scope (th only)
 
 ### Table Layout Gaps
