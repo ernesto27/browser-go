@@ -244,3 +244,77 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDescendantSelector(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantSels  []Selector
+	}{
+		{
+			name:  "simple tag - no ancestor",
+			input: `b { color: red; }`,
+			wantSels: []Selector{
+				{TagName: "b"},
+			},
+		},
+		{
+			name:  "two-level descendant: span.pagetop b",
+			input: `span.pagetop b { font-size: 15px; }`,
+			wantSels: []Selector{
+				{TagName: "b", Ancestor: &Selector{TagName: "span", Classes: []string{"pagetop"}}},
+			},
+		},
+		{
+			name:  "two-level descendant: div p",
+			input: `div p { color: blue; }`,
+			wantSels: []Selector{
+				{TagName: "p", Ancestor: &Selector{TagName: "div"}},
+			},
+		},
+		{
+			name:  "three-level descendant: div p a",
+			input: `div p a { color: green; }`,
+			wantSels: []Selector{
+				{TagName: "a", Ancestor: &Selector{TagName: "p", Ancestor: &Selector{TagName: "div"}}},
+			},
+		},
+		{
+			name:  "comma-separated still works",
+			input: `div, p { color: red; }`,
+			wantSels: []Selector{
+				{TagName: "div"},
+				{TagName: "p"},
+			},
+		},
+		{
+			name:  "comma-separated with descendant: div p, span b",
+			input: `div p, span b { color: red; }`,
+			wantSels: []Selector{
+				{TagName: "p", Ancestor: &Selector{TagName: "div"}},
+				{TagName: "b", Ancestor: &Selector{TagName: "span"}},
+			},
+		},
+		{
+			// Pre-existing behaviour: ':' is skipped by the unknown-char branch,
+			// so 'hover' gets parsed as a second (spurious) selector.
+			// The important thing is 'a' appears first and is not corrupted.
+			name:  "pseudo-class: a tag still parsed first",
+			input: `a:hover { color: red; }`,
+			wantSels: []Selector{
+				{TagName: "a"},
+				{TagName: "hover"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sheet := Parse(tt.input)
+			assert.Len(t, sheet.Rules, 1, "expected one rule")
+			if len(sheet.Rules) > 0 {
+				assert.Equal(t, tt.wantSels, sheet.Rules[0].Selectors)
+			}
+		})
+	}
+}

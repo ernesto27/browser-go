@@ -1,6 +1,7 @@
 package css
 
 import (
+	"browser/dom"
 	"image/color"
 	"strconv"
 	"strings"
@@ -295,9 +296,10 @@ func ParseColor(value string) color.Color {
 }
 
 type Selector struct {
-	TagName string
-	ID      string
-	Classes []string
+	TagName  string
+	ID       string
+	Classes  []string
+	Ancestor *Selector // non-nil for descendant selectors (e.g. "div p" → p.Ancestor = &div)
 }
 
 type Declaration struct {
@@ -342,6 +344,31 @@ func MatchSelector(sel Selector, tagName string, id string, classes []string) bo
 	}
 
 	return true
+}
+
+// MatchSelectorNode checks if a selector (including any descendant chain) matches a DOM node.
+func MatchSelectorNode(sel Selector, node *dom.Node) bool {
+	if node.Type != dom.Element {
+		return false
+	}
+	id := node.Attributes["id"]
+	classes := strings.Fields(node.Attributes["class"])
+	if !MatchSelector(sel, node.TagName, id, classes) {
+		return false
+	}
+	if sel.Ancestor == nil {
+		return true
+	}
+	// Walk up the DOM tree looking for a matching ancestor
+	for p := node.Parent; p != nil; p = p.Parent {
+		if p.Type != dom.Element {
+			continue
+		}
+		if MatchSelectorNode(*sel.Ancestor, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // ApplyStylesheet applies matching rules from stylesheet to a base style
@@ -720,7 +747,8 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 }
 
 // ApplyStylesheetWithContext applies matching rules with parent font-size for em units
-func ApplyStylesheetWithContext(sheet Stylesheet, tagName string, id string, classes []string, parentFontSize, viewportWidth, viewportHeight float64) Style {
+func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize, viewportWidth, viewportHeight float64) Style {
+	tagName := node.TagName
 	style := DefaultStyle()
 	importantProps := make(map[string]bool)
 
@@ -731,7 +759,7 @@ func ApplyStylesheetWithContext(sheet Stylesheet, tagName string, id string, cla
 	for _, rule := range sheet.Rules {
 		matches := false
 		for _, sel := range rule.Selectors {
-			if MatchSelector(sel, tagName, id, classes) {
+			if MatchSelectorNode(sel, node) {
 				matches = true
 				break
 			}
@@ -766,7 +794,7 @@ func ApplyStylesheetWithContext(sheet Stylesheet, tagName string, id string, cla
 	for _, rule := range sheet.Rules {
 		matches := false
 		for _, sel := range rule.Selectors {
-			if MatchSelector(sel, tagName, id, classes) {
+			if MatchSelectorNode(sel, node) {
 				matches = true
 				break
 			}

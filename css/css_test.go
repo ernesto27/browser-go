@@ -1,6 +1,7 @@
 package css
 
 import (
+	"browser/dom"
 	"image/color"
 	"testing"
 
@@ -205,6 +206,111 @@ func TestMatchSelector(t *testing.T) {
 	}
 }
 
+func TestMatchSelectorNode(t *testing.T) {
+	// Helper to build a DOM node with optional parent
+	makeNode := func(tag string, classes string, parent *dom.Node) *dom.Node {
+		attrs := map[string]string{}
+		if classes != "" {
+			attrs["class"] = classes
+		}
+		n := &dom.Node{Type: dom.Element, TagName: tag, Attributes: attrs, Parent: parent}
+		return n
+	}
+
+	tests := []struct {
+		name     string
+		sel      Selector
+		node     func() *dom.Node
+		expected bool
+	}{
+		{
+			name:     "simple tag match - no ancestor required",
+			sel:      Selector{TagName: "b"},
+			node:     func() *dom.Node { return makeNode("b", "", nil) },
+			expected: true,
+		},
+		{
+			name:     "simple tag no match",
+			sel:      Selector{TagName: "b"},
+			node:     func() *dom.Node { return makeNode("span", "", nil) },
+			expected: false,
+		},
+		{
+			name: "descendant match: b inside span",
+			sel:  Selector{TagName: "b", Ancestor: &Selector{TagName: "span"}},
+			node: func() *dom.Node {
+				parent := makeNode("span", "", nil)
+				return makeNode("b", "", parent)
+			},
+			expected: true,
+		},
+		{
+			name: "descendant no match: b inside div (not span)",
+			sel:  Selector{TagName: "b", Ancestor: &Selector{TagName: "span"}},
+			node: func() *dom.Node {
+				parent := makeNode("div", "", nil)
+				return makeNode("b", "", parent)
+			},
+			expected: false,
+		},
+		{
+			name: "deep descendant: span anywhere up the chain",
+			sel:  Selector{TagName: "b", Ancestor: &Selector{TagName: "span"}},
+			node: func() *dom.Node {
+				grandparent := makeNode("span", "", nil)
+				parent := makeNode("div", "", grandparent)
+				return makeNode("b", "", parent)
+			},
+			expected: true,
+		},
+		{
+			name: "compound ancestor: b inside span.pagetop",
+			sel:  Selector{TagName: "b", Ancestor: &Selector{TagName: "span", Classes: []string{"pagetop"}}},
+			node: func() *dom.Node {
+				parent := makeNode("span", "pagetop", nil)
+				return makeNode("b", "", parent)
+			},
+			expected: true,
+		},
+		{
+			name: "compound ancestor class mismatch: b inside span.other",
+			sel:  Selector{TagName: "b", Ancestor: &Selector{TagName: "span", Classes: []string{"pagetop"}}},
+			node: func() *dom.Node {
+				parent := makeNode("span", "other", nil)
+				return makeNode("b", "", parent)
+			},
+			expected: false,
+		},
+		{
+			name: "three-level chain: a inside li inside ul",
+			sel: Selector{TagName: "a", Ancestor: &Selector{TagName: "li", Ancestor: &Selector{TagName: "ul"}}},
+			node: func() *dom.Node {
+				ul := makeNode("ul", "", nil)
+				li := makeNode("li", "", ul)
+				return makeNode("a", "", li)
+			},
+			expected: true,
+		},
+		{
+			name: "three-level chain no match: wrong middle element",
+			sel: Selector{TagName: "a", Ancestor: &Selector{TagName: "li", Ancestor: &Selector{TagName: "ul"}}},
+			node: func() *dom.Node {
+				ol := makeNode("ol", "", nil)
+				li := makeNode("li", "", ol)
+				return makeNode("a", "", li)
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := MatchSelectorNode(tt.sel, tt.node())
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestParseInlineStyle(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -394,7 +500,7 @@ func TestImportantWithContext(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sheet := Parse(tt.css)
-			style := ApplyStylesheetWithContext(sheet, "p", "", nil, 16, DefaultViewportWidth, DefaultViewportHeight)
+			style := ApplyStylesheetWithContext(sheet, &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}, 16, DefaultViewportWidth, DefaultViewportHeight)
 			assert.Equal(t, tt.expectedFontSize, style.FontSize)
 		})
 	}

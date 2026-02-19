@@ -37,8 +37,8 @@ func (p *Parser) parseRule() Rule {
 func (p *Parser) parseSelectors() []Selector {
 	var selectors []Selector
 	for {
-		sel := p.parseSelector()
-		if sel.TagName != "" || sel.ID != "" || len(sel.Classes) > 0 {
+		sel, valid := p.parseCompoundSelector()
+		if valid {
 			selectors = append(selectors, sel)
 		}
 		p.skipWhitespace()
@@ -55,7 +55,55 @@ func (p *Parser) parseSelectors() []Selector {
 	return selectors
 }
 
-func (p *Parser) parseSelector() Selector {
+// parseCompoundSelector parses a selector that may include descendant combinators (spaces).
+// e.g. "span.pagetop b" → Selector{TagName:"b", Ancestor:&Selector{TagName:"span", Classes:["pagetop"]}}
+func (p *Parser) parseCompoundSelector() (Selector, bool) {
+	var parts []Selector
+	for {
+		part := p.parseSimpleSelector()
+		if part.TagName == "" && part.ID == "" && len(part.Classes) == 0 {
+			break
+		}
+		parts = append(parts, part)
+
+		// Peek ahead: whitespace followed by another simple selector = descendant combinator
+		savedPos := p.pos
+		p.skipWhitespace()
+		if p.pos >= len(p.input) || p.input[p.pos] == '{' || p.input[p.pos] == ',' || p.input[p.pos] == ':' {
+			p.pos = savedPos // restore; outer loop handles trailing whitespace
+			break
+		}
+		c := p.input[p.pos]
+		if c == '#' || c == '.' || isIdentChar(rune(c)) {
+			// descendant combinator: continue parsing next simple selector
+			continue
+		}
+		// unknown char: not a descendant combinator
+		p.pos = savedPos
+		break
+	}
+
+	if len(parts) == 0 {
+		return Selector{}, false
+	}
+	if len(parts) == 1 {
+		return parts[0], true
+	}
+
+	// Build ancestor chain right-to-left: parts[last] is subject, ancestors link leftward
+	subject := parts[len(parts)-1]
+	ptr := &subject
+	for i := len(parts) - 2; i >= 0; i-- {
+		anc := parts[i]
+		ptr.Ancestor = &anc
+		ptr = ptr.Ancestor
+	}
+	return subject, true
+}
+
+// parseSimpleSelector parses a single simple selector (tag, #id, .class combinations).
+// Stops at whitespace or any non-selector character.
+func (p *Parser) parseSimpleSelector() Selector {
 	p.skipWhitespace()
 	sel := Selector{}
 

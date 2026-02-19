@@ -78,20 +78,13 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 	box := &LayoutBox{Node: node, Parent: parent}
 
 	if node.Type == dom.Element {
-		id := node.Attributes["id"]
-		classAttr := node.Attributes["class"]
-		var classes []string
-		if classAttr != "" {
-			classes = strings.Fields(classAttr)
-		}
-
 		// Get parent's font-size for em unit resolution
 		parentFontSize := 16.0 // Default browser font-size
 		if parent != nil && parent.Style.FontSize > 0 {
 			parentFontSize = parent.Style.FontSize
 		}
 
-		box.Style = css.ApplyStylesheetWithContext(stylesheet, node.TagName, id, classes, parentFontSize, viewport.Width, viewport.Height)
+		box.Style = css.ApplyStylesheetWithContext(stylesheet, node, parentFontSize, viewport.Width, viewport.Height)
 
 		if align, ok := node.Attributes["align"]; ok {
 			switch strings.ToLower(align) {
