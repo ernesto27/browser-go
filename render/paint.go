@@ -367,21 +367,8 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				currentStyle.Bold = true
 			}
 		case dom.TagA:
-			href, hasHref := box.Node.Attributes["href"]
-			if hasHref {
-				// Resolve relative URL to absolute for visited check
-				if linkStyler.ResolveURL != nil && href != "" {
-					href = linkStyler.ResolveURL(href)
-				}
-				if linkStyler.IsVisited != nil && linkStyler.IsVisited(href) {
-					currentStyle.Color = ColorLinkVisited
-				} else {
-					currentStyle.Color = ColorLink
-				}
-
-				currentStyle.TextDecoration = TextDecorationUnderline
-
-			}
+			// Link color and text-decoration are now handled via CSS cascade
+			// (UA defaults in applyUserAgentDefaults, overridable by user CSS rules)
 		case dom.TagStrong, dom.TagB:
 			currentStyle.Bold = true
 		case dom.TagEm, dom.TagI, dom.TagCite, dom.TagDnf:

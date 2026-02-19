@@ -739,10 +739,13 @@ func (b *Browser) Reflow(width float32) {
 	stylesheet := css.Parse(fullCSS)
 
 	// Re-build layout tree with updated stylesheet
+	matchCtx := css.MatchContext{
+		IsVisited: func(url string) bool { return b.IsVisited(url) },
+	}
 	layoutTree := layout.BuildLayoutTree(b.document, stylesheet, layout.Viewport{
 		Width:  float64(width),
 		Height: float64(b.Window.Canvas().Size().Height),
-	})
+	}, matchCtx)
 	layout.ComputeLayout(layoutTree, float64(width))
 
 	// Update stored values

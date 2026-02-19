@@ -116,10 +116,14 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 		fmt.Println("Building layout...")
 		stylesheet := css.Parse(fullCSS)
 		browser.SetDocument(document)
+		matchCtx := css.MatchContext{
+			IsVisited:  func(url string) bool { return browser.IsVisited(url) },
+			ResolveURL: func(href string) string { return resolveURL(pageURL, href) },
+		}
 		layoutTree := layout.BuildLayoutTree(document, stylesheet, layout.Viewport{
 			Width:  float64(browser.Width),
 			Height: float64(browser.Height),
-		})
+		}, matchCtx)
 		layout.ComputeLayout(layoutTree, float64(browser.Width))
 
 		// Execute JavaScript
@@ -157,7 +161,7 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 		layoutTree = layout.BuildLayoutTree(document, stylesheet, layout.Viewport{
 			Width:  float64(browser.Width),
 			Height: float64(browser.Height),
-		})
+		}, matchCtx)
 		layout.ComputeLayout(layoutTree, float64(browser.Width))
 		browser.SetContent(layoutTree)
 

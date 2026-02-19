@@ -296,10 +296,53 @@ func ParseColor(value string) color.Color {
 }
 
 type Selector struct {
-	TagName  string
-	ID       string
-	Classes  []string
-	Ancestor *Selector // non-nil for descendant selectors (e.g. "div p" → p.Ancestor = &div)
+	TagName     string
+	ID          string
+	Classes     []string
+	PseudoClass string    // e.g. "link", "visited", "hover" — empty means none
+	Ancestor    *Selector // non-nil for descendant selectors (e.g. "div p" → p.Ancestor = &div)
+}
+
+// Specificity represents CSS selector specificity as (A, B, C):
+// A = ID selectors, B = class/pseudo-class selectors, C = element/type selectors.
+type Specificity [3]int
+
+// LessThan returns true if s has lower specificity than o.
+func (s Specificity) LessThan(o Specificity) bool {
+	for i := range s {
+		if s[i] != o[i] {
+			return s[i] < o[i]
+		}
+	}
+	return false // equal
+}
+
+// selectorSpecificity computes the specificity of a selector, including its ancestor chain.
+func selectorSpecificity(sel Selector) Specificity {
+	sp := Specificity{}
+	if sel.ID != "" {
+		sp[0]++
+	}
+	sp[1] += len(sel.Classes)
+	if sel.PseudoClass != "" {
+		sp[1]++
+	}
+	if sel.TagName != "" {
+		sp[2]++
+	}
+	if sel.Ancestor != nil {
+		anc := selectorSpecificity(*sel.Ancestor)
+		for i := range sp {
+			sp[i] += anc[i]
+		}
+	}
+	return sp
+}
+
+// MatchContext provides runtime state needed for pseudo-class matching.
+type MatchContext struct {
+	IsVisited  func(url string) bool   // returns true if url has been visited
+	ResolveURL func(href string) string // resolves relative hrefs to absolute (optional)
 }
 
 type Declaration struct {
@@ -347,7 +390,7 @@ func MatchSelector(sel Selector, tagName string, id string, classes []string) bo
 }
 
 // MatchSelectorNode checks if a selector (including any descendant chain) matches a DOM node.
-func MatchSelectorNode(sel Selector, node *dom.Node) bool {
+func MatchSelectorNode(sel Selector, node *dom.Node, ctx MatchContext) bool {
 	if node.Type != dom.Element {
 		return false
 	}
@@ -355,6 +398,37 @@ func MatchSelectorNode(sel Selector, node *dom.Node) bool {
 	classes := strings.Fields(node.Attributes["class"])
 	if !MatchSelector(sel, node.TagName, id, classes) {
 		return false
+	}
+	// Check pseudo-class
+	if sel.PseudoClass != "" {
+		href := node.Attributes["href"]
+		switch sel.PseudoClass {
+		case "link":
+			if href == "" {
+				return false
+			}
+			resolvedHref := href
+			if ctx.ResolveURL != nil {
+				resolvedHref = ctx.ResolveURL(href)
+			}
+			if ctx.IsVisited != nil && ctx.IsVisited(resolvedHref) {
+				return false
+			}
+		case "visited":
+			if href == "" {
+				return false
+			}
+			resolvedHref := href
+			if ctx.ResolveURL != nil {
+				resolvedHref = ctx.ResolveURL(href)
+			}
+			if ctx.IsVisited == nil || !ctx.IsVisited(resolvedHref) {
+				return false
+			}
+		default:
+			// :hover, :focus, :active, etc. — not yet supported
+			return false
+		}
 	}
 	if sel.Ancestor == nil {
 		return true
@@ -364,7 +438,7 @@ func MatchSelectorNode(sel Selector, node *dom.Node) bool {
 		if p.Type != dom.Element {
 			continue
 		}
-		if MatchSelectorNode(*sel.Ancestor, p) {
+		if MatchSelectorNode(*sel.Ancestor, p, ctx) {
 			return true
 		}
 	}
@@ -747,23 +821,34 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 }
 
 // ApplyStylesheetWithContext applies matching rules with parent font-size for em units
-func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize, viewportWidth, viewportHeight float64) Style {
+func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize, viewportWidth, viewportHeight float64, ctx MatchContext) Style {
 	tagName := node.TagName
 	style := DefaultStyle()
 	importantProps := make(map[string]bool)
+	specificities := make(map[string]Specificity) // winning specificity per property
 
 	// Apply user-agent default styles based on tag
-	applyUserAgentDefaults(&style, tagName, parentFontSize)
+	applyUserAgentDefaults(&style, tagName, parentFontSize, node, ctx)
+
+	// ruleSpecificity returns the highest specificity among the rule's matching selectors.
+	ruleSpecificity := func(rule Rule) (Specificity, bool) {
+		best := Specificity{}
+		found := false
+		for _, sel := range rule.Selectors {
+			if MatchSelectorNode(sel, node, ctx) {
+				sp := selectorSpecificity(sel)
+				if !found || best.LessThan(sp) {
+					best = sp
+					found = true
+				}
+			}
+		}
+		return best, found
+	}
 
 	// First pass: find font-size (uses parent's font-size for em)
 	for _, rule := range sheet.Rules {
-		matches := false
-		for _, sel := range rule.Selectors {
-			if MatchSelectorNode(sel, node) {
-				matches = true
-				break
-			}
-		}
+		sp, matches := ruleSpecificity(rule)
 		if !matches {
 			continue
 		}
@@ -773,6 +858,9 @@ func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize
 				if importantProps["font-size"] && !decl.Important {
 					continue
 				}
+				if !decl.Important && specificities["font-size"] != (Specificity{}) && sp.LessThan(specificities["font-size"]) {
+					continue
+				}
 
 				if size := ParseSizeWithContext(decl.Value, parentFontSize, viewportWidth, viewportHeight); size > 0 {
 					style.FontSize = size
@@ -780,6 +868,8 @@ func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize
 
 				if decl.Important {
 					importantProps["font-size"] = true
+				} else {
+					specificities["font-size"] = sp
 				}
 			}
 		}
@@ -792,13 +882,7 @@ func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize
 
 	// Second pass: apply other properties (using computed font-size for em)
 	for _, rule := range sheet.Rules {
-		matches := false
-		for _, sel := range rule.Selectors {
-			if MatchSelectorNode(sel, node) {
-				matches = true
-				break
-			}
-		}
+		sp, matches := ruleSpecificity(rule)
 		if !matches {
 			continue
 		}
@@ -808,11 +892,16 @@ func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize
 				if importantProps[decl.Property] && !decl.Important {
 					continue
 				}
+				if !decl.Important && specificities[decl.Property] != (Specificity{}) && sp.LessThan(specificities[decl.Property]) {
+					continue
+				}
 
 				applyDeclarationWithContext(&style, decl.Property, decl.Value, style.FontSize, viewportWidth, viewportHeight)
 
 				if decl.Important {
 					importantProps[decl.Property] = true
+				} else {
+					specificities[decl.Property] = sp
 				}
 			}
 		}
@@ -903,7 +992,7 @@ func ParseInlineStyleWithContext(styleAttr string, parentFontSize, viewportWidth
 }
 
 // applyUserAgentDefaults applies browser default styles for HTML elements
-func applyUserAgentDefaults(style *Style, tagName string, fontSize float64) {
+func applyUserAgentDefaults(style *Style, tagName string, fontSize float64, node *dom.Node, ctx MatchContext) {
 	switch tagName {
 	case "p", "dl":
 		style.MarginTop = fontSize
@@ -938,6 +1027,23 @@ func applyUserAgentDefaults(style *Style, tagName string, fontSize float64) {
 	case "hr":
 		style.MarginTop = fontSize * 0.5
 		style.MarginBottom = fontSize * 0.5
+	case "a":
+		// UA default link styling — overridable by user CSS rules via specificity cascade
+		if node != nil {
+			href := node.Attributes["href"]
+			if href != "" {
+				style.TextDecoration = "underline"
+				resolvedHref := href
+				if ctx.ResolveURL != nil {
+					resolvedHref = ctx.ResolveURL(href)
+				}
+				if ctx.IsVisited != nil && ctx.IsVisited(resolvedHref) {
+					style.Color = color.RGBA{R: 0x55, G: 0x1a, B: 0x8b, A: 0xff} // visited purple
+				} else {
+					style.Color = color.RGBA{R: 0x00, G: 0x00, B: 0xee, A: 0xff} // unvisited blue
+				}
+			}
+		}
 	}
 }
 

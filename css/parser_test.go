@@ -296,14 +296,78 @@ func TestParseDescendantSelector(t *testing.T) {
 			},
 		},
 		{
-			// Pre-existing behaviour: ':' is skipped by the unknown-char branch,
-			// so 'hover' gets parsed as a second (spurious) selector.
-			// The important thing is 'a' appears first and is not corrupted.
-			name:  "pseudo-class: a tag still parsed first",
+			name:  "pseudo-class: a:hover parsed as one selector with PseudoClass",
 			input: `a:hover { color: red; }`,
 			wantSels: []Selector{
-				{TagName: "a"},
-				{TagName: "hover"},
+				{TagName: "a", PseudoClass: "hover"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sheet := Parse(tt.input)
+			assert.Len(t, sheet.Rules, 1, "expected one rule")
+			if len(sheet.Rules) > 0 {
+				assert.Equal(t, tt.wantSels, sheet.Rules[0].Selectors)
+			}
+		})
+	}
+}
+
+func TestParsePseudoClass(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		wantSels []Selector
+	}{
+		{
+			name:  "a:link",
+			input: `a:link { color: blue; }`,
+			wantSels: []Selector{
+				{TagName: "a", PseudoClass: "link"},
+			},
+		},
+		{
+			name:  "a:visited",
+			input: `a:visited { color: purple; }`,
+			wantSels: []Selector{
+				{TagName: "a", PseudoClass: "visited"},
+			},
+		},
+		{
+			name:  "a:hover",
+			input: `a:hover { color: red; }`,
+			wantSels: []Selector{
+				{TagName: "a", PseudoClass: "hover"},
+			},
+		},
+		{
+			name:  "pseudo-element ::before stored as PseudoClass",
+			input: `a::before { content: ''; }`,
+			wantSels: []Selector{
+				{TagName: "a", PseudoClass: "before"},
+			},
+		},
+		{
+			name:  "class with pseudo-class",
+			input: `.nav:link { color: blue; }`,
+			wantSels: []Selector{
+				{Classes: []string{"nav"}, PseudoClass: "link"},
+			},
+		},
+		{
+			name:  "tag+class+pseudo-class",
+			input: `a.active:hover { color: green; }`,
+			wantSels: []Selector{
+				{TagName: "a", Classes: []string{"active"}, PseudoClass: "hover"},
+			},
+		},
+		{
+			name:  "descendant with pseudo-class on subject",
+			input: `div a:link { color: blue; }`,
+			wantSels: []Selector{
+				{TagName: "a", PseudoClass: "link", Ancestor: &Selector{TagName: "div"}},
 			},
 		},
 	}

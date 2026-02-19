@@ -66,11 +66,11 @@ var imageElements = map[string]bool{
 	"img": true,
 }
 
-func BuildLayoutTree(root *dom.Node, stylesheet css.Stylesheet, viewport Viewport) *LayoutBox {
-	return BuildBox(root, nil, stylesheet, viewport)
+func BuildLayoutTree(root *dom.Node, stylesheet css.Stylesheet, viewport Viewport, ctx css.MatchContext) *LayoutBox {
+	return BuildBox(root, nil, stylesheet, viewport, ctx)
 }
 
-func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, viewport Viewport) *LayoutBox {
+func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, viewport Viewport, ctx css.MatchContext) *LayoutBox {
 	if node.Type == dom.Element && skipElements[node.TagName] {
 		return nil
 	}
@@ -84,7 +84,7 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 			parentFontSize = parent.Style.FontSize
 		}
 
-		box.Style = css.ApplyStylesheetWithContext(stylesheet, node, parentFontSize, viewport.Width, viewport.Height)
+		box.Style = css.ApplyStylesheetWithContext(stylesheet, node, parentFontSize, viewport.Width, viewport.Height, ctx)
 
 		if align, ok := node.Attributes["align"]; ok {
 			switch strings.ToLower(align) {
@@ -188,7 +188,7 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 	}
 
 	for _, child := range node.Children {
-		childBox := BuildBox(child, box, stylesheet, viewport)
+		childBox := BuildBox(child, box, stylesheet, viewport, ctx)
 		if childBox != nil {
 			box.Children = append(box.Children, childBox)
 		}

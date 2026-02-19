@@ -162,7 +162,7 @@ func TestGetListInfo(t *testing.T) {
 			// Parse HTML and build layout tree
 			doc := dom.Parse(strings.NewReader(tt.html))
 			viewport := layout.Viewport{Width: 800, Height: 600}
-			layoutRoot := layout.BuildLayoutTree(doc, css.Stylesheet{}, viewport)
+			layoutRoot := layout.BuildLayoutTree(doc, css.Stylesheet{}, viewport, css.MatchContext{})
 			layout.ComputeLayout(layoutRoot, 800)
 
 			// Find the target li's text box

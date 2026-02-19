@@ -61,7 +61,7 @@ func (p *Parser) parseCompoundSelector() (Selector, bool) {
 	var parts []Selector
 	for {
 		part := p.parseSimpleSelector()
-		if part.TagName == "" && part.ID == "" && len(part.Classes) == 0 {
+		if part.TagName == "" && part.ID == "" && len(part.Classes) == 0 && part.PseudoClass == "" {
 			break
 		}
 		parts = append(parts, part)
@@ -69,7 +69,7 @@ func (p *Parser) parseCompoundSelector() (Selector, bool) {
 		// Peek ahead: whitespace followed by another simple selector = descendant combinator
 		savedPos := p.pos
 		p.skipWhitespace()
-		if p.pos >= len(p.input) || p.input[p.pos] == '{' || p.input[p.pos] == ',' || p.input[p.pos] == ':' {
+		if p.pos >= len(p.input) || p.input[p.pos] == '{' || p.input[p.pos] == ',' {
 			p.pos = savedPos // restore; outer loop handles trailing whitespace
 			break
 		}
@@ -101,7 +101,7 @@ func (p *Parser) parseCompoundSelector() (Selector, bool) {
 	return subject, true
 }
 
-// parseSimpleSelector parses a single simple selector (tag, #id, .class combinations).
+// parseSimpleSelector parses a single simple selector (tag, #id, .class, :pseudo-class combinations).
 // Stops at whitespace or any non-selector character.
 func (p *Parser) parseSimpleSelector() Selector {
 	p.skipWhitespace()
@@ -121,6 +121,16 @@ func (p *Parser) parseSimpleSelector() Selector {
 			break
 		}
 	}
+
+	// Parse optional pseudo-class (e.g. :link, :visited, :hover) or pseudo-element (::before)
+	if p.pos < len(p.input) && p.input[p.pos] == ':' {
+		p.pos++ // consume first ':'
+		if p.pos < len(p.input) && p.input[p.pos] == ':' {
+			p.pos++ // consume second ':' for pseudo-elements like ::before
+		}
+		sel.PseudoClass = p.parseIdentifier()
+	}
+
 	return sel
 }
 

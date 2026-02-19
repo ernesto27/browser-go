@@ -24,14 +24,14 @@ func createStylesheet(cssText string) css.Stylesheet {
 // buildTree is a convenience wrapper for building layout from HTML
 func buildTree(html string) *LayoutBox {
 	root := parseHTML(html)
-	return BuildLayoutTree(root, emptyStylesheet(), Viewport{})
+	return BuildLayoutTree(root, emptyStylesheet(), Viewport{}, css.MatchContext{})
 }
 
 // buildTreeWithCSS builds tree with stylesheet
 func buildTreeWithCSS(html, cssText string) *LayoutBox {
 	root := parseHTML(html)
 	sheet := createStylesheet(cssText)
-	return BuildLayoutTree(root, sheet, Viewport{})
+	return BuildLayoutTree(root, sheet, Viewport{}, css.MatchContext{})
 }
 
 // findBoxByTag finds first box with given tag using DFS

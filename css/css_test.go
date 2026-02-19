@@ -305,8 +305,155 @@ func TestMatchSelectorNode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := MatchSelectorNode(tt.sel, tt.node())
+			result := MatchSelectorNode(tt.sel, tt.node(), MatchContext{})
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSelectorSpecificity(t *testing.T) {
+	tests := []struct {
+		name string
+		sel  Selector
+		want Specificity
+	}{
+		{"element", Selector{TagName: "a"}, Specificity{0, 0, 1}},
+		{"class", Selector{Classes: []string{"foo"}}, Specificity{0, 1, 0}},
+		{"id", Selector{ID: "main"}, Specificity{1, 0, 0}},
+		{"pseudo-class only", Selector{PseudoClass: "link"}, Specificity{0, 1, 0}},
+		{"a:link", Selector{TagName: "a", PseudoClass: "link"}, Specificity{0, 1, 1}},
+		{"a:visited", Selector{TagName: "a", PseudoClass: "visited"}, Specificity{0, 1, 1}},
+		{"#id.class", Selector{ID: "x", Classes: []string{"y"}}, Specificity{1, 1, 0}},
+		{"div p ancestor chain", Selector{TagName: "p", Ancestor: &Selector{TagName: "div"}}, Specificity{0, 0, 2}},
+		{"div a:link ancestor chain", Selector{TagName: "a", PseudoClass: "link", Ancestor: &Selector{TagName: "div"}}, Specificity{0, 1, 2}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, selectorSpecificity(tt.sel))
+		})
+	}
+}
+
+func TestMatchSelectorNodePseudoClass(t *testing.T) {
+	visited := map[string]bool{"https://example.com": true}
+	ctxWithVisited := MatchContext{IsVisited: func(url string) bool { return visited[url] }}
+	ctxEmpty := MatchContext{}
+
+	makeLink := func(href string) func() *dom.Node {
+		return func() *dom.Node {
+			return &dom.Node{Type: dom.Element, TagName: "a", Attributes: map[string]string{"href": href}}
+		}
+	}
+	makeLinkNoHref := func() *dom.Node {
+		return &dom.Node{Type: dom.Element, TagName: "a", Attributes: map[string]string{}}
+	}
+
+	tests := []struct {
+		name     string
+		sel      Selector
+		node     func() *dom.Node
+		ctx      MatchContext
+		expected bool
+	}{
+		{
+			":link matches unvisited link",
+			Selector{TagName: "a", PseudoClass: "link"},
+			makeLink("https://other.com"),
+			ctxWithVisited,
+			true,
+		},
+		{
+			":link does not match visited link",
+			Selector{TagName: "a", PseudoClass: "link"},
+			makeLink("https://example.com"),
+			ctxWithVisited,
+			false,
+		},
+		{
+			":link does not match <a> without href",
+			Selector{TagName: "a", PseudoClass: "link"},
+			func() *dom.Node { return makeLinkNoHref() },
+			ctxWithVisited,
+			false,
+		},
+		{
+			":link with no IsVisited treats all links as unvisited",
+			Selector{TagName: "a", PseudoClass: "link"},
+			makeLink("https://example.com"),
+			ctxEmpty,
+			true,
+		},
+		{
+			":visited matches visited link",
+			Selector{TagName: "a", PseudoClass: "visited"},
+			makeLink("https://example.com"),
+			ctxWithVisited,
+			true,
+		},
+		{
+			":visited does not match unvisited link",
+			Selector{TagName: "a", PseudoClass: "visited"},
+			makeLink("https://other.com"),
+			ctxWithVisited,
+			false,
+		},
+		{
+			":visited does not match <a> without href",
+			Selector{TagName: "a", PseudoClass: "visited"},
+			func() *dom.Node { return makeLinkNoHref() },
+			ctxWithVisited,
+			false,
+		},
+		{
+			":hover never matches (no hover state)",
+			Selector{TagName: "a", PseudoClass: "hover"},
+			makeLink("https://example.com"),
+			ctxWithVisited,
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, MatchSelectorNode(tt.sel, tt.node(), tt.ctx))
+		})
+	}
+}
+
+func TestSpecificityCascade(t *testing.T) {
+	tests := []struct {
+		name          string
+		css           string
+		expectedColor color.Color
+	}{
+		{
+			"a:link beats a when a comes first",
+			`a { color: red; } a:link { color: blue; }`,
+			color.RGBA{0, 0, 255, 255},
+		},
+		{
+			"a:link beats a when a:link comes first",
+			`a:link { color: blue; } a { color: red; }`,
+			color.RGBA{0, 0, 255, 255},
+		},
+		{
+			"equal specificity: later rule wins",
+			`a:link { color: blue; } a:link { color: green; }`,
+			color.RGBA{0, 128, 0, 255},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sheet := Parse(tt.css)
+			node := &dom.Node{
+				Type:       dom.Element,
+				TagName:    "a",
+				Attributes: map[string]string{"href": "https://example.com"},
+			}
+			style := ApplyStylesheetWithContext(sheet, node, 16, 0, 0, MatchContext{})
+			assert.Equal(t, tt.expectedColor, style.Color)
 		})
 	}
 }
@@ -500,7 +647,7 @@ func TestImportantWithContext(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sheet := Parse(tt.css)
-			style := ApplyStylesheetWithContext(sheet, &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}, 16, DefaultViewportWidth, DefaultViewportHeight)
+			style := ApplyStylesheetWithContext(sheet, &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
 			assert.Equal(t, tt.expectedFontSize, style.FontSize)
 		})
 	}
