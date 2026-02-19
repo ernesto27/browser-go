@@ -1243,14 +1243,17 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 		case InlineBox:
 			box.Rect.X = currentX
 			box.Rect.Y = currentY
+			prevY := currentY // capture before children may advance it via nested blocks
 			childStartX := currentX
 			for _, child := range box.Children {
 				layoutInline(child)
 			}
 			box.Rect.Width = currentX - childStartX
 			box.Rect.Height = lineHeight
-			if currentY+lineHeight > maxY {
-				maxY = currentY + lineHeight
+			// Use prevY (not the post-children currentY) to avoid double-counting when
+			// a block child already advanced currentY.
+			if prevY+lineHeight > maxY {
+				maxY = prevY + lineHeight
 			}
 
 		case BRBox:
@@ -1267,10 +1270,16 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 			}
 			box.Rect.X = startX
 			box.Rect.Y = currentY
+			beforeY := currentY
 			for _, child := range box.Children {
 				layoutInline(child)
 			}
-			currentY += lineHeight
+			// Advance currentY to the furthest point reached by children (maxY).
+			// If nothing was drawn (empty block), leave currentY unchanged — don't
+			// add phantom height for elements like <div class="votearrow"/>.
+			if maxY > beforeY {
+				currentY = maxY
+			}
 			currentX = startX
 			if currentY > maxY {
 				maxY = currentY
