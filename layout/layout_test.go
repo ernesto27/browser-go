@@ -40,6 +40,9 @@ func TestBuildLayoutTreeBoxTypes(t *testing.T) {
 		{"strong is InlineBox", "<div><strong></strong></div>", "strong", InlineBox, true},
 		{"em is InlineBox", "<div><em></em></div>", "em", InlineBox, true},
 		{"b is InlineBox", "<div><b></b></div>", "b", InlineBox, true},
+		// CSS display:block promotes inline elements to BlockBox
+		{"b with display:block inline style is BlockBox", `<div><b style="display:block"></b></div>`, "b", BlockBox, true},
+		{"span with display:block inline style is BlockBox", `<div><span style="display:block"></span></div>`, "span", BlockBox, true},
 		{"i is InlineBox", "<div><i></i></div>", "i", InlineBox, true},
 		{"small is InlineBox", "<div><small></small></div>", "small", InlineBox, true},
 		{"u is InlineBox", "<div><u></u></div>", "u", InlineBox, true},
@@ -101,6 +104,47 @@ func TestBuildLayoutTreeBoxTypes(t *testing.T) {
 			} else {
 				assert.Nil(t, box)
 			}
+		})
+	}
+}
+
+func TestDisplayBlockFromStylesheet(t *testing.T) {
+	tests := []struct {
+		name     string
+		html     string
+		css      string
+		findTag  string
+		wantType BoxType
+	}{
+		{
+			name:     "b inside span.pagetop gets BlockBox via descendant selector",
+			html:     `<div><span class="pagetop"><b>Title</b></span></div>`,
+			css:      `span.pagetop b { display: block; }`,
+			findTag:  "b",
+			wantType: BlockBox,
+		},
+		{
+			name:     "b without matching ancestor stays InlineBox",
+			html:     `<div><span class="other"><b>Title</b></span></div>`,
+			css:      `span.pagetop b { display: block; }`,
+			findTag:  "b",
+			wantType: InlineBox,
+		},
+		{
+			name:     "b with direct class selector gets BlockBox",
+			html:     `<div><b class="title">Title</b></div>`,
+			css:      `.title { display: block; }`,
+			findTag:  "b",
+			wantType: BlockBox,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTreeWithCSS(tt.html, tt.css)
+			box := findBoxByTag(tree, tt.findTag)
+			assert.NotNil(t, box)
+			assert.Equal(t, tt.wantType, box.Type)
 		})
 	}
 }

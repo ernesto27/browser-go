@@ -182,6 +182,11 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 		box.Text = wrapInlineQuotes(node)
 	}
 
+	// CSS display property overrides the default box type
+	if box.Type == InlineBox && box.Style.Display == "block" {
+		box.Type = BlockBox
+	}
+
 	for _, child := range node.Children {
 		childBox := BuildBox(child, box, stylesheet, viewport)
 		if childBox != nil {
