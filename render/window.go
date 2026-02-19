@@ -77,12 +77,12 @@ type Browser struct {
 	toastTimer     *time.Timer
 
 	// Tooltip support
-	hoveredNode     *dom.Node
-	tooltipTimer    *time.Timer
-	tooltipOverlay  *fyne.Container
-	tooltipPos      fyne.Position
-	contentScroll   *container.Scroll // Reference to scroll container for offset calculation
-	toolbarHeight   float32           // Height of toolbar for tooltip positioning
+	hoveredNode    *dom.Node
+	tooltipTimer   *time.Timer
+	tooltipOverlay *fyne.Container
+	tooltipPos     fyne.Position
+	contentScroll  *container.Scroll // Reference to scroll container for offset calculation
+	toolbarHeight  float32           // Height of toolbar for tooltip positioning
 }
 
 type SelectionPoint struct {
@@ -517,6 +517,12 @@ func (b *Browser) handleClick(x, y float64) {
 			return
 		}
 
+		if u, err := url.Parse(fullURL); err == nil && u.Fragment != "" {
+			if b.scrollToID(u.Fragment) {
+				return
+			}
+		}
+
 		// Normal navigation
 		if b.OnNavigate != nil {
 			if b.onBeforeNavigate != nil && !b.onBeforeNavigate() {
@@ -524,7 +530,44 @@ func (b *Browser) handleClick(x, y float64) {
 			}
 			b.OnNavigate(NavigationRequest{URL: fullURL, Method: "GET", ReferrerPolicy: linkInfo.ReferrerPolicy})
 		}
+
 	}()
+}
+
+func (b *Browser) scrollToID(id string) bool {
+	node := dom.FindByID(b.document, id)
+	if node == nil {
+		return false
+	}
+
+	box := findLayoutBoxByNode(b.layoutTree, node)
+	if box == nil {
+		return false
+	}
+
+	if b.contentScroll != nil {
+		b.contentScroll.Offset.Y = float32(box.Rect.Y)
+		b.contentScroll.Refresh()
+	}
+	return true
+}
+
+func findLayoutBoxByNode(box *layout.LayoutBox, node *dom.Node) *layout.LayoutBox {
+	if box == nil {
+		return nil
+	}
+
+	if box.Node == node {
+		return box
+	}
+
+	for _, child := range box.Children {
+		if found := findLayoutBoxByNode(child, node); found != nil {
+			return found
+		}
+	}
+
+	return nil
 }
 
 func (b *Browser) openNewWindow(targetURL string) {
