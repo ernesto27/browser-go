@@ -1140,6 +1140,65 @@ func TestTableCellSpacingAttribute(t *testing.T) {
 	}
 }
 
+func TestTableBorderAttribute(t *testing.T) {
+	tests := []struct {
+		name        string
+		html        string
+		wantBorder  int
+	}{
+		{
+			name:       "no border attribute defaults to 0",
+			html:       `<table><tr><td>X</td></tr></table>`,
+			wantBorder: 0,
+		},
+		{
+			name:       "border=0 sets TableBorder to 0",
+			html:       `<table border="0"><tr><td>X</td></tr></table>`,
+			wantBorder: 0,
+		},
+		{
+			name:       "border=1 sets TableBorder to 1",
+			html:       `<table border="1"><tr><td>X</td></tr></table>`,
+			wantBorder: 1,
+		},
+		{
+			name:       "border=2 sets TableBorder to 2",
+			html:       `<table border="2"><tr><td>X</td></tr></table>`,
+			wantBorder: 2,
+		},
+		{
+			name:       "all cells in a row inherit the same TableBorder value",
+			html:       `<table border="1"><tr><td>A</td><td>B</td></tr></table>`,
+			wantBorder: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, 600)
+			cell := findCellByText(tree, "X")
+			if cell == nil {
+				cell = findCellByText(tree, "A")
+			}
+			assert.NotNil(t, cell)
+			assert.Equal(t, tt.wantBorder, cell.TableBorder)
+		})
+	}
+
+	// Extra: verify all cells share the same border value
+	t.Run("both cells in multi-column row have TableBorder=1", func(t *testing.T) {
+		tree := buildTree(`<table border="1"><tr><td>A</td><td>B</td></tr></table>`)
+		ComputeLayout(tree, 600)
+		cellA := findCellByText(tree, "A")
+		cellB := findCellByText(tree, "B")
+		assert.NotNil(t, cellA)
+		assert.NotNil(t, cellB)
+		assert.Equal(t, 1, cellA.TableBorder)
+		assert.Equal(t, 1, cellB.TableBorder)
+	})
+}
+
 func TestTableShrinkToFit(t *testing.T) {
 	tests := []struct {
 		name           string

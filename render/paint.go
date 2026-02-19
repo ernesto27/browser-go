@@ -689,13 +689,14 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		})
 	}
 
-	// Draw table cell border
-	if box.Type == layout.TableCellBox {
+	// Draw table cell border (only when table has border attribute > 0)
+	if box.Type == layout.TableCellBox && box.TableBorder > 0 {
 		borderColor := color.Gray{Y: 180}
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: box.Rect.Width, Height: 1}, Color: borderColor})
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y + box.Rect.Height - 1, Width: box.Rect.Width, Height: 1}, Color: borderColor})
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: 1, Height: box.Rect.Height}, Color: borderColor})
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X + box.Rect.Width - 1, Y: box.Rect.Y, Width: 1, Height: box.Rect.Height}, Color: borderColor})
+		bw := float64(box.TableBorder)
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: box.Rect.Width, Height: bw}, Color: borderColor})
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y + box.Rect.Height - bw, Width: box.Rect.Width, Height: bw}, Color: borderColor})
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: bw, Height: box.Rect.Height}, Color: borderColor})
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X + box.Rect.Width - bw, Y: box.Rect.Y, Width: bw, Height: box.Rect.Height}, Color: borderColor})
 	}
 
 	// Paint children with input state

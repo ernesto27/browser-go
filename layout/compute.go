@@ -874,6 +874,15 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		}
 	}
 
+	tableBorder := 0
+	if table.Node != nil {
+		if b, ok := table.Node.Attributes["border"]; ok {
+			if parsed, err := strconv.Atoi(b); err == nil && parsed >= 0 {
+				tableBorder = parsed
+			}
+		}
+	}
+
 	// Seed per-column widths from <col>/<colgroup> elements, then let
 	// individual cell explicit widths override via max() in the scan below.
 	colWidths := make([]float64, numCols)
@@ -1055,6 +1064,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 			cell.Rect.X = xPos
 			cell.Rect.Y = yOffset
 			cell.Rect.Width = cellWidth
+			cell.TableBorder = tableBorder
 
 			// Compute cell content height
 			cellHeight := computeCellContent(cell, cellWidth-cellPadding*2, xPos+cellPadding, yOffset+cellPadding)

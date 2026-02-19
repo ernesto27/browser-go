@@ -54,6 +54,7 @@ type LayoutBox struct {
 	Right        float64
 	Bottom       float64
 	Float        string
+	TableBorder  int
 }
 
 // IsInline returns true if the box should flow horizontally (inline)

@@ -87,17 +87,29 @@ https://html.spec.whatwg.org/
 - [x] `table.insertRow(index)` - Insert row at index (WHATWG 4.9.1)
 - [x] `table.deleteRow(index)` - Remove row at index
 
+### HTMLTableSectionElement (WHATWG 4.9.5 / 4.9.6 / 4.9.7)
+- [ ] `tbody.rows` / `thead.rows` / `tfoot.rows` - HTMLCollection of tr children of the section
+- [ ] `tbody.insertRow(index)` - Create and insert tr at index within the section (-1 = append, IndexSizeError if out of range)
+- [ ] `tbody.deleteRow(index)` - Remove tr at index within the section (-1 = last row, IndexSizeError if out of range)
+- [ ] `thead`/`tfoot` ordering in layout - thead rendered first, tfoot rendered last per spec
+
+### HTMLTableColElement (WHATWG 4.9.3 / 4.9.4)
+- [ ] `col.span` / `colgroup.span` getter/setter - Reflect span attribute (default 1, clamped range 1–1000 per spec)
+- [ ] `HTMLTableColElement` interface - Proper DOM interface for `<col>` and `<colgroup>` elements
+
 ### HTMLTableRowElement (WHATWG 4.9.8)
 - [x] `tr.cells` - HTMLCollection of td/th elements
 - [x] `tr.rowIndex` - Row position in table
 - [x] `tr.sectionRowIndex` - Row position in section
 - [x] `tr.insertCell(index)` / `tr.deleteCell(index)` - Insert/remove cells
 
-### HTMLTableCellElement (WHATWG 4.9.11)
+### HTMLTableCellElement (WHATWG 4.9.9 / 4.9.10 / 4.9.11)
 - [x] `td.colSpan` / `td.rowSpan` - Span attributes (getter/setter with clamping per spec)
 - [x] `td.cellIndex` - Cell position in row
 - [x] `td.headers` - Associated header cells
 - [x] `td.scope` - Header cell scope (enumerated: row/col/rowgroup/colgroup, invalid → "")
+- [ ] `td.abbr` / `th.abbr` - Reflect abbr attribute (conforming only for th, but interface is shared)
+- [ ] `td.colSpan` / `td.rowSpan` getter clamping - Getters must clamp raw HTML attr values to spec range (colSpan: 1–1000, rowSpan: 0–65534), not just setter
 
 ### Table Layout Gaps
 - [x] `colspan` attribute support in layout
@@ -109,7 +121,7 @@ https://html.spec.whatwg.org/
 - [x] `vertical-align` in cells
 - [x] `<colgroup>` / `<col>` elements
 - [x] `cellpadding` attribute - read from table element (currently hardcoded to 8px)
-- [ ] `cellspacing` attribute - gap between cells
+- [x] `cellspacing` attribute - gap between cells
 - [x] HTML `width` attribute on `<table>` - e.g., width="85%"
 - [ ] `bgcolor` attribute on `<td>`/`<tr>` - background color via HTML attr
 - [ ] `valign` attribute on `<td>` - vertical alignment in cells
