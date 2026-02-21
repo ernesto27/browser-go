@@ -365,6 +365,8 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		return cached
 	}
 
+	tagName := strings.ToUpper(node.TagName)
+
 	elem := newElement(rt, node)
 	obj := rt.vm.NewObject()
 
@@ -375,7 +377,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 	obj.Set("attributes", attrsObj)
 
 	// Static properties
-	obj.Set("tagName", strings.ToUpper(node.TagName))
+	obj.Set("tagName", tagName)
 	obj.Set("id", node.Attributes["id"])
 	obj.Set("className", node.Attributes["class"])
 
@@ -471,7 +473,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				return goja.Undefined()
 			}
 
-			if strings.ToUpper(node.TagName) == "BASE" {
+			if tagName == "BASE" {
 				return rt.vm.ToValue(href)
 			}
 
@@ -513,7 +515,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		}),
 		goja.FLAG_FALSE, goja.FLAG_TRUE)
 
-	if strings.ToUpper(node.TagName) == "TITLE" {
+	if tagName == "TITLE" {
 		obj.DefineAccessorProperty("text",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				return rt.vm.ToValue(elem.GetTextContent())
@@ -527,7 +529,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
-	if strings.ToUpper(node.TagName) == "A" {
+	if tagName == "A" {
 		relList := dom.NewDOMTokenList(node, "rel")
 		relListObj := rt.vm.NewObject()
 
@@ -679,8 +681,8 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}), nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
-	if strings.ToUpper(node.TagName) == "BLOCKQUOTE" || strings.ToUpper(node.TagName) == "Q" ||
-		strings.ToUpper(node.TagName) == "INS" || strings.ToUpper(node.TagName) == "DEL" {
+	if tagName == "BLOCKQUOTE" || tagName == "Q" ||
+		tagName == "INS" || tagName == "DEL" {
 		obj.DefineAccessorProperty("cite",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				cite := node.Attributes["cite"]
@@ -714,7 +716,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 	}
 
 	// HTMLTableElement.caption property (WHATWG 4.9.1)
-	if strings.ToUpper(node.TagName) == "TABLE" {
+	if tagName == "TABLE" {
 		obj.DefineAccessorProperty("caption",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				// Return first caption child, or null
@@ -1063,7 +1065,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 	}
 
 	// HTMLTableRowElement properties (WHATWG 4.9.8)
-	if strings.ToUpper(node.TagName) == "TR" {
+	if tagName == "TR" {
 		// tr.cells - returns HTMLCollection of td/th elements in document order
 		obj.DefineAccessorProperty("cells",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
@@ -1196,7 +1198,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		}))
 	}
 
-	if strings.ToUpper(node.TagName) == "TD" || strings.ToUpper(node.TagName) == "TH" {
+	if tagName == "TD" || tagName == "TH" {
 		obj.DefineAccessorProperty("colSpan",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				colspanAttr := node.Attributes["colspan"]
@@ -1320,7 +1322,7 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 
 	}
 
-	if strings.ToUpper(node.TagName) == "OL" {
+	if tagName == "OL" {
 		obj.DefineAccessorProperty("start",
 			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 				startAttr := node.Attributes["start"]
@@ -1377,7 +1379,21 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				return goja.Undefined()
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
 
+	if tagName == "THEAD" || tagName == "TFOOT" || tagName == "TBODY" {
+		obj.DefineAccessorProperty("rows",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				var rows []any
+				for _, child := range node.Children {
+					if child.Type == dom.Element && child.TagName == "tr" {
+						rows = append(rows, rt.wrapElement(child))
+					}
+				}
+				return rt.vm.NewArray(rows...)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
 	obj.DefineAccessorProperty("title",

@@ -3031,6 +3031,121 @@
     </script>
 
     <hr>
+
+    <h2>HTMLTableSectionElement.rows (WHATWG 4.9.6)</h2>
+
+    <h3>Test: tbody.rows returns only rows inside that tbody</h3>
+    <div class="test-box">
+        <table id="tse-1">
+            <thead id="tse-head">
+                <tr id="tse-head-r1"><th>Name</th><th>Score</th></tr>
+            </thead>
+            <tbody id="tse-body">
+                <tr id="tse-body-r1"><td>Alice</td><td>90</td></tr>
+                <tr id="tse-body-r2"><td>Bob</td><td>85</td></tr>
+                <tr id="tse-body-r3"><td>Carol</td><td>78</td></tr>
+            </tbody>
+            <tfoot id="tse-foot">
+                <tr id="tse-foot-r1"><td>Total</td><td>253</td></tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: tbody.rows.length = 3, thead.rows.length = 1, tfoot.rows.length = 1</p>
+
+    <h3>Test: tbody.rows with empty section</h3>
+    <div class="test-box">
+        <table id="tse-2">
+            <tbody id="tse-empty"></tbody>
+        </table>
+    </div>
+    <p>Expected: empty tbody.rows.length = 0</p>
+
+    <h3>Test: multiple tbody elements — each has its own .rows</h3>
+    <div class="test-box">
+        <table id="tse-3">
+            <tbody id="tse-b1">
+                <tr id="tse-b1-r1"><td>Group A Row 1</td></tr>
+                <tr id="tse-b1-r2"><td>Group A Row 2</td></tr>
+            </tbody>
+            <tbody id="tse-b2">
+                <tr id="tse-b2-r1"><td>Group B Row 1</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: first tbody.rows.length = 2, second tbody.rows.length = 1</p>
+
+    <h2>JavaScript Tests - HTMLTableSectionElement.rows (WHATWG 4.9.6)</h2>
+    <script>
+        info("--- HTMLTableSectionElement.rows tests (WHATWG 4.9.6) ---");
+
+        var tseBody  = document.getElementById("tse-body");
+        var tseHead  = document.getElementById("tse-head");
+        var tseFoot  = document.getElementById("tse-foot");
+        var tseEmpty = document.getElementById("tse-empty");
+        var tseB1    = document.getElementById("tse-b1");
+        var tseB2    = document.getElementById("tse-b2");
+
+        // tbody.rows exists
+        assert(tseBody !== null, "tbody element found");
+        assert(typeof tseBody.rows !== "undefined",
+            "tbody.rows property exists (got: " + typeof tseBody.rows + ")");
+
+        // tbody.rows.length = 3
+        if (tseBody && typeof tseBody.rows !== "undefined") {
+            assert(tseBody.rows.length === 3,
+                "tbody.rows.length === 3 (got: " + tseBody.rows.length + ")");
+        }
+
+        // thead.rows.length = 1
+        if (tseHead && typeof tseHead.rows !== "undefined") {
+            assert(tseHead.rows.length === 1,
+                "thead.rows.length === 1 (got: " + tseHead.rows.length + ")");
+        }
+
+        // tfoot.rows.length = 1
+        if (tseFoot && typeof tseFoot.rows !== "undefined") {
+            assert(tseFoot.rows.length === 1,
+                "tfoot.rows.length === 1 (got: " + tseFoot.rows.length + ")");
+        }
+
+        // empty tbody.rows.length = 0
+        if (tseEmpty && typeof tseEmpty.rows !== "undefined") {
+            assert(tseEmpty.rows.length === 0,
+                "empty tbody.rows.length === 0 (got: " + tseEmpty.rows.length + ")");
+        }
+
+        // rows[0] is the correct tr element
+        if (tseBody && typeof tseBody.rows !== "undefined" && tseBody.rows.length > 0) {
+            assert(tseBody.rows[0].id === "tse-body-r1",
+                "tbody.rows[0].id === 'tse-body-r1' (got: '" + tseBody.rows[0].id + "')");
+        }
+
+        // rows[2] is the last row
+        if (tseBody && typeof tseBody.rows !== "undefined" && tseBody.rows.length > 2) {
+            assert(tseBody.rows[2].id === "tse-body-r3",
+                "tbody.rows[2].id === 'tse-body-r3' (got: '" + tseBody.rows[2].id + "')");
+        }
+
+        // multiple tbodies each have independent .rows
+        if (tseB1 && typeof tseB1.rows !== "undefined") {
+            assert(tseB1.rows.length === 2,
+                "first tbody.rows.length === 2 (got: " + tseB1.rows.length + ")");
+        }
+        if (tseB2 && typeof tseB2.rows !== "undefined") {
+            assert(tseB2.rows.length === 1,
+                "second tbody.rows.length === 1 (got: " + tseB2.rows.length + ")");
+        }
+
+        // tbody.rows does NOT include rows from other sections
+        if (tseBody && typeof tseBody.rows !== "undefined") {
+            assert(tseBody.rows.length !== 5,
+                "tbody.rows only includes its own rows, not all table rows");
+        }
+
+        info("Tests cover: tbody.rows, thead.rows, tfoot.rows, empty section, multiple tbodies, index access, section isolation");
+    </script>
+
+    <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
 </html>
