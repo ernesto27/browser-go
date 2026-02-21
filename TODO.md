@@ -57,7 +57,7 @@ https://html.spec.whatwg.org/
 
 ### HTMLBodyElement (WHATWG 4.3.1)
 - [x] `document.body` setter - Allow setting body element (fixed wrong parent + HierarchyRequestError on invalid type)
-- [ ] `onload` event - Window load event on body (High priority)
+- [x] `onload` event - Window load event: `window.onload`, `window.addEventListener('load', fn)`, `<body onload="...">` (all three paths via FireLoad())
 - [ ] `ononline` / `onoffline` - Network status events
 - [ ] `onhashchange` - URL hash navigation
 - [ ] `onpopstate` - History API
@@ -191,6 +191,7 @@ https://html.spec.whatwg.org/
 ---
 
 ## Refactoring
+- [ ] Replace 30+ `if rt.onReflow != nil` guards with a no-op default in `NewJSRuntime` (`js/runtime.go:62`) — assign `func() {}` when nil so all call sites become unconditional `rt.onReflow()`
 - [ ] Refactor Rect usage pattern:
   ```go
   X:     box.Rect.X,

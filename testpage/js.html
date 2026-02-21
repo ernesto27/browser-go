@@ -56,6 +56,12 @@
     </div>
 
     <div class="box">
+        <h3>onload Event Tests</h3>
+        <div id="windowOnloadResult">window.onload: not fired</div>
+        <div id="addEventListenerLoadResult">window.addEventListener load: not fired</div>
+    </div>
+
+    <div class="box">
         <h3>Inline Event Handler (onclick) Tests</h3>
         <button onclick="alert('Inline onclick works!')">Basic onclick Alert</button>
         <button onclick="console.log('Button clicked via inline handler')">onclick Console Log</button>
@@ -308,6 +314,18 @@
                 console.log("21. Element already removed");
                 output.textContent = "Element was already removed!";
             }
+        });
+
+        // Test: window.onload property
+        window.onload = function() {
+            document.getElementById("windowOnloadResult").textContent = "window.onload: FIRED!";
+            console.log("window.onload fired");
+        };
+
+        // Test: window.addEventListener('load', fn)
+        window.addEventListener("load", function() {
+            document.getElementById("addEventListenerLoadResult").textContent = "window.addEventListener load: FIRED!";
+            console.log("window addEventListener load fired");
         });
 
         // Test 20: alert on page load

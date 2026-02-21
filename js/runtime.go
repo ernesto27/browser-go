@@ -23,6 +23,8 @@ type JSRuntime struct {
 	elementCache        map[*dom.Node]*goja.Object
 	onTitleChange       func(string)
 	beforeUnloadHandler goja.Callable
+	onLoadHandler       goja.Callable
+	windowLoadListeners []goja.Callable
 }
 
 // collectTableRows returns all tr elements in a table node in WHATWG 4.9.1 order:
@@ -280,6 +282,40 @@ func (rt *JSRuntime) setupGlobals() {
 			return goja.Undefined()
 		}),
 		goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+	window.DefineAccessorProperty("onload",
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if rt.onLoadHandler == nil {
+				return goja.Null()
+			}
+			return rt.vm.ToValue(rt.onLoadHandler)
+		}),
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if len(call.Arguments) > 0 {
+				if callback, ok := goja.AssertFunction(call.Arguments[0]); ok {
+					rt.onLoadHandler = callback
+				} else {
+					rt.onLoadHandler = nil
+				}
+			}
+			return goja.Undefined()
+		}),
+		goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+	window.Set("addEventListener", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 2 {
+			return goja.Undefined()
+		}
+		eventType := call.Arguments[0].String()
+		callback, ok := goja.AssertFunction(call.Arguments[1])
+		if !ok {
+			return goja.Undefined()
+		}
+		if eventType == "load" {
+			rt.windowLoadListeners = append(rt.windowLoadListeners, callback)
+		}
+		return goja.Undefined()
+	})
 
 	rt.vm.Set("window", window)
 
@@ -1594,4 +1630,22 @@ func (rt *JSRuntime) CheckBeforeUnload() bool {
 
 	fmt.Println("  No beforeunload handler, allowing navigation")
 	return true
+}
+
+func (rt *JSRuntime) FireLoad() {
+	// Path 1: window.onload / body.onload (same slot — script wins over inline attribute)
+	if rt.onLoadHandler != nil {
+		rt.onLoadHandler(goja.Undefined())
+	} else {
+		// Fall back to <body onload="..."> only if no script set window.onload
+		bodyNode := dom.FindElementsByTagName(rt.document, dom.TagBody)
+		if bodyNode != nil {
+			rt.ExecuteInlineEvent(bodyNode, "load")
+		}
+	}
+
+	// Path 2: window.addEventListener('load', fn) — independent list, always fires
+	for _, listener := range rt.windowLoadListeners {
+		listener(goja.Undefined())
+	}
 }

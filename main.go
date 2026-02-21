@@ -165,13 +165,8 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 		layout.ComputeLayout(layoutTree, float64(browser.Width))
 		browser.SetContent(layoutTree)
 
-		bodyNode := dom.FindElementsByTagName(document, dom.TagBody)
-		if bodyNode != nil {
-			if onload, ok := bodyNode.Attributes["onload"]; ok {
-				fmt.Println("Executing body onload...")
-				jsRuntime.Execute(onload)
-			}
-		}
+		fmt.Println("Firing load event...")
+		jsRuntime.FireLoad()
 
 		browser.AddToHistory(pageURL)
 		browser.MarkVisited(pageURL)
