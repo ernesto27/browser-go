@@ -56,7 +56,7 @@ https://html.spec.whatwg.org/
 - [x] Visited/unvisited link styling (visitedURLs map, LinkStyler)
 
 ### HTMLBodyElement (WHATWG 4.3.1)
-- [ ] `document.body` setter - Allow setting body element
+- [x] `document.body` setter - Allow setting body element (fixed wrong parent + HierarchyRequestError on invalid type)
 - [ ] `onload` event - Window load event on body (High priority)
 - [ ] `ononline` / `onoffline` - Network status events
 - [ ] `onhashchange` - URL hash navigation

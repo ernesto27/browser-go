@@ -129,14 +129,41 @@ func (rt *JSRuntime) setupGlobals() {
 		}),
 		goja.FLAG_FALSE, goja.FLAG_TRUE)
 
-	docObj.DefineAccessorProperty("body", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
-		bodyNode := dom.FindElementsByTagName(rt.document, dom.TagBody)
-		if bodyNode == nil {
-			return goja.Null()
-		}
-		return rt.wrapElement(bodyNode)
-	}),
-		nil,
+	docObj.DefineAccessorProperty("body",
+
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			bodyNode := dom.FindElementsByTagName(rt.document, dom.TagBody)
+			if bodyNode == nil {
+				return goja.Null()
+			}
+			return rt.wrapElement(bodyNode)
+		}),
+		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			if len(call.Arguments) > 0 {
+				newBodyNode := unwrapNode(rt, call.Arguments[0])
+				if newBodyNode == nil || (newBodyNode.TagName != "body" && newBodyNode.TagName != "frameset") {
+					panic(rt.vm.NewTypeError("HierarchyRequestError: The new body element must be a body or frameset element."))
+				}
+				existingBody := dom.FindElementsByTagName(rt.document, dom.TagBody)
+				if existingBody != nil && existingBody.Parent != nil {
+					parent := existingBody.Parent
+					parent.RemoveChild(existingBody)
+					parent.AppendChild(newBodyNode)
+				} else {
+					htmlNode := dom.FindElementsByTagName(rt.document, "html")
+					if htmlNode != nil {
+						htmlNode.AppendChild(newBodyNode)
+					} else {
+						rt.document.AppendChild(newBodyNode)
+					}
+				}
+				if rt.onReflow != nil {
+					rt.onReflow()
+				}
+			}
+
+			return goja.Undefined()
+		}),
 		goja.FLAG_FALSE, goja.FLAG_TRUE)
 
 	docObj.DefineAccessorProperty("baseURI",

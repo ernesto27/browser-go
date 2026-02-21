@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>document.body Compliance Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .box { padding: 15px; margin: 10px 0; background: #e0e0e0; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>document.body Compliance Test</h1>
+
+    <div id="status" class="box">Running tests...</div>
+
+    <div class="box">
+        <h3>Getter Test</h3>
+        <div id="getterResult">Waiting...</div>
+    </div>
+
+    <div class="box">
+        <h3>Setter Test</h3>
+        <div id="setterResult">Waiting...</div>
+        <button id="setBodyBtn">Replace body via document.body = newBody</button>
+    </div>
+
+    <div class="box">
+        <h3>Setter: Invalid value should throw</h3>
+        <div id="errorResult">Waiting...</div>
+        <button id="setInvalidBtn">Try document.body = "not an element"</button>
+    </div>
+
+    <script>
+        console.log("=== document.body Compliance Tests ===");
+
+        var passed = 0;
+        var failed = 0;
+
+        function pass(id, msg) {
+            document.getElementById(id).textContent = "PASS: " + msg;
+            document.getElementById(id).className = "pass";
+            passed++;
+            console.log("PASS:", msg);
+        }
+
+        function fail(id, msg) {
+            document.getElementById(id).textContent = "FAIL: " + msg;
+            document.getElementById(id).className = "fail";
+            failed++;
+            console.log("FAIL:", msg);
+        }
+
+        // Test 1: document.body getter returns the <body> element
+        console.log("--- Test 1: document.body getter ---");
+        var body = document.body;
+        if (body && body.tagName && body.tagName.toLowerCase() === "body") {
+            pass("getterResult", "document.body returns <body> element (tagName=" + body.tagName + ")");
+        } else {
+            fail("getterResult", "document.body did not return a <body> element, got: " + body);
+        }
+
+        // Test 2: document.body setter - replace entire body on button click
+        console.log("--- Test 2: document.body setter ---");
+        document.getElementById("setBodyBtn").addEventListener("click", function() {
+            var newBody = document.createElement("body");
+            newBody.innerHTML = "<h2>New Body!</h2><p>The body was replaced by the setter. If you see this, the setter works.</p>";
+
+            try {
+                document.body = newBody;
+                var check = document.body;
+                if (check && check.tagName && check.tagName.toLowerCase() === "body") {
+                    pass("setterResult", "document.body = newBody worked. New body is live.");
+                } else {
+                    fail("setterResult", "Setter ran but document.body still returned: " + check);
+                }
+            } catch(e) {
+                fail("setterResult", "Setter threw an error: " + e.message);
+            }
+        });
+
+        // Test 3: document.body setter must reject non-element values
+        console.log("--- Test 3: document.body setter rejects invalid values ---");
+        document.getElementById("setInvalidBtn").addEventListener("click", function() {
+            try {
+                document.body = "not an element";
+                fail("errorResult", "Setter accepted a string - should have thrown HierarchyRequestError");
+            } catch(e) {
+                pass("errorResult", "Setter correctly threw for non-element: " + e.message);
+            }
+        });
+
+        // Summary
+        console.log("=== Static tests complete: " + passed + " passed, " + failed + " failed ===");
+        console.log("Click the buttons above to run the interactive setter tests.");
+
+        var status = document.getElementById("status");
+        if (failed === 0) {
+            status.textContent = "Static tests: " + passed + " passed. Click buttons to test setter.";
+            status.className = "box pass";
+        } else {
+            status.textContent = "Static tests: " + passed + " passed, " + failed + " failed.";
+            status.className = "box fail";
+        }
+    </script>
+</body>
+</html>
