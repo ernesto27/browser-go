@@ -1033,6 +1033,16 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 		row.Rect.Width = tableWidth
 
 		rowHeight := 24.0 // minimum row height
+
+		// Apply HTML height attribute on <tr> as minimum row height
+		if row.Node != nil {
+			if h, ok := row.Node.Attributes["height"]; ok {
+				if parsed := utils.ParseHTMLSizeAttribute(h, 0); parsed > 0 {
+					rowHeight = parsed
+				}
+			}
+		}
+
 		colIdx := 0
 
 		for _, cell := range row.Children {

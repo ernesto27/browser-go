@@ -3355,6 +3355,61 @@
         info("Tests cover: col.span default, col.span explicit, colgroup.span, type check, setter, clamp below 1, clamp above 1000, attribute reflection");
     </script>
 
+    <h2>Visual Tests - HTML height Attribute on tr/img (Spacer Rows)</h2>
+
+    <h3>Test: tr with height attribute (spacer row)</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr><td>Row above spacer</td></tr>
+            <tr height="50"><td></td></tr>
+            <tr><td>Row below spacer (50px gap expected)</td></tr>
+        </table>
+    </div>
+    <p>Expected: Empty middle row is 50px tall, creating visible vertical spacing</p>
+
+    <h3>Test: tr with small height (1px spacer)</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr><td>Before</td></tr>
+            <tr height="1"><td></td></tr>
+            <tr><td>After (1px spacer)</td></tr>
+        </table>
+    </div>
+    <p>Expected: Middle row is only 1px tall — a thin line separator</p>
+
+    <h3>Test: tr height with content (height as minimum)</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr height="80"><td>This row has height="80" and text content</td></tr>
+            <tr><td>Normal row</td></tr>
+        </table>
+    </div>
+    <p>Expected: First row is at least 80px tall; content should not shrink the row</p>
+
+    <h3>Test: img with width and height as spacer</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr>
+                <td>Left</td>
+                <td><img src="" width="1" height="1"></td>
+                <td>Right</td>
+            </tr>
+        </table>
+    </div>
+    <p>Expected: Middle cell contains a 1×1 invisible spacer image</p>
+
+    <h3>Test: Multiple spacer rows with different heights</h3>
+    <div class="test-box">
+        <table border="1">
+            <tr><td>Content</td></tr>
+            <tr height="10"><td></td></tr>
+            <tr><td>Content</td></tr>
+            <tr height="30"><td></td></tr>
+            <tr><td>Content</td></tr>
+        </table>
+    </div>
+    <p>Expected: Two spacer rows — 10px gap then 30px gap between content rows</p>
+
     <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>

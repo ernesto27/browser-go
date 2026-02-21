@@ -123,10 +123,10 @@ https://html.spec.whatwg.org/
 - [x] `cellpadding` attribute - read from table element (currently hardcoded to 8px)
 - [x] `cellspacing` attribute - gap between cells
 - [x] HTML `width` attribute on `<table>` - e.g., width="85%"
-- [ ] `bgcolor` attribute on `<td>`/`<tr>` - background color via HTML attr
-- [ ] `valign` attribute on `<td>` - vertical alignment in cells
-- [ ] `align` attribute on `<td>` - text alignment in cells
-- [ ] HTML `height` attribute on `<tr>`/`<img>` - spacer rows
+- [x] `bgcolor` attribute on `<td>`/`<tr>` - background color via HTML attr
+- [x] `valign` attribute on `<td>` - vertical alignment in cells
+- [x] `align` attribute on `<td>` - text alignment in cells
+- [x] HTML `height` attribute on `<tr>`/`<img>` - spacer rows
 
 ### CSSStyleSheet (CSSOM)
 - [ ] `sheet.cssRules` - Get list of CSS rules
