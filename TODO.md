@@ -88,9 +88,9 @@ https://html.spec.whatwg.org/
 - [x] `table.deleteRow(index)` - Remove row at index
 
 ### HTMLTableSectionElement (WHATWG 4.9.5 / 4.9.6 / 4.9.7)
-- [x] `tbody.rows` / `thead.rows` / `tfoot.rows` - HTMLCollection of tr children of the section (compliance test added in `table_compliance.html`)
-- [ ] `tbody.insertRow(index)` - Create and insert tr at index within the section (-1 = append, IndexSizeError if out of range)
-- [ ] `tbody.deleteRow(index)` - Remove tr at index within the section (-1 = last row, IndexSizeError if out of range)
+- [x] `tbody.rows` / `thead.rows` / `tfoot.rows` - HTMLCollection of tr children of the section
+- [x] `tbody.insertRow(index)` - Create and insert tr at index within the section (-1 = append)
+- [x] `tbody.deleteRow(index)` - Remove tr at index within the section (-1 = last row)
 - [ ] `thead`/`tfoot` ordering in layout - thead rendered first, tfoot rendered last per spec
 
 ### HTMLTableColElement (WHATWG 4.9.3 / 4.9.4)

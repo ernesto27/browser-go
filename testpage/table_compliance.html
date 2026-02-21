@@ -3146,6 +3146,112 @@
     </script>
 
     <hr>
+
+    <h2>HTMLTableSectionElement.insertRow (WHATWG 4.9.6)</h2>
+
+    <h3>Test: tbody.insertRow(-1) appends a row at the end of the section</h3>
+    <div class="test-box">
+        <table id="ir-1">
+            <thead><tr><th>Name</th><th>Score</th></tr></thead>
+            <tbody id="ir-body1">
+                <tr><td>Alice</td><td>90</td></tr>
+                <tr><td>Bob</td><td>85</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: after <code>tbody.insertRow(-1)</code>, tbody has 3 rows; new row is last</p>
+
+    <h3>Test: tbody.insertRow(0) inserts a row at the top of the section</h3>
+    <div class="test-box">
+        <table id="ir-2">
+            <thead><tr><th>Item</th></tr></thead>
+            <tbody id="ir-body2">
+                <tr id="ir-b2-r1"><td>First</td></tr>
+                <tr><td>Second</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Expected: after <code>tbody.insertRow(0)</code>, new row is at index 0; "First" row shifts to index 1</p>
+
+    <h3>Test: tbody.insertRow only affects its own section, not thead or tfoot</h3>
+    <div class="test-box">
+        <table id="ir-3">
+            <thead id="ir-head3">
+                <tr><th>Header</th></tr>
+                <tr><th>Header 2</th></tr>
+            </thead>
+            <tbody id="ir-body3">
+                <tr><td>Body row 1</td></tr>
+            </tbody>
+            <tfoot id="ir-foot3">
+                <tr><td>Footer</td></tr>
+            </tfoot>
+        </table>
+    </div>
+    <p>Expected: <code>tbody.insertRow(0)</code> adds to tbody only; thead.rows.length stays 2, tfoot.rows.length stays 1</p>
+
+    <h2>JavaScript Tests - HTMLTableSectionElement.insertRow (WHATWG 4.9.6)</h2>
+    <script>
+        info("--- HTMLTableSectionElement.insertRow tests (WHATWG 4.9.6) ---");
+
+        var irBody1 = document.getElementById("ir-body1");
+        var irBody2 = document.getElementById("ir-body2");
+        var irB2R1  = document.getElementById("ir-b2-r1");
+        var irBody3 = document.getElementById("ir-body3");
+        var irHead3 = document.getElementById("ir-head3");
+        var irFoot3 = document.getElementById("ir-foot3");
+
+        // insertRow method exists on tbody
+        assert(irBody1 !== null, "tbody element found");
+        assert(typeof irBody1.insertRow === "function",
+            "tbody.insertRow is a function (got: " + typeof irBody1.insertRow + ")");
+
+        // insertRow(-1) appends at end of section
+        if (irBody1 && typeof irBody1.insertRow === "function") {
+            var beforeLen = irBody1.rows ? irBody1.rows.length : -1;
+            var newRow = irBody1.insertRow(-1);
+            assert(newRow !== null && newRow !== undefined,
+                "tbody.insertRow(-1) returns the new tr element");
+            if (irBody1.rows) {
+                assert(irBody1.rows.length === beforeLen + 1,
+                    "tbody.rows.length grew by 1 after insertRow(-1) (got: " + irBody1.rows.length + ")");
+                assert(irBody1.rows[irBody1.rows.length - 1] === newRow,
+                    "new row is last in tbody after insertRow(-1)");
+            }
+        }
+
+        // insertRow(0) inserts at top of section; existing first row shifts to index 1
+        if (irBody2 && typeof irBody2.insertRow === "function") {
+            var topRow = irBody2.insertRow(0);
+            assert(topRow !== null && topRow !== undefined,
+                "tbody.insertRow(0) returns the new tr element");
+            if (irBody2.rows) {
+                assert(irBody2.rows[0] === topRow,
+                    "new row is at index 0 after insertRow(0)");
+                assert(irBody2.rows[1] === irB2R1,
+                    "original first row shifted to index 1 after insertRow(0)");
+            }
+        }
+
+        // insertRow does NOT affect other sections
+        if (irBody3 && typeof irBody3.insertRow === "function") {
+            var headBefore = irHead3 && irHead3.rows ? irHead3.rows.length : -1;
+            var footBefore = irFoot3 && irFoot3.rows ? irFoot3.rows.length : -1;
+            irBody3.insertRow(0);
+            if (irHead3 && irHead3.rows) {
+                assert(irHead3.rows.length === headBefore,
+                    "thead.rows.length unchanged after tbody.insertRow (got: " + irHead3.rows.length + ", expected: " + headBefore + ")");
+            }
+            if (irFoot3 && irFoot3.rows) {
+                assert(irFoot3.rows.length === footBefore,
+                    "tfoot.rows.length unchanged after tbody.insertRow (got: " + irFoot3.rows.length + ", expected: " + footBefore + ")");
+            }
+        }
+
+        info("Tests cover: insertRow(-1) append, insertRow(0) prepend, section isolation from thead/tfoot");
+    </script>
+
+    <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
 </html>

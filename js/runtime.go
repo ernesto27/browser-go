@@ -29,6 +29,17 @@ type JSRuntime struct {
 
 // collectTableRows returns all tr elements in a table node in WHATWG 4.9.1 order:
 // thead rows first, then tbody/direct tr rows in tree order, then tfoot rows.
+// collectSectionRows returns all direct tr children of a tbody/thead/tfoot node.
+func collectSectionRows(sectionNode *dom.Node) []*dom.Node {
+	var rows []*dom.Node
+	for _, child := range sectionNode.Children {
+		if child.Type == dom.Element && child.TagName == "tr" {
+			rows = append(rows, child)
+		}
+	}
+	return rows
+}
+
 func collectTableRows(tableNode *dom.Node) []*dom.Node {
 	var rows []*dom.Node
 	collectTRs := func(section *dom.Node) {
@@ -1062,6 +1073,80 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			return goja.Undefined()
 		}))
 
+	}
+
+	// HTMLTableSectionElement properties (WHATWG 4.9.5-4.9.7)
+	if tagName == "TBODY" || tagName == "THEAD" || tagName == "TFOOT" {
+		// rows - HTMLCollection of tr elements within this section only
+		obj.DefineAccessorProperty("rows",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				sectionRows := collectSectionRows(node)
+				var rows []any
+				for _, row := range sectionRows {
+					rows = append(rows, rt.wrapElement(row))
+				}
+				return rt.vm.NewArray(rows...)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		// insertRow(index) - creates a new tr and inserts it at index within this section.
+		// index -1 or omitted appends at end. Out-of-range returns undefined (spec: IndexSizeError).
+		obj.Set("insertRow", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			index := int64(-1)
+			if len(call.Arguments) > 0 {
+				index = call.Argument(0).ToInteger()
+			}
+
+			sectionRows := collectSectionRows(node)
+			newRow := dom.NewElement("tr", map[string]string{})
+			newRow.Parent = node
+
+			if index == -1 || index == int64(len(sectionRows)) {
+				node.Children = append(node.Children, newRow)
+			} else if index >= 0 && index < int64(len(sectionRows)) {
+				targetRow := sectionRows[index]
+				for i, child := range node.Children {
+					if child == targetRow {
+						node.Children = append(
+							node.Children[:i],
+							append([]*dom.Node{newRow}, node.Children[i:]...)...)
+						break
+					}
+				}
+			} else {
+				return goja.Undefined()
+			}
+
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			return rt.wrapElement(newRow)
+		}))
+
+		// deleteRow(index) - removes the tr at index within this section.
+		// index -1 removes the last row. Out-of-range does nothing (spec: IndexSizeError).
+		obj.Set("deleteRow", rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+			index := int64(-1)
+			if len(call.Arguments) > 0 {
+				index = call.Argument(0).ToInteger()
+			}
+
+			sectionRows := collectSectionRows(node)
+
+			if index == -1 && len(sectionRows) > 0 {
+				index = int64(len(sectionRows) - 1)
+			}
+
+			if index >= 0 && index < int64(len(sectionRows)) {
+				sectionRows[index].Parent.RemoveChild(sectionRows[index])
+				if rt.onReflow != nil {
+					rt.onReflow()
+				}
+			}
+
+			return goja.Undefined()
+		}))
 	}
 
 	// HTMLTableRowElement properties (WHATWG 4.9.8)
