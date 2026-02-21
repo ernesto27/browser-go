@@ -94,7 +94,7 @@ https://html.spec.whatwg.org/
 - [ ] `thead`/`tfoot` ordering in layout - thead rendered first, tfoot rendered last per spec
 
 ### HTMLTableColElement (WHATWG 4.9.3 / 4.9.4)
-- [ ] `col.span` / `colgroup.span` getter/setter - Reflect span attribute (default 1, clamped range 1–1000 per spec)
+- [x] `col.span` / `colgroup.span` getter/setter - Reflect span attribute (default 1, clamped range 1–1000 per spec)
 - [ ] `HTMLTableColElement` interface - Proper DOM interface for `<col>` and `<colgroup>` elements
 
 ### HTMLTableRowElement (WHATWG 4.9.8)

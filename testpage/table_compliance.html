@@ -3252,6 +3252,110 @@
     </script>
 
     <hr>
+
+    <h2>HTMLTableColElement.span (WHATWG 4.9.3 / 4.9.4)</h2>
+
+    <h3>Test: col.span default value (no attribute)</h3>
+    <div class="test-box">
+        <table id="cs-1">
+            <colgroup>
+                <col id="cs-col-default">
+                <col id="cs-col-explicit" span="3">
+            </colgroup>
+            <tr><td>A</td><td>B</td><td>C</td><td>D</td></tr>
+        </table>
+    </div>
+    <p>Expected: col without span attribute → <code>col.span === 1</code>; col with span="3" → <code>col.span === 3</code></p>
+
+    <h3>Test: colgroup.span (colgroup without child col elements)</h3>
+    <div class="test-box">
+        <table id="cs-2">
+            <colgroup id="cs-cg-span" span="2"></colgroup>
+            <colgroup id="cs-cg-no-span"></colgroup>
+            <tr><td>A</td><td>B</td><td>C</td></tr>
+        </table>
+    </div>
+    <p>Expected: colgroup with span="2" → <code>colgroup.span === 2</code>; colgroup without → <code>colgroup.span === 1</code></p>
+
+    <h3>Test: col.span setter and clamping (1–1000 per spec)</h3>
+    <div class="test-box">
+        <table id="cs-3">
+            <colgroup>
+                <col id="cs-col-clamp">
+            </colgroup>
+            <tr><td>X</td></tr>
+        </table>
+    </div>
+    <p>Expected: setting span=0 clamps to 1; setting span=9999 clamps to 1000; setting span=5 stays 5</p>
+
+    <h2>JavaScript Tests - HTMLTableColElement.span (WHATWG 4.9.3 / 4.9.4)</h2>
+    <script>
+        info("--- HTMLTableColElement.span / HTMLTableColGroupElement.span tests (WHATWG 4.9.3-4.9.4) ---");
+
+        var csColDefault  = document.getElementById("cs-col-default");
+        var csColExplicit = document.getElementById("cs-col-explicit");
+        var csCgSpan      = document.getElementById("cs-cg-span");
+        var csCgNoSpan    = document.getElementById("cs-cg-no-span");
+        var csColClamp    = document.getElementById("cs-col-clamp");
+
+        // col.span property exists
+        assert(csColDefault !== null, "col element found");
+        assert(typeof csColDefault.span !== "undefined",
+            "col.span property exists (got: " + typeof csColDefault.span + ")");
+
+        // col without span attribute → default 1
+        if (csColDefault && typeof csColDefault.span !== "undefined") {
+            assert(csColDefault.span === 1,
+                "col.span defaults to 1 when attribute absent (got: " + csColDefault.span + ")");
+        }
+
+        // col with span="3" → 3
+        if (csColExplicit && typeof csColExplicit.span !== "undefined") {
+            assert(csColExplicit.span === 3,
+                "col.span returns 3 for span='3' (got: " + csColExplicit.span + ")");
+            assert(typeof csColExplicit.span === "number",
+                "col.span is typeof number (got: " + typeof csColExplicit.span + ")");
+        }
+
+        // colgroup with span="2" → 2
+        if (csCgSpan && typeof csCgSpan.span !== "undefined") {
+            assert(csCgSpan.span === 2,
+                "colgroup.span returns 2 for span='2' (got: " + csCgSpan.span + ")");
+        }
+
+        // colgroup without span → default 1
+        if (csCgNoSpan && typeof csCgNoSpan.span !== "undefined") {
+            assert(csCgNoSpan.span === 1,
+                "colgroup.span defaults to 1 when attribute absent (got: " + csCgNoSpan.span + ")");
+        }
+
+        // setter: valid value
+        if (csColClamp && typeof csColClamp.span !== "undefined") {
+            csColClamp.span = 5;
+            assert(csColClamp.span === 5,
+                "col.span setter: span=5 stays 5 (got: " + csColClamp.span + ")");
+            assert(csColClamp.getAttribute("span") === "5",
+                "col.span setter reflects to attribute (got: '" + csColClamp.getAttribute("span") + "')");
+        }
+
+        // setter: clamp below 1 → 1
+        if (csColClamp && typeof csColClamp.span !== "undefined") {
+            csColClamp.span = 0;
+            assert(csColClamp.span === 1,
+                "col.span setter: span=0 clamped to 1 (got: " + csColClamp.span + ")");
+        }
+
+        // setter: clamp above 1000 → 1000
+        if (csColClamp && typeof csColClamp.span !== "undefined") {
+            csColClamp.span = 9999;
+            assert(csColClamp.span === 1000,
+                "col.span setter: span=9999 clamped to 1000 (got: " + csColClamp.span + ")");
+        }
+
+        info("Tests cover: col.span default, col.span explicit, colgroup.span, type check, setter, clamp below 1, clamp above 1000, attribute reflection");
+    </script>
+
+    <hr>
     <p><a href="index.html">Back to Index</a></p>
 </body>
 </html>

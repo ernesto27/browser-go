@@ -1481,6 +1481,40 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
+	// HTMLTableColElement / HTMLTableColGroupElement (WHATWG 4.9.3-4.9.4)
+	if tagName == "COL" || tagName == "COLGROUP" {
+		obj.DefineAccessorProperty("span",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				spanAttr := node.Attributes["span"]
+				if spanAttr == "" {
+					return rt.vm.ToValue(1)
+				}
+				v, err := strconv.Atoi(spanAttr)
+				if err != nil || v < 1 {
+					return rt.vm.ToValue(1)
+				}
+				if v > 1000 {
+					return rt.vm.ToValue(1000)
+				}
+				return rt.vm.ToValue(v)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					v, err := strconv.Atoi(call.Arguments[0].String())
+					if err == nil {
+						if v < 1 {
+							v = 1
+						} else if v > 1000 {
+							v = 1000
+						}
+						node.Attributes["span"] = strconv.Itoa(v)
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
 	obj.DefineAccessorProperty("title",
 		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 			title := node.Attributes["title"]
