@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -25,6 +26,8 @@ var (
 	imageCacheMu    sync.Mutex
 	pendingFeteches = make(map[string]bool)
 	pendingMu       sync.Mutex
+	failedImages    = make(map[string]bool)
+	failedMu        sync.Mutex
 )
 
 // renderTextFieldObjects creates canvas objects for input/textarea fields
@@ -280,9 +283,20 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, useCache bool, on
 			}
 
 		case DrawImage:
-			img := getImageOrPlaceholder(c.URL, baseURL, c.Width, c.Height, onImageLoad)
+			img, err := getImageOrPlaceholder(c.URL, baseURL, c.Width, c.Height, onImageLoad)
 
-			if img != nil {
+			if err != nil {
+				// Broken image icon (top-left corner)
+				icon := canvas.NewText("🖼", color.RGBA{150, 150, 150, 255})
+				icon.TextSize = 12
+				icon.Move(fyne.NewPos(float32(c.X)+4, float32(c.Y)+4))
+				objects = append(objects, icon)
+
+				altText := canvas.NewText(c.AltText, color.RGBA{100, 100, 100, 255})
+				altText.TextSize = 12
+				altText.Move(fyne.NewPos(float32(c.X)+22, float32(c.Y)+4))
+				objects = append(objects, altText)
+			} else if img != nil {
 				img.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
 				objects = append(objects, img)
 			} else {
@@ -746,7 +760,7 @@ func renderFileInput(x, y, width, height float64, filename string, isDisabled bo
 
 	return objects
 }
-func fetchimageToCache(fullURL string) {
+func fetchimageToCache(fullURL string) error {
 	fmt.Println("Fetching image:", fullURL)
 
 	var img image.Image
@@ -757,21 +771,21 @@ func fetchimageToCache(fullURL string) {
 		img, err = loadLocalImage(fullURL)
 		if err != nil {
 			fmt.Println("Error loading local image:", err)
-			return
+			return errors.New("Error loading local image")
 		}
 	} else {
 		// Remote URL - fetch via HTTP
 		resp, err := http.Get(fullURL)
 		if err != nil {
 			fmt.Println("Error fetching image:", err)
-			return
+			return errors.New("Error fetching image")
 		}
 		defer resp.Body.Close()
 
 		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Println("Error reading image data:", err)
-			return
+			return errors.New("Error reading image data")
 		}
 
 		contentType := resp.Header.Get("Content-Type")
@@ -783,7 +797,7 @@ func fetchimageToCache(fullURL string) {
 
 		if err != nil {
 			fmt.Println("Error decoding image:", err)
-			return
+			return errors.New("Error decoding image")
 		}
 
 	}
@@ -791,8 +805,9 @@ func fetchimageToCache(fullURL string) {
 	imageCacheMu.Lock()
 	imageCache[fullURL] = img
 	imageCacheMu.Unlock()
+	return nil
 }
-func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad func()) *canvas.Image {
+func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad func()) (*canvas.Image, error) {
 	fullURL := resolveImageURL(src, baseURL)
 
 	imageCacheMu.Lock()
@@ -803,8 +818,15 @@ func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad fu
 		fyneImg := canvas.NewImageFromImage(cached)
 		fyneImg.Resize(fyne.NewSize(float32(width), float32(height)))
 		fyneImg.FillMode = canvas.ImageFillContain
-		return fyneImg
+		return fyneImg, nil
 	}
+
+	failedMu.Lock()
+	if failedImages[fullURL] {
+		failedMu.Unlock()
+		return nil, errors.New("Previously failed to load image")
+	}
+	failedMu.Unlock()
 
 	pendingMu.Lock()
 	alreadyFetching := pendingFeteches[fullURL]
@@ -815,8 +837,14 @@ func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad fu
 
 	if !alreadyFetching {
 		go func() {
-			fetchimageToCache(fullURL)
+			err := fetchimageToCache(fullURL)
 
+			if err != nil {
+				failedMu.Lock()
+				failedImages[fullURL] = true
+				failedMu.Unlock()
+				fmt.Println("Failed to load image:", fullURL)
+			}
 			pendingMu.Lock()
 			delete(pendingFeteches, fullURL)
 			pendingMu.Unlock()
@@ -827,7 +855,7 @@ func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad fu
 		}()
 	}
 
-	return nil
+	return nil, nil
 }
 
 func isSVG(url, contentType string) bool {

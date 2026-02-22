@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHATWG 4.8.3 img Element - Alt Fallback Compliance Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .description { color: #555; margin-bottom: 10px; }
+        .expected { color: #0066cc; font-style: italic; }
+        code { background-color: #f5f5f5; padding: 2px 6px; }
+    </style>
+</head>
+<body>
+    <h1>WHATWG 4.8.3 img Element - Alt Fallback Compliance Test</h1>
+    <p>Tests how the browser handles <code>&lt;img&gt;</code> elements when images cannot be loaded.
+    Per WHATWG spec, the <code>alt</code> attribute provides fallback text that should be shown
+    when the image is unavailable.</p>
+
+    <h2>Test 1: Broken URL with alt text</h2>
+    <div class="test">
+        <p class="description">Image with a broken src URL and a meaningful alt attribute.</p>
+        <p class="expected">Expected: Shows alt text "[A majestic mountain landscape]" or similar indicator instead of a blank space.</p>
+        <img src="https://this-domain-does-not-exist-xyz.example/photo.jpg" alt="A majestic mountain landscape" width="300" height="200">
+    </div>
+
+    <h2>Test 2: Local missing file with alt text</h2>
+    <div class="test">
+        <p class="description">Image pointing to a local file that does not exist.</p>
+        <p class="expected">Expected: Shows alt text "Company logo" as fallback.</p>
+        <img src="missing-image.png" alt="Company logo" width="200" height="80">
+    </div>
+
+    <h2>Test 3: Empty alt attribute (decorative image)</h2>
+    <div class="test">
+        <p class="description">Image with <code>alt=""</code> — marks the image as purely decorative. Per WHATWG spec, no fallback text is needed.</p>
+        <p class="expected">Expected: Nothing shown (or a blank placeholder). No alt text because it is decorative.</p>
+        <img src="missing-decorative.png" alt="" width="100" height="100">
+        <p>(Decorative image above — blank is correct behaviour)</p>
+    </div>
+
+    <h2>Test 4: Missing alt attribute entirely</h2>
+    <div class="test">
+        <p class="description">Image with no <code>alt</code> attribute at all. The spec says this means the image is not described — its purpose is unknown.</p>
+        <p class="expected">Expected: A generic placeholder (e.g., "[image]") or blank, since no description was provided.</p>
+        <img src="no-alt-image.png" width="150" height="100">
+    </div>
+
+    <h2>Test 5: Valid image (control case)</h2>
+    <div class="test">
+        <p class="description">A real image that should load successfully — the alt text should NOT be shown.</p>
+        <p class="expected">Expected: The actual image is displayed; alt text is hidden.</p>
+        <img src="https://picsum.photos/200/150" alt="A random placeholder image" width="200" height="150">
+    </div>
+
+    <h2>Test 6: Long alt text</h2>
+    <div class="test">
+        <p class="description">Image with a lengthy alt description, testing text wrapping in the fallback area.</p>
+        <p class="expected">Expected: Fallback text wraps within the image's allocated width.</p>
+        <img src="missing-chart.png" alt="Bar chart showing quarterly revenue growth from Q1 2023 to Q4 2024, with a peak in Q3 2024" width="400" height="250">
+    </div>
+
+    <h2>Test 7: Alt text with special characters</h2>
+    <div class="test">
+        <p class="description">Alt attribute containing HTML entities and special punctuation.</p>
+        <p class="expected">Expected: Renders as plain text — "Caf&eacute; &amp; Bistro logo — Est. 1999".</p>
+        <img src="missing-logo.png" alt="Café &amp; Bistro logo — Est. 1999" width="200" height="80">
+    </div>
+
+    <h2>Test 8: Image inside a link (clickable)</h2>
+    <div class="test">
+        <p class="description">A broken image wrapped in an anchor tag. The alt text should still be visible and the whole area should remain clickable.</p>
+        <p class="expected">Expected: Alt text "Visit our homepage" shown as a fallback, and it acts as a link.</p>
+        <a href="https://example.com">
+            <img src="missing-banner.png" alt="Visit our homepage" width="300" height="60">
+        </a>
+    </div>
+
+    <h2>Test 9: Image inside figure with figcaption</h2>
+    <div class="test">
+        <p class="description">Broken image inside a <code>&lt;figure&gt;</code>. Alt text and figcaption should both appear.</p>
+        <p class="expected">Expected: Alt text shown where image would be, caption "Figure 1: Eiffel Tower at dusk" below.</p>
+        <figure>
+            <img src="missing-eiffel.jpg" alt="Eiffel Tower at dusk, Paris" width="300" height="200">
+            <figcaption>Figure 1: Eiffel Tower at dusk</figcaption>
+        </figure>
+    </div>
+
+    <h2>Test 10: Multiple broken images in a row</h2>
+    <div class="test">
+        <p class="description">Several consecutive broken images, each with distinct alt text.</p>
+        <p class="expected">Expected: Each image shows its own alt text independently.</p>
+        <img src="missing1.png" alt="Red apple" width="100" height="100">
+        <img src="missing2.png" alt="Green pear" width="100" height="100">
+        <img src="missing3.png" alt="Blue blueberry" width="100" height="100">
+    </div>
+
+    <h2>Test 11: Image with width and height of zero</h2>
+    <div class="test">
+        <p class="description">Edge case — image with zero dimensions. Even with alt text, nothing visible should appear.</p>
+        <p class="expected">Expected: Nothing rendered (zero-size box).</p>
+        <img src="missing-zero.png" alt="You should not see this" width="0" height="0">
+        <p>(Zero-size image above — should be invisible)</p>
+    </div>
+
+    <h2>Test 12: Image with no dimensions specified</h2>
+    <div class="test">
+        <p class="description">Broken image with no <code>width</code> or <code>height</code> attributes. The browser must choose a default size for the fallback area.</p>
+        <p class="expected">Expected: Fallback text shown in a default-sized placeholder box.</p>
+        <img src="missing-nodims.png" alt="Photo with no dimensions given">
+    </div>
+
+</body>
+</html>

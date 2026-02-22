@@ -128,6 +128,26 @@ https://html.spec.whatwg.org/
 - [x] `align` attribute on `<td>` - text alignment in cells
 - [x] HTML `height` attribute on `<tr>`/`<img>` - spacer rows
 
+### HTMLImageElement (WHATWG 4.8.3)
+- [x] `src` attribute - Address of the image resource
+- [x] `width` / `height` attributes - Dimension attributes (layout sizing)
+- [x] `alt` fallback rendering - Show alt text when image is unavailable (icon + text on load failure; compliance test: img_compliance.html)
+- [ ] `srcset` / `sizes` attributes - Responsive image sources for different layouts/resolutions
+- [ ] `crossorigin` attribute - CORS settings for canvas use
+- [ ] `usemap` attribute - Client-side image map association
+- [ ] `ismap` attribute - Server-side image map
+- [ ] `referrerpolicy` attribute - Referrer policy for image fetches
+- [ ] `decoding` attribute - Decode hint (sync/async/auto)
+- [ ] `loading` attribute - Lazy loading (lazy/eager)
+- [ ] `fetchpriority` attribute - Fetch priority hint
+- [ ] `image.width` / `image.height` getter/setter - Rendered dimensions IDL attributes
+- [ ] `image.naturalWidth` / `image.naturalHeight` - Density-corrected natural dimensions
+- [ ] `image.complete` - Whether image is fully downloaded
+- [ ] `image.currentSrc` - Absolute URL of current image
+- [ ] `image.decode()` - Parallel decode returning a Promise
+- [ ] `Image(width, height)` constructor - Legacy factory function (`new Image()`)
+- [ ] `<picture>` / `<source>` parent support - Responsive image selection
+
 ### CSSStyleSheet (CSSOM)
 - [ ] `sheet.cssRules` - Get list of CSS rules
 - [ ] `sheet.insertRule(rule, index)` - Add a CSS rule
