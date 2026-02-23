@@ -19,16 +19,27 @@ func DoPost(url string, body string) {
 	http.DefaultClient.Do(req)
 }
 
+// HTTPRequest holds the parameters for DoRequest.
+type HTTPRequest struct {
+	Method         string
+	URL            string
+	Body           []byte
+	ContentType    string
+	FormData       url.Values
+	ReferrerPolicy string
+	FromURL        string
+}
+
 // DoRequest performs an HTTP request (GET or POST).
-func DoRequest(
-	method string,
-	pageURL string,
-	body []byte,
-	contentType string,
-	formData url.Values,
-	referrerPolicy string,
-	fromURL string,
-) (*http.Response, error) {
+func DoRequest(req HTTPRequest) (*http.Response, error) {
+	method := req.Method
+	pageURL := req.URL
+	body := req.Body
+	contentType := req.ContentType
+	formData := req.FormData
+	referrerPolicy := req.ReferrerPolicy
+	fromURL := req.FromURL
+
 	var httpReq *http.Request
 	var err error
 
@@ -59,22 +70,51 @@ func DoRequest(
 		fmt.Println(parsed)
 		originURL := fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
+		isDowngrade := parsed.Scheme == "https" && httpReq.URL.Scheme == "http"
+		isSameOrigin := strings.EqualFold(parsed.Host, httpReq.URL.Host)
+
 		switch referrerPolicy {
-		case "origin":
-			httpReq.Header.Set("Referer", originURL)
-		case "same-origin":
-			if strings.EqualFold(parsed.Host, httpReq.URL.Host) {
+		case "no-referrer":
+			// Never send Referer
+		case "no-referrer-when-downgrade":
+			if !isDowngrade {
 				httpReq.Header.Set("Referer", fromURL)
 			}
-		case "strict-origin-when-cross-origin":
-			if strings.EqualFold(parsed.Host, httpReq.URL.Host) {
+		case "origin":
+			httpReq.Header.Set("Referer", originURL)
+		case "origin-when-cross-origin":
+			if isSameOrigin {
 				httpReq.Header.Set("Referer", fromURL)
 			} else {
 				httpReq.Header.Set("Referer", originURL)
 			}
+		case "same-origin":
+			if isSameOrigin {
+				httpReq.Header.Set("Referer", fromURL)
+			}
+		case "strict-origin":
+			if !isDowngrade {
+				httpReq.Header.Set("Referer", originURL)
+			}
+		case "strict-origin-when-cross-origin":
+			if !isDowngrade {
+				if isSameOrigin {
+					httpReq.Header.Set("Referer", fromURL)
+				} else {
+					httpReq.Header.Set("Referer", originURL)
+				}
+			}
 		case "unsafe-url":
 			httpReq.Header.Set("Referer", fromURL)
 		default:
+			// Empty or unrecognized — browser default: strict-origin-when-cross-origin
+			if !isDowngrade {
+				if isSameOrigin {
+					httpReq.Header.Set("Referer", fromURL)
+				} else {
+					httpReq.Header.Set("Referer", originURL)
+				}
+			}
 		}
 	}
 

@@ -199,8 +199,9 @@ type DrawText struct {
 
 type DrawImage struct {
 	layout.Rect
-	URL     string
-	AltText string
+	URL            string
+	AltText        string
+	ReferrerPolicy string
 }
 
 type DrawHR struct {
@@ -486,9 +487,10 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Type == layout.ImageBox && box.Node != nil && !isHidden {
 		if src := box.Node.Attributes["src"]; src != "" {
 			*commands = append(*commands, DrawImage{
-				Rect:    box.Rect,
-				URL:     src,
-				AltText: box.Node.Attributes["alt"],
+				Rect:           box.Rect,
+				URL:            src,
+				AltText:        box.Node.Attributes["alt"],
+				ReferrerPolicy: box.Node.Attributes["referrerpolicy"],
 			})
 		}
 	}

@@ -136,7 +136,7 @@ https://html.spec.whatwg.org/
 - [ ] `crossorigin` attribute - CORS settings for canvas use
 - [ ] `usemap` attribute - Client-side image map association
 - [ ] `ismap` attribute - Server-side image map
-- [ ] `referrerpolicy` attribute - Referrer policy for image fetches
+- [x] `referrerpolicy` attribute - Referrer policy for image fetches (all 8 spec values; default falls back to `strict-origin-when-cross-origin` per spec)
 - [ ] `decoding` attribute - Decode hint (sync/async/auto)
 - [ ] `loading` attribute - Lazy loading (lazy/eager)
 - [ ] `fetchpriority` attribute - Fetch priority hint
@@ -183,6 +183,12 @@ https://html.spec.whatwg.org/
 ---
 
 ## Known Issues
+
+- [ ] `go run .` / `go build` appears to freeze for ~2 minutes on first run or after `go.mod` changes
+  - Root cause: CGo compilation of Fyne's OpenGL/GLFW bindings (`github.com/go-gl/gl`, `fyne.io/fyne/v2/internal/driver/glfw`)
+  - Confirmed: `time go build ./...` took **1m53s** due to C compiler compiling OpenGL headers
+  - Fix: nothing to fix — subsequent runs use the build cache and are near-instant
+  - Avoid unnecessary `go.mod` edits; any change invalidates cached CGo artifacts and triggers full recompile
 - [x] Whitespace between inline elements is missing (e.g., "Here is**bold**and" instead of "Here is **bold** and")
   - Spaces between inline elements like `<strong>`, `<em>`, `<small>` are not rendering
   - Need to debug DOM parser to see if whitespace text nodes are preserved
@@ -211,6 +217,7 @@ https://html.spec.whatwg.org/
 ---
 
 ## Refactoring
+- [x] Refactor `DoRequest` 7-parameter signature into `utils.HTTPRequest` struct (`utils/utils.go`) — callers only set fields they need
 - [ ] Replace 30+ `if rt.onReflow != nil` guards with a no-op default in `NewJSRuntime` (`js/runtime.go:62`) — assign `func() {}` when nil so all call sites become unconditional `rt.onReflow()`
 - [ ] Refactor Rect usage pattern:
   ```go

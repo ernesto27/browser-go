@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 
+	"browser/utils"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"github.com/fyne-io/oksvg"
@@ -221,7 +223,7 @@ func renderNumberInput(x, y, width, height float64, value, placeholder string, i
 	return objects
 }
 
-func RenderToCanvas(commands []DisplayCommand, baseURL string, useCache bool, onImageLoad func()) []fyne.CanvasObject {
+func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, useCache bool, onImageLoad func()) []fyne.CanvasObject {
 	var objects []fyne.CanvasObject
 	var dropdownOverlays []fyne.CanvasObject // Collect dropdowns to render LAST (on top)
 
@@ -283,7 +285,7 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, useCache bool, on
 			}
 
 		case DrawImage:
-			img, err := getImageOrPlaceholder(c.URL, baseURL, c.Width, c.Height, onImageLoad)
+			img, err := getImageOrPlaceholder(c.URL, baseURL, c.ReferrerPolicy, pageURL, c.Width, c.Height, onImageLoad)
 
 			if err != nil {
 				// Broken image icon (top-left corner)
@@ -760,7 +762,7 @@ func renderFileInput(x, y, width, height float64, filename string, isDisabled bo
 
 	return objects
 }
-func fetchimageToCache(fullURL string) error {
+func fetchimageToCache(fullURL, referrerPolicy, pageURL string) error {
 	fmt.Println("Fetching image:", fullURL)
 
 	var img image.Image
@@ -775,7 +777,12 @@ func fetchimageToCache(fullURL string) error {
 		}
 	} else {
 		// Remote URL - fetch via HTTP
-		resp, err := http.Get(fullURL)
+		resp, err := utils.DoRequest(utils.HTTPRequest{
+			Method:         "GET",
+			URL:            fullURL,
+			ReferrerPolicy: referrerPolicy,
+			FromURL:        pageURL,
+		})
 		if err != nil {
 			fmt.Println("Error fetching image:", err)
 			return errors.New("Error fetching image")
@@ -807,7 +814,7 @@ func fetchimageToCache(fullURL string) error {
 	imageCacheMu.Unlock()
 	return nil
 }
-func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad func()) (*canvas.Image, error) {
+func getImageOrPlaceholder(src, baseURL, referrerPolicy, pageURL string, width, height float64, onLoad func()) (*canvas.Image, error) {
 	fullURL := resolveImageURL(src, baseURL)
 
 	imageCacheMu.Lock()
@@ -837,7 +844,7 @@ func getImageOrPlaceholder(src, baseURL string, width, height float64, onLoad fu
 
 	if !alreadyFetching {
 		go func() {
-			err := fetchimageToCache(fullURL)
+			err := fetchimageToCache(fullURL, referrerPolicy, pageURL)
 
 			if err != nil {
 				failedMu.Lock()

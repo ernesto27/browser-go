@@ -224,11 +224,13 @@ func (b *Browser) SetContent(layoutTree *layout.LayoutBox) {
 
 	// Get base URL for resolving relative image URLs
 	baseURL := ""
+	pageURL := ""
 	if b.currentURL != nil {
 		baseURL = b.currentURL.Scheme + "://" + b.currentURL.Host
+		pageURL = b.currentURL.String()
 	}
 
-	objects := RenderToCanvas(commands, baseURL, false, b.triggerRepaint)
+	objects := RenderToCanvas(commands, baseURL, pageURL, false, b.triggerRepaint)
 
 	scroll := b.createContentScroll(objects)
 	b.content.Objects = []fyne.CanvasObject{scroll}
@@ -810,12 +812,14 @@ func (b *Browser) Reflow(width float32) {
 	})
 
 	baseURL := ""
+	pageURL := ""
 	if b.currentURL != nil {
 		baseURL = b.currentURL.Scheme + "://" + b.currentURL.Host
+		pageURL = b.currentURL.String()
 	}
 
 	// Use cached images on reflow (don't re-fetch)
-	objects := RenderToCanvas(commands, baseURL, true, b.triggerRepaint) // true = use cache
+	objects := RenderToCanvas(commands, baseURL, pageURL, true, b.triggerRepaint) // true = use cache
 
 	// UI updates must be on main thread
 	fyne.Do(func() {
@@ -1036,11 +1040,13 @@ func (b *Browser) repaint() {
 	})
 
 	baseURL := ""
+	pageURL := ""
 	if b.currentURL != nil {
 		baseURL = b.currentURL.Scheme + "://" + b.currentURL.Host
+		pageURL = b.currentURL.String()
 	}
 
-	objects := RenderToCanvas(commands, baseURL, true, nil)
+	objects := RenderToCanvas(commands, baseURL, pageURL, true, nil)
 
 	fyne.Do(func() {
 		// Preserve scroll position

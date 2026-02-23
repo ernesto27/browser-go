@@ -54,7 +54,15 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 
 	// Run fetch in background so UI stays responsive
 	go func() {
-		resp, err := utils.DoRequest(method, pageURL, req.Body, req.ContentType, req.Data, req.ReferrerPolicy, browser.GetCurrentURL())
+		resp, err := utils.DoRequest(utils.HTTPRequest{
+			Method:         method,
+			URL:            pageURL,
+			Body:           req.Body,
+			ContentType:    req.ContentType,
+			FormData:       req.Data,
+			ReferrerPolicy: req.ReferrerPolicy,
+			FromURL:        browser.GetCurrentURL(),
+		})
 
 		if err != nil {
 			fmt.Println("Error:", err)
