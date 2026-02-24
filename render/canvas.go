@@ -823,8 +823,8 @@ func getImageOrPlaceholder(src, baseURL, referrerPolicy, pageURL string, width, 
 
 	if found {
 		fyneImg := canvas.NewImageFromImage(cached)
+		fyneImg.FillMode = canvas.ImageFillStretch
 		fyneImg.Resize(fyne.NewSize(float32(width), float32(height)))
-		fyneImg.FillMode = canvas.ImageFillContain
 		return fyneImg, nil
 	}
 

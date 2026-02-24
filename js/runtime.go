@@ -1515,6 +1515,44 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
+	if tagName == "IMG" {
+		obj.DefineAccessorProperty("width",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				v, _ := strconv.Atoi(node.Attributes["width"])
+				return rt.vm.ToValue(v)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					v := call.Arguments[0].ToInteger()
+
+					node.Attributes["width"] = strconv.FormatInt(v, 10)
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("height",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				v, _ := strconv.Atoi(node.Attributes["height"])
+				return rt.vm.ToValue(v)
+			}),
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) > 0 {
+					v := call.Arguments[0].ToInteger()
+
+					node.Attributes["height"] = strconv.FormatInt(v, 10)
+					if rt.onReflow != nil {
+						rt.onReflow()
+					}
+				}
+				return goja.Undefined()
+			}),
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+	}
+
 	obj.DefineAccessorProperty("title",
 		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 			title := node.Attributes["title"]

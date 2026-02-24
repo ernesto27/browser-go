@@ -140,7 +140,7 @@ https://html.spec.whatwg.org/
 - [ ] `decoding` attribute - Decode hint (sync/async/auto)
 - [ ] `loading` attribute - Lazy loading (lazy/eager)
 - [ ] `fetchpriority` attribute - Fetch priority hint
-- [ ] `image.width` / `image.height` getter/setter - Rendered dimensions IDL attributes
+- [x] `image.width` / `image.height` getter/setter - Rendered dimensions IDL attributes
 - [ ] `image.naturalWidth` / `image.naturalHeight` - Density-corrected natural dimensions
 - [ ] `image.complete` - Whether image is fully downloaded
 - [ ] `image.currentSrc` - Absolute URL of current image

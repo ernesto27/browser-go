@@ -18,6 +18,98 @@
     Per WHATWG spec, the <code>alt</code> attribute provides fallback text that should be shown
     when the image is unavailable.</p>
 
+    <h2>IDL: image.width / image.height getter/setter</h2>
+
+    <h2>Test W1: width getter matches HTML attribute</h2>
+    <div class="test">
+        <p class="description">Image with <code>width="200"</code> and <code>height="150"</code> in HTML. JS reads <code>img.width</code> and <code>img.height</code>.</p>
+        <p class="expected">Expected: width=200, height=150</p>
+        <img id="w1" src="https://picsum.photos/200/150" width="200" height="150" alt="test image">
+        <p id="w1-result">Reading...</p>
+        <script>
+            var el = document.getElementById("w1");
+            document.getElementById("w1-result").textContent =
+                "img.width=" + el.width + ", img.height=" + el.height;
+        </script>
+    </div>
+
+    <h2>Test W2: width setter resizes the image</h2>
+    <div class="test">
+        <p class="description">Image starts at <code>width="100"</code>. JS sets <code>img.width = 300</code>. The rendered size should change.</p>
+        <p class="expected">Expected: image visually widens; getter reports width=300</p>
+        <img id="w2" src="https://picsum.photos/200/150" width="100" height="75" alt="resize test">
+        <p id="w2-result">Waiting...</p>
+        <script>
+            var el2 = document.getElementById("w2");
+            var before = el2.width;
+            el2.width = 300;
+            var after = el2.width;
+            document.getElementById("w2-result").textContent =
+                "Before: " + before + " → After: " + after + " (expected 100 → 300)";
+        </script>
+    </div>
+
+    <h2>Test W3: getter returns 0 for unloaded image with no attributes</h2>
+    <div class="test">
+        <p class="description">Broken image with no <code>width</code> or <code>height</code> attributes. Getter should return 0 (not laid out, not loaded).</p>
+        <p class="expected">Expected: width=0, height=0</p>
+        <img id="w3" src="https://this-does-not-exist.example/img.png" alt="broken no dims">
+        <p id="w3-result">Reading...</p>
+        <script>
+            var el3 = document.getElementById("w3");
+            document.getElementById("w3-result").textContent =
+                "img.width=" + el3.width + ", img.height=" + el3.height;
+        </script>
+    </div>
+
+    <h2>Test W4: setter reflects back into getAttribute</h2>
+    <div class="test">
+        <p class="description">After <code>img.width = 250</code>, the HTML attribute should also update. <code>getAttribute("width")</code> should return <code>"250"</code>.</p>
+        <p class="expected">Expected: getAttribute("width")="250"</p>
+        <img id="w4" src="https://picsum.photos/100/100" width="100" height="100" alt="attr reflection test">
+        <p id="w4-result">Reading...</p>
+        <script>
+            var el4 = document.getElementById("w4");
+            el4.width = 250;
+            document.getElementById("w4-result").textContent =
+                'getAttribute("width")="' + el4.getAttribute("width") + '" (expected "250")';
+        </script>
+    </div>
+
+    <h2>Test W5: negative value should throw RangeError</h2>
+    <div class="test">
+        <p class="description">Setting <code>img.width = -1</code> should throw a <code>RangeError</code> per spec (unsigned long IDL type).</p>
+        <p class="expected">Expected: RangeError caught; width unchanged</p>
+        <img id="w5" src="https://picsum.photos/100/100" width="100" height="100" alt="negative test">
+        <p id="w5-result">Reading...</p>
+        <script>
+            var el5 = document.getElementById("w5");
+            try {
+                el5.width = -1;
+                document.getElementById("w5-result").textContent = "No error thrown (non-compliant)";
+            } catch (e) {
+                document.getElementById("w5-result").textContent =
+                    "Caught: " + e.name + " ✓";
+            }
+        </script>
+    </div>
+
+    <h2>Test W6: non-integer value is truncated</h2>
+    <div class="test">
+        <p class="description">Setting <code>img.width = 3.9</code>. IDL unsigned long truncates toward zero — result should be <code>3</code>, not <code>4</code>.</p>
+        <p class="expected">Expected: img.width=3</p>
+        <img id="w6" src="https://picsum.photos/100/100" width="100" height="100" alt="truncation test">
+        <p id="w6-result">Reading...</p>
+        <script>
+            var el6 = document.getElementById("w6");
+            el6.width = 3.9;
+            document.getElementById("w6-result").textContent =
+                "img.width=" + el6.width + " (expected 3)";
+        </script>
+    </div>
+
+    <h1>Alt Fallback Tests (WHATWG 4.8.3)</h1>
+
     <h2>Test 1: Broken URL with alt text</h2>
     <div class="test">
         <p class="description">Image with a broken src URL and a meaningful alt attribute.</p>
