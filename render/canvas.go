@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 
+	"browser/dom"
 	"browser/utils"
 
 	"fyne.io/fyne/v2"
@@ -31,6 +32,17 @@ var (
 	failedImages    = make(map[string]bool)
 	failedMu        sync.Mutex
 )
+
+type ImageRequest struct {
+	Node           *dom.Node
+	Src            string
+	BaseURL        string
+	ReferrerPolicy string
+	PageURL        string
+	Width          float64
+	Height         float64
+	OnLoad         func()
+}
 
 // renderTextFieldObjects creates canvas objects for input/textarea fields
 func renderTextFieldObjects(x, y, width, height float64, value, placeholder string, isFocused, isDisabled, isValid bool) []fyne.CanvasObject {
@@ -285,7 +297,16 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 			}
 
 		case DrawImage:
-			img, err := getImageOrPlaceholder(c.URL, baseURL, c.ReferrerPolicy, pageURL, c.Width, c.Height, onImageLoad)
+			img, err := getImageOrPlaceholder(ImageRequest{
+				Node:           c.Node,
+				Src:            c.URL,
+				BaseURL:        baseURL,
+				ReferrerPolicy: c.ReferrerPolicy,
+				PageURL:        pageURL,
+				Width:          c.Width,
+				Height:         c.Height,
+				OnLoad:         onImageLoad,
+			})
 
 			if err != nil {
 				// Broken image icon (top-left corner)
@@ -762,7 +783,7 @@ func renderFileInput(x, y, width, height float64, filename string, isDisabled bo
 
 	return objects
 }
-func fetchimageToCache(fullURL, referrerPolicy, pageURL string) error {
+func fetchimageToCache(fullURL, referrerPolicy, pageURL string) (image.Image, error) {
 	fmt.Println("Fetching image:", fullURL)
 
 	var img image.Image
@@ -773,7 +794,7 @@ func fetchimageToCache(fullURL, referrerPolicy, pageURL string) error {
 		img, err = loadLocalImage(fullURL)
 		if err != nil {
 			fmt.Println("Error loading local image:", err)
-			return errors.New("Error loading local image")
+			return nil, errors.New("Error loading local image")
 		}
 	} else {
 		// Remote URL - fetch via HTTP
@@ -785,14 +806,14 @@ func fetchimageToCache(fullURL, referrerPolicy, pageURL string) error {
 		})
 		if err != nil {
 			fmt.Println("Error fetching image:", err)
-			return errors.New("Error fetching image")
+			return nil, errors.New("Error fetching image")
 		}
 		defer resp.Body.Close()
 
 		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Println("Error reading image data:", err)
-			return errors.New("Error reading image data")
+			return nil, errors.New("Error reading image data")
 		}
 
 		contentType := resp.Header.Get("Content-Type")
@@ -804,7 +825,7 @@ func fetchimageToCache(fullURL, referrerPolicy, pageURL string) error {
 
 		if err != nil {
 			fmt.Println("Error decoding image:", err)
-			return errors.New("Error decoding image")
+			return nil, errors.New("Error decoding image")
 		}
 
 	}
@@ -812,19 +833,24 @@ func fetchimageToCache(fullURL, referrerPolicy, pageURL string) error {
 	imageCacheMu.Lock()
 	imageCache[fullURL] = img
 	imageCacheMu.Unlock()
-	return nil
+	return img, nil
 }
-func getImageOrPlaceholder(src, baseURL, referrerPolicy, pageURL string, width, height float64, onLoad func()) (*canvas.Image, error) {
-	fullURL := resolveImageURL(src, baseURL)
+func getImageOrPlaceholder(req ImageRequest) (*canvas.Image, error) {
+	fullURL := resolveImageURL(req.Src, req.BaseURL)
+	if req.Node != nil {
+		req.Node.NaturalWidth = 0
+		req.Node.NaturalHeight = 0
+	}
 
 	imageCacheMu.Lock()
 	cached, found := imageCache[fullURL]
 	imageCacheMu.Unlock()
 
 	if found {
+		setImageNaturalSize(req.Node, cached)
 		fyneImg := canvas.NewImageFromImage(cached)
 		fyneImg.FillMode = canvas.ImageFillStretch
-		fyneImg.Resize(fyne.NewSize(float32(width), float32(height)))
+		fyneImg.Resize(fyne.NewSize(float32(req.Width), float32(req.Height)))
 		return fyneImg, nil
 	}
 
@@ -844,7 +870,7 @@ func getImageOrPlaceholder(src, baseURL, referrerPolicy, pageURL string, width, 
 
 	if !alreadyFetching {
 		go func() {
-			err := fetchimageToCache(fullURL, referrerPolicy, pageURL)
+			img, err := fetchimageToCache(fullURL, req.ReferrerPolicy, req.PageURL)
 
 			if err != nil {
 				failedMu.Lock()
@@ -852,12 +878,15 @@ func getImageOrPlaceholder(src, baseURL, referrerPolicy, pageURL string, width, 
 				failedMu.Unlock()
 				fmt.Println("Failed to load image:", fullURL)
 			}
+			if err == nil {
+				setImageNaturalSize(req.Node, img)
+			}
 			pendingMu.Lock()
 			delete(pendingFeteches, fullURL)
 			pendingMu.Unlock()
 
-			if onLoad != nil {
-				fyne.Do(onLoad)
+			if req.OnLoad != nil {
+				fyne.Do(req.OnLoad)
 			}
 		}()
 	}
@@ -867,6 +896,15 @@ func getImageOrPlaceholder(src, baseURL, referrerPolicy, pageURL string, width, 
 
 func isSVG(url, contentType string) bool {
 	return strings.HasSuffix(strings.ToLower(url), ".svg") || strings.Contains(contentType, "image/svg+xml")
+}
+
+func setImageNaturalSize(node *dom.Node, img image.Image) {
+	if node == nil || img == nil {
+		return
+	}
+	bounds := img.Bounds()
+	node.NaturalWidth = bounds.Dx()
+	node.NaturalHeight = bounds.Dy()
 }
 
 func decodeSVG(data []byte) (image.Image, error) {

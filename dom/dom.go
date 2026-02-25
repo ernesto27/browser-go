@@ -9,14 +9,16 @@ const (
 )
 
 type Node struct {
-	Type       NodeType
-	TagName    string
-	Namespace  string
-	Attributes map[string]string
-	Children   []*Node
-	Parent     *Node
-	Text       string
-	Disabled   bool
+	Type          NodeType
+	TagName       string
+	Namespace     string
+	Attributes    map[string]string
+	Children      []*Node
+	Parent        *Node
+	Text          string
+	Disabled      bool
+	NaturalWidth  int
+	NaturalHeight int
 }
 
 func NewElement(tagName string, tags map[string]string) *Node {

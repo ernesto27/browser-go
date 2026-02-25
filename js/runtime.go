@@ -1551,6 +1551,20 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 				return goja.Undefined()
 			}),
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("naturalWidth",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				return rt.vm.ToValue(node.NaturalWidth)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("naturalHeight",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				return rt.vm.ToValue(node.NaturalHeight)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
 	}
 
 	obj.DefineAccessorProperty("title",

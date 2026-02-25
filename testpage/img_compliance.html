@@ -108,6 +108,50 @@
         </script>
     </div>
 
+    <h2>IDL: image.naturalWidth / image.naturalHeight</h2>
+
+    <h2>Test N1: natural dimensions of loaded image</h2>
+    <div class="test">
+        <p class="description">Reads <code>img.naturalWidth</code> and <code>img.naturalHeight</code> from a local fixture image.</p>
+        <p class="expected">Expected: naturalWidth=544, naturalHeight=184 (for sample-bg.png)</p>
+        <img id="n1" src="sample-bg.png" alt="natural size fixture">
+        <p id="n1-result">Reading...</p>
+        <script>
+            var n1 = document.getElementById("n1");
+            document.getElementById("n1-result").textContent =
+                "img.naturalWidth=" + n1.naturalWidth + ", img.naturalHeight=" + n1.naturalHeight;
+        </script>
+    </div>
+
+    <h2>Test N2: rendered size does not change natural dimensions</h2>
+    <div class="test">
+        <p class="description">Image is rendered at <code>272x92</code>, but natural dimensions should remain the source dimensions.</p>
+        <p class="expected">Expected: width=272, height=92, naturalWidth=544, naturalHeight=184</p>
+        <img id="n2" src="sample-bg.png" width="272" height="92" alt="scaled natural size fixture">
+        <p id="n2-result">Reading...</p>
+        <script>
+            var n2 = document.getElementById("n2");
+            document.getElementById("n2-result").textContent =
+                "img.width=" + n2.width +
+                ", img.height=" + n2.height +
+                ", img.naturalWidth=" + n2.naturalWidth +
+                ", img.naturalHeight=" + n2.naturalHeight;
+        </script>
+    </div>
+
+    <h2>Test N3: broken image reports zero natural dimensions</h2>
+    <div class="test">
+        <p class="description">Broken image with no decodable resource should report <code>0</code> natural dimensions.</p>
+        <p class="expected">Expected: naturalWidth=0, naturalHeight=0</p>
+        <img id="n3" src="missing-natural-size.png" alt="broken natural size test">
+        <p id="n3-result">Reading...</p>
+        <script>
+            var n3 = document.getElementById("n3");
+            document.getElementById("n3-result").textContent =
+                "img.naturalWidth=" + n3.naturalWidth + ", img.naturalHeight=" + n3.naturalHeight;
+        </script>
+    </div>
+
     <h1>Alt Fallback Tests (WHATWG 4.8.3)</h1>
 
     <h2>Test 1: Broken URL with alt text</h2>

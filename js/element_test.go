@@ -281,3 +281,17 @@ func TestGetInnerHTML(t *testing.T) {
 		})
 	}
 }
+
+func TestImageNaturalSize(t *testing.T) {
+	doc := &dom.Node{Type: dom.Document}
+	img := dom.NewElement("img", map[string]string{})
+	img.NaturalWidth = 640
+	img.NaturalHeight = 480
+	doc.AppendChild(img)
+
+	rt := NewJSRuntime(doc, nil)
+	obj := rt.wrapElement(img).ToObject(rt.vm)
+
+	assert.Equal(t, int64(640), obj.Get("naturalWidth").ToInteger())
+	assert.Equal(t, int64(480), obj.Get("naturalHeight").ToInteger())
+}

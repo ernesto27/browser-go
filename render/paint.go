@@ -202,6 +202,7 @@ type DrawImage struct {
 	URL            string
 	AltText        string
 	ReferrerPolicy string
+	Node           *dom.Node
 }
 
 type DrawHR struct {
@@ -491,6 +492,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				URL:            src,
 				AltText:        box.Node.Attributes["alt"],
 				ReferrerPolicy: box.Node.Attributes["referrerpolicy"],
+				Node:           box.Node,
 			})
 		}
 	}
