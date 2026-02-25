@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/dop251/goja"
 )
@@ -25,6 +27,9 @@ type JSRuntime struct {
 	beforeUnloadHandler goja.Callable
 	onLoadHandler       goja.Callable
 	windowLoadListeners []goja.Callable
+	timerMu             sync.Mutex
+	nextTimerID         int64
+	timers              map[int64]*time.Timer
 }
 
 // collectTableRows returns all tr elements in a table node in WHATWG 4.9.1 order:
@@ -79,6 +84,7 @@ func NewJSRuntime(document *dom.Node, onReflow func()) *JSRuntime {
 		onReflow:     onReflow,
 		Events:       NewEventManager(),
 		elementCache: make(map[*dom.Node]*goja.Object),
+		timers:       make(map[int64]*time.Timer),
 	}
 	rt.setupGlobals()
 	return rt
@@ -328,7 +334,71 @@ func (rt *JSRuntime) setupGlobals() {
 		return goja.Undefined()
 	})
 
+	window.Set("setTimeout", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 1 {
+			return goja.Undefined()
+		}
+
+		callback, ok := goja.AssertFunction(call.Arguments[0])
+		if !ok {
+			return goja.Undefined()
+		}
+
+		milliseconds := int64(0)
+		if len(call.Arguments) > 1 {
+			milliseconds = call.Arguments[1].ToInteger()
+			if milliseconds < 0 {
+				milliseconds = 0
+			}
+		}
+
+		rt.timerMu.Lock()
+		rt.nextTimerID++
+		timerID := rt.nextTimerID
+		rt.timerMu.Unlock()
+
+		delay := time.Duration(milliseconds) * time.Millisecond
+		timer := time.AfterFunc(delay, func() {
+			_, err := callback(goja.Undefined())
+			if err != nil {
+				fmt.Println("setTimeout callback error:", err)
+			}
+			if rt.onReflow != nil {
+				rt.onReflow()
+			}
+			rt.timerMu.Lock()
+			delete(rt.timers, timerID)
+			rt.timerMu.Unlock()
+		})
+
+		rt.timerMu.Lock()
+		rt.timers[timerID] = timer
+		rt.timerMu.Unlock()
+
+		return rt.vm.ToValue(timerID)
+	})
+
+	window.Set("clearTimeout", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 1 {
+			return goja.Undefined()
+		}
+		id := call.Arguments[0].ToInteger()
+
+		rt.timerMu.Lock()
+		timer, ok := rt.timers[id]
+		if ok {
+			timer.Stop()
+			delete(rt.timers, id)
+		}
+		rt.timerMu.Unlock()
+
+		return goja.Undefined()
+	})
+
 	rt.vm.Set("window", window)
+
+	rt.vm.Set("setTimeout", window.Get("setTimeout"))
+	rt.vm.Set("clearTimeout", window.Get("clearTimeout"))
 
 }
 
@@ -404,6 +474,9 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 		rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
 			if len(call.Arguments) > 0 {
 				elem.SetTextContent(call.Arguments[0].String())
+				if rt.onReflow != nil {
+					rt.onReflow()
+				}
 			}
 			return goja.Undefined()
 		}),

@@ -62,6 +62,12 @@
     </div>
 
     <div class="box">
+        <h3>Timer API Tests (setTimeout / clearTimeout)</h3>
+        <div id="timerResult">Waiting for timer...</div>
+        <div id="timerResultFire">Waiting for firing timer...</div>
+    </div>
+
+    <div class="box">
         <h3>Inline Event Handler (onclick) Tests</h3>
         <button onclick="alert('Inline onclick works!')">Basic onclick Alert</button>
         <button onclick="console.log('Button clicked via inline handler')">onclick Console Log</button>
@@ -339,6 +345,30 @@
             console.log("22. Inline onclick counter:", counter);
         }
         console.log("Inline onclick handler function defined - click the counter box to test!");
+
+        // Test 23: direct setTimeout / clearTimeout usage (no support checks)
+        console.log("=== Testing Timer API (direct) ===");
+        var timerResult = document.getElementById("timerResult");
+        timerResult.textContent = "Scheduling timeout...";
+
+        var timeoutId = setTimeout(function() {
+            timerResult.textContent = "setTimeout callback fired after 1s";
+            console.log("23a. setTimeout callback fired");
+        }, 10000);
+
+        clearTimeout(timeoutId);
+        timerResult.textContent = "Timeout scheduled then cleared (callback should NOT run)";
+        console.log("23b. clearTimeout called");
+
+        // Test 24: setTimeout that is not cleared (should fire)
+        console.log("=== Testing setTimeout firing ===");
+        var timerResultFire = document.getElementById("timerResultFire");
+        timerResultFire.textContent = "Scheduling timeout that will fire...";
+
+        setTimeout(function() {
+            timerResultFire.textContent = "setTimeout callback fired after 1s (expected)";
+            console.log("24. setTimeout callback fired");
+        }, 5000);
     </script>
 </body>
 </html>

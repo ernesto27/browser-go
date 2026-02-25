@@ -154,6 +154,8 @@ https://html.spec.whatwg.org/
 - [ ] `sheet.deleteRule(index)` - Remove a CSS rule
 - [ ] `sheet.disabled` - Enable/disable the stylesheet
 
+- [x] `window.setTimeout / clearTimeout` - Timer API support for async script behavior
+
 
 
 
