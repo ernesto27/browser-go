@@ -840,6 +840,14 @@ func getImageOrPlaceholder(req ImageRequest) (*canvas.Image, error) {
 	if req.Node != nil {
 		req.Node.NaturalWidth = 0
 		req.Node.NaturalHeight = 0
+		req.Node.ImageComplete = false
+	}
+
+	if strings.TrimSpace(req.Src) == "" {
+		if req.Node != nil {
+			req.Node.ImageComplete = true
+		}
+		return nil, errors.New("Image src is empty")
 	}
 
 	imageCacheMu.Lock()
@@ -848,6 +856,9 @@ func getImageOrPlaceholder(req ImageRequest) (*canvas.Image, error) {
 
 	if found {
 		setImageNaturalSize(req.Node, cached)
+		if req.Node != nil {
+			req.Node.ImageComplete = true
+		}
 		fyneImg := canvas.NewImageFromImage(cached)
 		fyneImg.FillMode = canvas.ImageFillStretch
 		fyneImg.Resize(fyne.NewSize(float32(req.Width), float32(req.Height)))
@@ -857,6 +868,9 @@ func getImageOrPlaceholder(req ImageRequest) (*canvas.Image, error) {
 	failedMu.Lock()
 	if failedImages[fullURL] {
 		failedMu.Unlock()
+		if req.Node != nil {
+			req.Node.ImageComplete = true
+		}
 		return nil, errors.New("Previously failed to load image")
 	}
 	failedMu.Unlock()
@@ -876,10 +890,16 @@ func getImageOrPlaceholder(req ImageRequest) (*canvas.Image, error) {
 				failedMu.Lock()
 				failedImages[fullURL] = true
 				failedMu.Unlock()
+				if req.Node != nil {
+					req.Node.ImageComplete = true
+				}
 				fmt.Println("Failed to load image:", fullURL)
 			}
 			if err == nil {
 				setImageNaturalSize(req.Node, img)
+				if req.Node != nil {
+					req.Node.ImageComplete = true
+				}
 			}
 			pendingMu.Lock()
 			delete(pendingFeteches, fullURL)
