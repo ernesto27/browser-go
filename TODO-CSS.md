@@ -129,8 +129,9 @@
 - [x] `vw` - viewport width
 - [x] `vh` - viewport height
 - [ ] `calc()` - calculations
-- [ ] `rgb()` / `rgba()` - color functions
+- [ ] `rgb()` / `rgba()` - color functions (`css/css.go:194` — ParseColor only handles named colors and hex)
 - [ ] `hsl()` / `hsla()` - color functions
+- [ ] `transparent` keyword — not recognized by ParseColor; returns nil (no background drawn)
 
 ### Selectors
 - [ ] Descendant selectors - `div p`, `ul li`
@@ -163,10 +164,13 @@
 ## Parsed But Not Applied
 - [ ] `cursor` - parsed but not applied in render
 - [ ] `display: block/inline` - only `none` actually works
+- [ ] `display: inline-block` - not recognized; treated as `InlineBox` without proper inline-block sizing (`layout/layout.go:178`)
 - [ ] `position: relative/fixed/sticky` - only `absolute` works
-- [ ] `z-index` - parsed but stacking may not work correctly
+  - `position: fixed` bug: not extracted from normal flow like `absolute` is (`layout/compute.go:72-81`)
+- [ ] `z-index` - parsed but stacking order not enforced (all elements paint in DOM order)
 
 ---
 
 ## Known Issues
 - [ ] `position: absolute` - text/color inside positioned elements not rendering
+- [ ] `top/left/right/bottom: 0` silently ignored — `> 0` guard in `computeBlockLayout` and `mergeStyles` drops zero and negative offsets (`layout/compute.go:485-497`)

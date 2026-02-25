@@ -152,6 +152,67 @@
         </script>
     </div>
 
+    <h2>IDL: image.complete</h2>
+
+    <h2>Test C1: no src is complete</h2>
+    <div class="test">
+        <p class="description">Image element with no <code>src</code> should report <code>complete=true</code>.</p>
+        <p class="expected">Expected: complete=true</p>
+        <img id="c1" alt="no source complete test">
+        <p id="c1-result">Reading...</p>
+        <script>
+            var c1 = document.getElementById("c1");
+            document.getElementById("c1-result").textContent =
+                "img.complete=" + c1.complete;
+        </script>
+    </div>
+
+    <h2>Test C2: broken image reaches terminal complete state</h2>
+    <div class="test">
+        <p class="description">Broken image should eventually report <code>complete=true</code> (terminal state after load failure).</p>
+        <p class="expected">Expected: delayed complete=true</p>
+        <img id="c2" src="missing-complete.png" alt="broken complete test">
+        <p id="c2-result">Waiting...</p>
+        <script>
+            var c2 = document.getElementById("c2");
+            setTimeout(function() {
+                document.getElementById("c2-result").textContent =
+                    "img.complete(after 500ms)=" + c2.complete;
+            }, 500);
+        </script>
+    </div>
+
+    <h2>Test C3: valid image transitions to complete</h2>
+    <div class="test">
+        <p class="description">Valid image may start as incomplete while loading, then should report <code>complete=true</code>.</p>
+        <p class="expected">Expected: delayed complete=true</p>
+        <img id="c3" src="sample-bg.png" alt="valid complete test">
+        <p id="c3-result">Reading...</p>
+        <script>
+            var c3 = document.getElementById("c3");
+            var c3Immediate = c3.complete;
+            setTimeout(function() {
+                document.getElementById("c3-result").textContent =
+                    "img.complete(immediate)=" + c3Immediate + ", img.complete(after 500ms)=" + c3.complete;
+            }, 500);
+        </script>
+    </div>
+
+    <h2>IDL: image.currentSrc</h2>
+
+    <h2>Test S1: currentSrc resolves to absolute URL</h2>
+    <div class="test">
+        <p class="description">Image uses relative <code>src="sample-bg.png"</code>. JS reads <code>img.currentSrc</code>.</p>
+        <p class="expected">Expected: <code>img.currentSrc</code> is an absolute URL ending with <code>/sample-bg.png</code>.</p>
+        <img id="s1" src="sample-bg.png" alt="currentSrc test image">
+        <p id="s1-result">Reading...</p>
+        <script>
+            var s1 = document.getElementById("s1");
+            document.getElementById("s1-result").textContent =
+                "img.src=" + s1.src + ", img.currentSrc=" + s1.currentSrc;
+        </script>
+    </div>
+
     <h1>Alt Fallback Tests (WHATWG 4.8.3)</h1>
 
     <h2>Test 1: Broken URL with alt text</h2>

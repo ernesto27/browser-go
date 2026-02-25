@@ -19,6 +19,8 @@ type Node struct {
 	Disabled      bool
 	NaturalWidth  int
 	NaturalHeight int
+	ImageComplete bool
+	CurrentSrc    string
 }
 
 func NewElement(tagName string, tags map[string]string) *Node {

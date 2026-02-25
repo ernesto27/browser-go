@@ -14,6 +14,7 @@ import (
 
 type JSRuntime struct {
 	vm                  *goja.Runtime
+	vmMu                sync.Mutex
 	document            *dom.Node
 	onReflow            func()
 	onAlert             func(message string)
@@ -359,7 +360,15 @@ func (rt *JSRuntime) setupGlobals() {
 
 		delay := time.Duration(milliseconds) * time.Millisecond
 		timer := time.AfterFunc(delay, func() {
+			defer func() {
+				if recovered := recover(); recovered != nil {
+					fmt.Println("setTimeout callback panic:", recovered)
+				}
+			}()
+
+			rt.vmMu.Lock()
 			_, err := callback(goja.Undefined())
+			rt.vmMu.Unlock()
 			if err != nil {
 				fmt.Println("setTimeout callback error:", err)
 			}
@@ -403,6 +412,13 @@ func (rt *JSRuntime) setupGlobals() {
 }
 
 func (rt *JSRuntime) Execute(code string) error {
+	rt.vmMu.Lock()
+	defer rt.vmMu.Unlock()
+
+	return rt.executeLocked(code)
+}
+
+func (rt *JSRuntime) executeLocked(code string) error {
 	_, err := rt.vm.RunString(code)
 	if err != nil {
 		fmt.Println("JS error: ", err)
@@ -1638,6 +1654,31 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 			}),
 			nil,
 			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("complete",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				if strings.TrimSpace(node.Attributes["src"]) == "" {
+					return rt.vm.ToValue(true)
+				}
+				return rt.vm.ToValue(node.ImageComplete)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("src",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				return rt.vm.ToValue(node.Attributes["src"])
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
+		obj.DefineAccessorProperty("currentSrc",
+			rt.vm.ToValue(func(call goja.FunctionCall) goja.Value {
+				return rt.vm.ToValue(node.CurrentSrc)
+			}),
+			nil,
+			goja.FLAG_FALSE, goja.FLAG_TRUE)
+
 	}
 
 	obj.DefineAccessorProperty("title",
@@ -1801,7 +1842,10 @@ func (rt *JSRuntime) wrapElement(node *dom.Node) goja.Value {
 }
 
 func (rt *JSRuntime) DispatchClick(node *dom.Node) bool {
-	inlinePrevented := rt.ExecuteInlineEvent(node, "click")
+	rt.vmMu.Lock()
+	defer rt.vmMu.Unlock()
+
+	inlinePrevented := rt.executeInlineEventLocked(node, "click")
 	listenerPrevented := rt.Events.Dispatch(rt, node, "click")
 
 	return inlinePrevented || listenerPrevented
@@ -1832,6 +1876,13 @@ func (rt *JSRuntime) SetTitleChangeHandler(handler func(string)) {
 }
 
 func (rt *JSRuntime) ExecuteInlineEvent(node *dom.Node, eventType string) bool {
+	rt.vmMu.Lock()
+	defer rt.vmMu.Unlock()
+
+	return rt.executeInlineEventLocked(node, eventType)
+}
+
+func (rt *JSRuntime) executeInlineEventLocked(node *dom.Node, eventType string) bool {
 	if node == nil || node.Type != dom.Element {
 		return false
 	}
@@ -1843,7 +1894,7 @@ func (rt *JSRuntime) ExecuteInlineEvent(node *dom.Node, eventType string) bool {
 		return false
 	}
 
-	err := rt.Execute(code)
+	err := rt.executeLocked(code)
 	if err != nil {
 		fmt.Printf("Error executing inline %s: %v\n", eventType, err)
 		return false
@@ -1853,6 +1904,9 @@ func (rt *JSRuntime) ExecuteInlineEvent(node *dom.Node, eventType string) bool {
 }
 
 func (rt *JSRuntime) CheckBeforeUnload() bool {
+	rt.vmMu.Lock()
+	defer rt.vmMu.Unlock()
+
 	fmt.Println("CheckBeforeUnload called")
 
 	// Check window.onbeforeunload (set via JavaScript)
@@ -1893,6 +1947,9 @@ func (rt *JSRuntime) CheckBeforeUnload() bool {
 }
 
 func (rt *JSRuntime) FireLoad() {
+	rt.vmMu.Lock()
+	defer rt.vmMu.Unlock()
+
 	// Path 1: window.onload / body.onload (same slot — script wins over inline attribute)
 	if rt.onLoadHandler != nil {
 		rt.onLoadHandler(goja.Undefined())
@@ -1900,7 +1957,7 @@ func (rt *JSRuntime) FireLoad() {
 		// Fall back to <body onload="..."> only if no script set window.onload
 		bodyNode := dom.FindElementsByTagName(rt.document, dom.TagBody)
 		if bodyNode != nil {
-			rt.ExecuteInlineEvent(bodyNode, "load")
+			rt.executeInlineEventLocked(bodyNode, "load")
 		}
 	}
 

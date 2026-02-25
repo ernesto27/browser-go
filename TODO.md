@@ -142,8 +142,8 @@ https://html.spec.whatwg.org/
 - [ ] `fetchpriority` attribute - Fetch priority hint
 - [x] `image.width` / `image.height` getter/setter - Rendered dimensions IDL attributes
 - [x] `image.naturalWidth` / `image.naturalHeight` - Density-corrected natural dimensions
-- [ ] `image.complete` - Whether image is fully downloaded
-- [ ] `image.currentSrc` - Absolute URL of current image
+- [x] `image.complete` - Whether image is fully downloaded
+- [x] `image.currentSrc` - Absolute URL of current image
 - [ ] `image.decode()` - Parallel decode returning a Promise
 - [ ] `Image(width, height)` constructor - Legacy factory function (`new Image()`)
 - [ ] `<picture>` / `<source>` parent support - Responsive image selection
@@ -185,6 +185,21 @@ https://html.spec.whatwg.org/
 ---
 
 ## Known Issues
+
+### Google.com Rendering (root causes identified 2026-02-25)
+- [ ] `position: fixed` not removed from normal flow (`layout/compute.go:72-81`)
+  - Only `position: absolute` is extracted; `fixed` stays in normal block flow
+  - Fix: add `child.Position == "fixed"` to the positionedChildren branch, position relative to viewport (0,0)
+  - Symptom: fixed nav bars render at their DOM position and overlap with page content
+- [ ] Absolute/fixed positioning ignores `top: 0`, `left: 0`, and negative offsets (`layout/compute.go:485-497`, `layout/layout.go:349-360`)
+  - `if child.Top > 0` silently drops `top: 0` (valid: align to edge) and `top: -20px` (negative shift)
+  - Same `> 0` bug applies to `Left`, `Right`, `Bottom` in both `computeBlockLayout` and `mergeStyles`
+  - Fix: use a separate boolean "is-set" flag per offset, or change check to a non-zero sentinel value
+  - Symptom: absolutely-positioned overlays appear at wrong coordinates
+- [ ] No `User-Agent` header sent in HTTP requests (`utils/utils.go:62`)
+  - Google and most sites detect non-browser UAs and serve a degraded HTML fallback
+  - Fix: add `httpReq.Header.Set("User-Agent", "Mozilla/5.0 (compatible; browser-go/1.0)")`
+  - Symptom: Google serves a text-only page with different DOM structure than Chrome/Firefox receives
 
 - [ ] `go run .` / `go build` appears to freeze for ~2 minutes on first run or after `go.mod` changes
   - Root cause: CGo compilation of Fyne's OpenGL/GLFW bindings (`github.com/go-gl/gl`, `fyne.io/fyne/v2/internal/driver/glfw`)
