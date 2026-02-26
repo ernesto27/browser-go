@@ -25,6 +25,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -139,6 +140,11 @@ func NewBrowser(width, height float32) *Browser {
 		if b.selectedText != "" {
 			b.Window.Clipboard().SetContent(b.selectedText)
 		}
+	})
+
+	// Handle Ctrl+W to close the application
+	w.Canvas().AddShortcut(&desktop.CustomShortcut{KeyName: fyne.KeyW, Modifier: fyne.KeyModifierControl}, func(_ fyne.Shortcut) {
+		a.Quit()
 	})
 
 	// Create buttons
