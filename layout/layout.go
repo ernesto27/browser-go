@@ -57,9 +57,14 @@ var transparentElements = map[string]bool{
 }
 
 var skipElements = map[string]bool{
-	"script": true, "style": true, "head": true,
-	"meta": true, "link": true, "option": true,
-	"colgroup": true, "col": true,
+	"script":   true,
+	"style":    true,
+	"head":     true,
+	"meta":     true,
+	"link":     true,
+	"option":   true,
+	"colgroup": true,
+	"col":      true,
 }
 
 var imageElements = map[string]bool{
@@ -373,6 +378,23 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 
 	if inline.BackgroundImage != "" {
 		base.BackgroundImage = inline.BackgroundImage
+	}
+
+	if inline.TopSet {
+		base.Top = inline.Top
+		base.TopSet = true
+	}
+	if inline.LeftSet {
+		base.Left = inline.Left
+		base.LeftSet = true
+	}
+	if inline.RightSet {
+		base.Right = inline.Right
+		base.RightSet = true
+	}
+	if inline.BottomSet {
+		base.Bottom = inline.Bottom
+		base.BottomSet = true
 	}
 }
 

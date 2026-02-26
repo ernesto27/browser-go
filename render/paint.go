@@ -225,7 +225,22 @@ type DrawFieldset struct {
 	HasLegend    bool
 }
 
+type paintLayer int
+
+const (
+	paintAll paintLayer = iota
+	paintNormalOnly
+	paintFixedOnly
+)
+
 func BuildDisplayList(root *layout.LayoutBox, state InputState, linkStyler LinkStyler) []DisplayCommand {
+	normal, fixed := BuildDisplayLayers(root, state, linkStyler)
+	return append(normal, fixed...)
+}
+
+func BuildDisplayLayers(root *layout.LayoutBox, state InputState, linkStyler LinkStyler) ([]DisplayCommand, []DisplayCommand) {
+	var normalCommands []DisplayCommand
+	var fixedCommands []DisplayCommand
 	var commands []DisplayCommand
 
 	// Calculate actual content height from layout tree
@@ -239,13 +254,32 @@ func BuildDisplayList(root *layout.LayoutBox, state InputState, linkStyler LinkS
 		Color: color.White,
 	})
 
-	paintLayoutBox(root, &commands, DefaultStyle(), state, linkStyler)
+	normalCommands = append(normalCommands, commands...)
+	paintLayoutBox(root, &normalCommands, DefaultStyle(), state, linkStyler, paintNormalOnly, false)
+	paintLayoutBox(root, &fixedCommands, DefaultStyle(), state, linkStyler, paintFixedOnly, false)
 
-	return commands
+	return normalCommands, fixedCommands
 }
 
-func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler) {
+func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler, layer paintLayer, ancestorFixed bool) {
 	currentStyle := style
+	isFixed := ancestorFixed || box.Position == "fixed"
+
+	if layer == paintNormalOnly && isFixed {
+		return
+	}
+	if layer == paintFixedOnly && !isFixed {
+		// Skip drawing this non-fixed box, but still traverse children to find fixed descendants.
+		if box.Type != layout.ButtonBox && box.Type != layout.SelectBox {
+			for _, child := range box.Children {
+				if child.Type == layout.LegendBox {
+					continue
+				}
+				paintLayoutBox(child, commands, currentStyle, state, linkStyler, layer, isFixed)
+			}
+		}
+		return
+	}
 
 	// Apply inline styles from CSS
 	if box.Style.Color != nil {
@@ -700,7 +734,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			if child.Type == layout.LegendBox {
 				continue
 			}
-			paintLayoutBox(child, commands, currentStyle, state, linkStyler)
+			paintLayoutBox(child, commands, currentStyle, state, linkStyler, layer, isFixed)
 		}
 	}
 }

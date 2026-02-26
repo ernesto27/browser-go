@@ -223,7 +223,7 @@ func NewBrowser(width, height float32) *Browser {
 func (b *Browser) SetContent(layoutTree *layout.LayoutBox) {
 	b.layoutTree = layoutTree // Save it so handleClick can use it
 
-	commands := BuildDisplayList(layoutTree, InputState{}, LinkStyler{
+	normalCommands, fixedCommands := BuildDisplayLayers(layoutTree, InputState{}, LinkStyler{
 		IsVisited:  b.IsVisited,
 		ResolveURL: b.resolveURL,
 	})
@@ -236,10 +236,13 @@ func (b *Browser) SetContent(layoutTree *layout.LayoutBox) {
 		pageURL = b.currentURL.String()
 	}
 
-	objects := RenderToCanvas(commands, baseURL, pageURL, false, b.triggerRepaint)
+	normalObjects := RenderToCanvas(normalCommands, baseURL, pageURL, false, b.triggerRepaint)
+	fixedObjects := RenderToCanvas(fixedCommands, baseURL, pageURL, false, b.triggerRepaint)
 
-	scroll := b.createContentScroll(objects)
-	b.content.Objects = []fyne.CanvasObject{scroll}
+	scroll := b.createContentScroll(normalObjects)
+	overlay := container.NewWithoutLayout(fixedObjects...)
+	stack := container.NewStack(scroll, overlay)
+	b.content.Objects = []fyne.CanvasObject{stack}
 	b.content.Refresh()
 }
 
@@ -299,8 +302,8 @@ func (b *Browser) handleClick(x, y float64) {
 		return
 	}
 
-	// Hit test: find what was clicked
-	hit := b.layoutTree.HitTest(x, y)
+	// Hit test: prioritize fixed elements at viewport coordinates
+	hit := b.hitTestWithFixedPriority(x, y)
 	if hit == nil {
 		fmt.Println("  No hit found")
 		if b.focusedInputNode != nil {
@@ -686,7 +689,7 @@ func (b *Browser) handleMouseDown(x, y float64) {
 		return
 	}
 
-	hit := b.layoutTree.HitTest(x, y)
+	hit := b.hitTestWithFixedPriority(x, y)
 	if hit != nil {
 		b.selectionStart = &SelectionPoint{
 			X:   x,
@@ -706,7 +709,7 @@ func (b *Browser) handleDrag(x, y float64) {
 		return
 	}
 
-	hit := b.layoutTree.HitTest(x, y)
+	hit := b.hitTestWithFixedPriority(x, y)
 	b.selectionEnd = &SelectionPoint{
 		X:   x,
 		Y:   y,
@@ -804,7 +807,7 @@ func (b *Browser) Reflow(width float32) {
 	b.layoutTree = layoutTree
 
 	// Repaint with input state preserved (uses DOM node keys, stable across reflow)
-	commands := BuildDisplayList(layoutTree, InputState{
+	normalCommands, fixedCommands := BuildDisplayLayers(layoutTree, InputState{
 		InputValues:     b.inputValues,
 		FocusedNode:     b.focusedInputNode,
 		OpenSelectNode:  b.openSelectNode,
@@ -825,22 +828,23 @@ func (b *Browser) Reflow(width float32) {
 	}
 
 	// Use cached images on reflow (don't re-fetch)
-	objects := RenderToCanvas(commands, baseURL, pageURL, true, b.triggerRepaint) // true = use cache
+	normalObjects := RenderToCanvas(normalCommands, baseURL, pageURL, true, b.triggerRepaint) // true = use cache
+	fixedObjects := RenderToCanvas(fixedCommands, baseURL, pageURL, true, b.triggerRepaint)
 
 	// UI updates must be on main thread
 	fyne.Do(func() {
 		// Preserve scroll position
 		var scrollOffset fyne.Position
-		if len(b.content.Objects) > 0 {
-			if oldScroll, ok := b.content.Objects[0].(*container.Scroll); ok {
-				scrollOffset = oldScroll.Offset
-			}
+		if b.contentScroll != nil {
+			scrollOffset = b.contentScroll.Offset
 		}
 
-		scroll := b.createContentScroll(objects)
+		scroll := b.createContentScroll(normalObjects)
 		scroll.Offset = scrollOffset // Restore scroll position
+		overlay := container.NewWithoutLayout(fixedObjects...)
+		stack := container.NewStack(scroll, overlay)
 
-		b.content.Objects = []fyne.CanvasObject{scroll}
+		b.content.Objects = []fyne.CanvasObject{stack}
 		b.content.Refresh()
 	})
 }
@@ -1030,7 +1034,7 @@ func (b *Browser) repaint() {
 		return
 	}
 
-	commands := BuildDisplayList(b.layoutTree, InputState{
+	normalCommands, fixedCommands := BuildDisplayLayers(b.layoutTree, InputState{
 		InputValues:     b.inputValues,
 		FocusedNode:     b.focusedInputNode,
 		OpenSelectNode:  b.openSelectNode,
@@ -1052,22 +1056,49 @@ func (b *Browser) repaint() {
 		pageURL = b.currentURL.String()
 	}
 
-	objects := RenderToCanvas(commands, baseURL, pageURL, true, nil)
+	normalObjects := RenderToCanvas(normalCommands, baseURL, pageURL, true, nil)
+	fixedObjects := RenderToCanvas(fixedCommands, baseURL, pageURL, true, nil)
 
 	fyne.Do(func() {
 		// Preserve scroll position
 		var scrollOffset fyne.Position
-		if len(b.content.Objects) > 0 {
-			if oldScroll, ok := b.content.Objects[0].(*container.Scroll); ok {
-				scrollOffset = oldScroll.Offset
-			}
+		if b.contentScroll != nil {
+			scrollOffset = b.contentScroll.Offset
 		}
 
-		scroll := b.createContentScroll(objects)
+		scroll := b.createContentScroll(normalObjects)
 		scroll.Offset = scrollOffset // Restore scroll position
-		b.content.Objects = []fyne.CanvasObject{scroll}
+		overlay := container.NewWithoutLayout(fixedObjects...)
+		stack := container.NewStack(scroll, overlay)
+		b.content.Objects = []fyne.CanvasObject{stack}
 		b.content.Refresh()
 	})
+}
+
+func hasFixedPosition(box *layout.LayoutBox) bool {
+	for current := box; current != nil; current = current.Parent {
+		if current.Position == "fixed" {
+			return true
+		}
+	}
+	return false
+}
+
+func (b *Browser) hitTestWithFixedPriority(x, y float64) *layout.LayoutBox {
+	if b.layoutTree == nil {
+		return nil
+	}
+
+	scrollY := 0.0
+	if b.contentScroll != nil {
+		scrollY = float64(b.contentScroll.Offset.Y)
+	}
+
+	if fixedHit := b.layoutTree.HitTest(x, y-scrollY); fixedHit != nil && hasFixedPosition(fixedHit) {
+		return fixedHit
+	}
+
+	return b.layoutTree.HitTest(x, y)
 }
 
 // refreshContent is an alias for repaint (called by keyboard handlers)

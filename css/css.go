@@ -68,6 +68,11 @@ type Style struct {
 	BorderBottomStyle string
 	BorderLeftStyle   string
 	BorderRadius      float64
+
+	TopSet    bool
+	LeftSet   bool
+	RightSet  bool
+	BottomSet bool
 }
 
 func DefaultStyle() Style {
@@ -341,7 +346,7 @@ func selectorSpecificity(sel Selector) Specificity {
 
 // MatchContext provides runtime state needed for pseudo-class matching.
 type MatchContext struct {
-	IsVisited  func(url string) bool   // returns true if url has been visited
+	IsVisited  func(url string) bool    // returns true if url has been visited
 	ResolveURL func(href string) string // resolves relative hrefs to absolute (optional)
 }
 
@@ -567,12 +572,16 @@ func applyDeclaration(style *Style, property, value string) {
 		style.Position = value
 	case "top":
 		style.Top = ParseSize(value)
+		style.TopSet = true
 	case "left":
 		style.Left = ParseSize(value)
+		style.LeftSet = true
 	case "right":
 		style.Right = ParseSize(value)
+		style.RightSet = true
 	case "bottom":
 		style.Bottom = ParseSize(value)
+		style.BottomSet = true
 
 	case "text-decoration":
 		style.TextDecoration = value

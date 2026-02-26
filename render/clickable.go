@@ -68,7 +68,12 @@ func (c *ClickableContainer) MouseMoved(event *desktop.MouseEvent) {
 		return
 	}
 
-	hit := c.layoutTree.HitTest(float64(event.Position.X), float64(event.Position.Y))
+	var hit *layout.LayoutBox
+	if c.browser != nil {
+		hit = c.browser.hitTestWithFixedPriority(float64(event.Position.X), float64(event.Position.Y))
+	} else {
+		hit = c.layoutTree.HitTest(float64(event.Position.X), float64(event.Position.Y))
+	}
 
 	// Tooltip handling: check if hovered element changed
 	var hoveredNode *dom.Node

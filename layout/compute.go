@@ -60,17 +60,37 @@ func getFontSize(tagName string) float64 {
 }
 
 func ComputeLayout(root *LayoutBox, containerWidth float64) {
-	computeBlockLayout(root, containerWidth, 0, 0, "")
+	computeBlockLayout(root, blockLayoutParams{
+		containerWidth: containerWidth,
+		startX:         0,
+		startY:         0,
+		parentTag:      "",
+		viewportWidth:  containerWidth,
+	})
 }
 
-func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY float64, parentTag string) {
+type blockLayoutParams struct {
+	containerWidth float64
+	startX         float64
+	startY         float64
+	parentTag      string
+	viewportWidth  float64
+}
+
+func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
+	containerWidth := p.containerWidth
+	startX := p.startX
+	startY := p.startY
+	parentTag := p.parentTag
+	viewportWidth := p.viewportWidth
+
 	// Separate positioned children from normal flow
 	var positionedChildren []*LayoutBox
 	var floatedChildren []*LayoutBox
 	var normalChildren []*LayoutBox
 
 	for _, child := range box.Children {
-		if child.Position == "absolute" {
+		if child.Position == "absolute" || child.Position == "fixed" {
 			positionedChildren = append(positionedChildren, child)
 		} else if child.Float == "left" || child.Float == "right" {
 			floatedChildren = append(floatedChildren, child)
@@ -412,7 +432,13 @@ func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY f
 			if child.Node != nil {
 				childTag = child.Node.TagName
 			}
-			computeBlockLayout(child, innerWidth, innerX, yOffset, childTag)
+			computeBlockLayout(child, blockLayoutParams{
+				containerWidth: innerWidth,
+				startX:         innerX,
+				startY:         yOffset,
+				parentTag:      childTag,
+				viewportWidth:  viewportWidth,
+			})
 			yOffset += child.Rect.Height
 			lineStartY = yOffset
 			continue
@@ -474,26 +500,45 @@ func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY f
 	for _, child := range positionedChildren {
 		childWidth := child.Style.Width
 		if childWidth <= 0 {
-			childWidth = containerWidth
+			if child.Position == "fixed" {
+				childWidth = viewportWidth
+			} else {
+				childWidth = containerWidth
+			}
 		}
 
 		// First, compute layout to determine child dimensions
-		computeBlockLayout(child, childWidth, 0, 0, "")
+		computeBlockLayout(child, blockLayoutParams{
+			containerWidth: childWidth,
+			startX:         0,
+			startY:         0,
+			parentTag:      "",
+			viewportWidth:  viewportWidth,
+		})
 
-		// Calculate X position
-		childX := startX
-		if child.Left > 0 {
-			childX = startX + child.Left
-		} else if child.Right > 0 {
-			childX = startX + box.Rect.Width - child.Right - child.Rect.Width
+		containingX := startX
+		containingY := startY
+		containingWidth := box.Rect.Width
+		containingHeight := box.Rect.Height
+
+		if child.Position == "fixed" {
+			containingX = 0
+			containingY = 0
+			containingWidth = viewportWidth
 		}
 
-		// Calculate Y position
-		childY := startY
-		if child.Top > 0 {
-			childY = startY + child.Top
-		} else if child.Bottom > 0 {
-			childY = startY + box.Rect.Height - child.Bottom - child.Rect.Height
+		childX := containingX
+		if child.Style.LeftSet {
+			childX = containingX + child.Left
+		} else if child.Style.RightSet {
+			childX = containingX + containingWidth - child.Right - child.Rect.Width
+		}
+
+		childY := containingY
+		if child.Style.TopSet {
+			childY = containingY + child.Top
+		} else if child.Style.BottomSet {
+			childY = containingY + containingHeight - child.Bottom - child.Rect.Height
 		}
 
 		// Apply final position by offsetting the entire subtree
@@ -514,7 +559,13 @@ func computeBlockLayout(box *LayoutBox, containerWidth float64, startX, startY f
 		}
 
 		// Compute layout to determine dimensions
-		computeBlockLayout(child, childWidth, 0, 0, "")
+		computeBlockLayout(child, blockLayoutParams{
+			containerWidth: childWidth,
+			startX:         0,
+			startY:         0,
+			parentTag:      "",
+			viewportWidth:  viewportWidth,
+		})
 
 		switch child.Float {
 		case "left":
