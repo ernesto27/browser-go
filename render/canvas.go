@@ -242,11 +242,27 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 	for _, cmd := range commands {
 		switch c := cmd.(type) {
 		case DrawRect:
-			rect := canvas.NewRectangle(c.Color)
-			rect.Resize(fyne.NewSize(float32(c.Width), float32(c.Height)))
-			rect.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
-			rect.CornerRadius = float32(c.CornerRadius)
-			objects = append(objects, rect)
+			allSame := c.TopLeftRadius == c.TopRightRadius &&
+				c.TopRightRadius == c.BottomRightRadius &&
+				c.BottomRightRadius == c.BottomLeftRadius
+			if allSame {
+				rect := canvas.NewRectangle(c.Color)
+				rect.Resize(fyne.NewSize(float32(c.Width), float32(c.Height)))
+				rect.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
+				rect.CornerRadius = float32(c.TopLeftRadius)
+				objects = append(objects, rect)
+			} else {
+				img := drawRoundedRectImage(
+					int(c.Width)+1, int(c.Height)+1, c.Color,
+					c.TopLeftRadius, c.TopRightRadius,
+					c.BottomRightRadius, c.BottomLeftRadius,
+				)
+				ci := canvas.NewImageFromImage(img)
+				ci.Resize(fyne.NewSize(float32(c.Width), float32(c.Height)))
+				ci.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
+				ci.FillMode = canvas.ImageFillOriginal
+				objects = append(objects, ci)
+			}
 
 		case DrawText:
 			text := canvas.NewText(c.Text, c.Color)

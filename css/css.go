@@ -55,19 +55,23 @@ type Style struct {
 	FontFamily      []string
 
 	// Border properties
-	BorderTopWidth    float64
-	BorderRightWidth  float64
-	BorderBottomWidth float64
-	BorderLeftWidth   float64
-	BorderTopColor    color.Color
-	BorderRightColor  color.Color
-	BorderBottomColor color.Color
-	BorderLeftColor   color.Color
-	BorderTopStyle    string
-	BorderRightStyle  string
-	BorderBottomStyle string
-	BorderLeftStyle   string
-	BorderRadius      float64
+	BorderTopWidth          float64
+	BorderRightWidth        float64
+	BorderBottomWidth       float64
+	BorderLeftWidth         float64
+	BorderTopColor          color.Color
+	BorderRightColor        color.Color
+	BorderBottomColor       color.Color
+	BorderLeftColor         color.Color
+	BorderTopStyle          string
+	BorderRightStyle        string
+	BorderBottomStyle       string
+	BorderLeftStyle         string
+	BorderRadius            float64
+	BorderTopLeftRadius     float64
+	BorderTopRightRadius    float64
+	BorderBottomLeftRadius  float64
+	BorderBottomRightRadius float64
 
 	TopSet    bool
 	LeftSet   bool
@@ -203,20 +207,21 @@ func ParseColor(value string) color.Color {
 	// Named colors (CSS standard)
 	colors := map[string]color.Color{
 		// Basic colors
-		"black":   color.Black,
-		"white":   color.White,
-		"red":     color.RGBA{255, 0, 0, 255},
-		"green":   color.RGBA{0, 128, 0, 255},
-		"blue":    color.RGBA{0, 0, 255, 255},
-		"yellow":  color.RGBA{255, 255, 0, 255},
-		"purple":  color.RGBA{128, 0, 128, 255},
-		"orange":  color.RGBA{255, 165, 0, 255},
-		"gray":    color.RGBA{128, 128, 128, 255},
-		"grey":    color.RGBA{128, 128, 128, 255},
-		"cyan":    color.RGBA{0, 255, 255, 255},
-		"magenta": color.RGBA{255, 0, 255, 255},
-		"pink":    color.RGBA{255, 192, 203, 255},
-		"brown":   color.RGBA{165, 42, 42, 255},
+		"black":        color.Black,
+		"white":        color.White,
+		"red":          color.RGBA{255, 0, 0, 255},
+		"green":        color.RGBA{0, 128, 0, 255},
+		"blue":         color.RGBA{0, 0, 255, 255},
+		"yellow":       color.RGBA{255, 255, 0, 255},
+		"purple":       color.RGBA{128, 0, 128, 255},
+		"mediumpurple": color.RGBA{47, 112, 216, 255},
+		"orange":       color.RGBA{255, 165, 0, 255},
+		"gray":         color.RGBA{128, 128, 128, 255},
+		"grey":         color.RGBA{128, 128, 128, 255},
+		"cyan":         color.RGBA{0, 255, 255, 255},
+		"magenta":      color.RGBA{255, 0, 255, 255},
+		"pink":         color.RGBA{255, 192, 203, 255},
+		"brown":        color.RGBA{165, 42, 42, 255},
 
 		// Light variants
 		"lightgray":   color.RGBA{211, 211, 211, 255},
@@ -276,6 +281,40 @@ func ParseColor(value string) color.Color {
 		"lavender":   color.RGBA{230, 230, 250, 255},
 		"linen":      color.RGBA{250, 240, 230, 255},
 		"seashell":   color.RGBA{255, 245, 238, 255},
+
+		// Extended CSS named colors
+		"seagreen":        color.RGBA{46, 139, 87, 255},
+		"mediumseagreen":  color.RGBA{60, 179, 113, 255},
+		"limegreen":       color.RGBA{50, 205, 50, 255},
+		"yellowgreen":     color.RGBA{154, 205, 50, 255},
+		"olivedrab":       color.RGBA{107, 142, 35, 255},
+		"goldenrod":       color.RGBA{218, 165, 32, 255},
+		"darkgoldenrod":   color.RGBA{184, 134, 11, 255},
+		"hotpink":         color.RGBA{255, 105, 180, 255},
+		"deeppink":        color.RGBA{255, 20, 147, 255},
+		"turquoise":       color.RGBA{64, 224, 208, 255},
+		"mediumturquoise": color.RGBA{72, 209, 204, 255},
+		"cadetblue":       color.RGBA{95, 158, 160, 255},
+		"dodgerblue":      color.RGBA{30, 144, 255, 255},
+		"royalblue":       color.RGBA{65, 105, 225, 255},
+		"cornflowerblue":  color.RGBA{100, 149, 237, 255},
+		"mediumblue":      color.RGBA{0, 0, 205, 255},
+		"peru":            color.RGBA{205, 133, 63, 255},
+		"sienna":          color.RGBA{160, 82, 45, 255},
+		"saddlebrown":     color.RGBA{139, 69, 19, 255},
+		"orchid":          color.RGBA{218, 112, 214, 255},
+		"darkviolet":      color.RGBA{148, 0, 211, 255},
+		"darkorchid":      color.RGBA{153, 50, 204, 255},
+		"mediumorchid":    color.RGBA{186, 85, 211, 255},
+		"palegreen":       color.RGBA{152, 251, 152, 255},
+		"lightcoral":      color.RGBA{240, 128, 128, 255},
+		"rosybrown":       color.RGBA{188, 143, 143, 255},
+		"mistyrose":       color.RGBA{255, 228, 225, 255},
+		"bisque":          color.RGBA{255, 228, 196, 255},
+		"moccasin":        color.RGBA{255, 228, 181, 255},
+		"peachpuff":       color.RGBA{255, 218, 185, 255},
+		"darkkhaki":       color.RGBA{189, 183, 107, 255},
+		"palegoldenrod":   color.RGBA{238, 232, 170, 255},
 	}
 
 	if c, ok := colors[value]; ok {
@@ -652,6 +691,15 @@ func applyDeclaration(style *Style, property, value string) {
 		style.BorderLeftWidth = w
 		style.BorderLeftStyle = s
 		style.BorderLeftColor = c
+	case "border-top-left-radius":
+		style.BorderTopLeftRadius = ParseSize(value)
+	case "border-top-right-radius":
+		style.BorderTopRightRadius = ParseSize(value)
+	case "border-bottom-left-radius":
+		style.BorderBottomLeftRadius = ParseSize(value)
+	case "border-bottom-right-radius":
+		style.BorderBottomRightRadius = ParseSize(value)
+
 	case "width":
 		if strings.HasSuffix(strings.TrimSpace(value), "%") {
 			num := strings.TrimSuffix(strings.TrimSpace(value), "%")

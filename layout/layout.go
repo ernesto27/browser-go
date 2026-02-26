@@ -319,6 +319,23 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	if inline.BorderLeftStyle != "" {
 		base.BorderLeftStyle = inline.BorderLeftStyle
 	}
+
+	if inline.BorderTopLeftRadius > 0 {
+		base.BorderTopLeftRadius = inline.BorderTopLeftRadius
+	}
+
+	if inline.BorderTopRightRadius > 0 {
+		base.BorderTopRightRadius = inline.BorderTopRightRadius
+	}
+
+	if inline.BorderBottomLeftRadius > 0 {
+		base.BorderBottomLeftRadius = inline.BorderBottomLeftRadius
+	}
+
+	if inline.BorderBottomRightRadius > 0 {
+		base.BorderBottomRightRadius = inline.BorderBottomRightRadius
+	}
+
 	// Sizing properties
 	if inline.Width > 0 {
 		base.Width = inline.Width

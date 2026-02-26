@@ -178,8 +178,12 @@ type DisplayCommand any
 
 type DrawRect struct {
 	layout.Rect
-	Color        color.Color
-	CornerRadius float64
+	Color             color.Color
+	CornerRadius      float64
+	TopLeftRadius     float64
+	TopRightRadius    float64
+	BottomRightRadius float64
+	BottomLeftRadius  float64
 }
 
 type DrawText struct {
@@ -316,10 +320,24 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 	// Draw background if set
 	if box.Style.BackgroundColor != nil && !isHidden {
+		tl := box.Style.BorderTopLeftRadius
+		tr := box.Style.BorderTopRightRadius
+		br := box.Style.BorderBottomRightRadius
+		bl := box.Style.BorderBottomLeftRadius
+		if tl == 0 && tr == 0 && br == 0 && bl == 0 {
+			tl = box.Style.BorderRadius
+			tr = box.Style.BorderRadius
+			br = box.Style.BorderRadius
+			bl = box.Style.BorderRadius
+		}
 		*commands = append(*commands, DrawRect{
-			Rect:         box.Rect,
-			Color:        applyOpacity(box.Style.BackgroundColor, currentStyle.Opacity),
-			CornerRadius: box.Style.BorderRadius,
+			Rect:              box.Rect,
+			Color:             applyOpacity(box.Style.BackgroundColor, currentStyle.Opacity),
+			CornerRadius:      box.Style.BorderRadius,
+			TopLeftRadius:     tl,
+			TopRightRadius:    tr,
+			BottomRightRadius: br,
+			BottomLeftRadius:  bl,
 		})
 	}
 

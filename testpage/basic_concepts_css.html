@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSS1 Basic Concepts - Color Inheritance</title>
+    <style>
+        div.root {
+            color: crimson;
+            padding: 12px;
+            border: 1px solid crimson;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>§1.3 Inheritance — color</h1>
+
+    <p>The rule only targets <code>div.root</code>. No rule targets the child elements.</p>
+    <p>Expected: all text inside the box is crimson — inherited from the parent div.</p>
+
+    <div class="root">
+        <p>This paragraph should be crimson (inherited, no rule targets it).</p>
+        <p>This paragraph too. <span>This span too.</span></p>
+        <p>The <em>emphasized text</em> should also be crimson.</p>
+        <p>Only this <span style="color: green;">green span</span> overrides via inline style.</p>
+    </div>
+
+    <p>This paragraph is outside the div — should be default black.</p>
+
+    <hr>
+
+    <h1>Border — Individual Corner Radius</h1>
+
+    <p>Each box below sets only one corner at a time. The other three corners stay sharp (0px).</p>
+
+    <div style="width: 200px; height: 80px; background-color: steelblue; color: white; padding: 10px;
+                border-top-left-radius: 40px;">
+        border-top-left-radius: 40px
+    </div>
+
+    <br>
+
+    <div style="width: 200px; height: 80px; background-color: #2e8b57; color: white; padding: 10px;
+                border-top-right-radius: 40px;">
+        border-top-right-radius: 40px
+    </div>
+
+    <br>
+
+    <div style="width: 200px; height: 80px; background-color: tomato; color: white; padding: 10px;
+                border-bottom-right-radius: 40px;">
+        border-bottom-right-radius: 40px
+    </div>
+
+    <br>
+
+    <div style="width: 200px; height: 80px; background-color: goldenrod; color: white; padding: 10px;
+                border-bottom-left-radius: 40px;">
+        border-bottom-left-radius: 40px
+    </div>
+
+    <br>
+
+    <p>All four set to different values — asymmetric shape:</p>
+    <div style="width: 200px; height: 80px; background-color: #9370d8; color: white; padding: 10px;
+                border-top-left-radius: 0px;
+                border-top-right-radius: 40px;
+                border-bottom-right-radius: 20px;
+                border-bottom-left-radius: 60px;">
+        TL:0 TR:40 BR:20 BL:60
+    </div>
+
+    <br>
+
+    <p>Tab shape — rounded top only:</p>
+    <div style="width: 160px; height: 40px; background-color: navy; color: white; padding: 10px;
+                border-top-left-radius: 12px;
+                border-top-right-radius: 12px;">
+        tab shape
+    </div>
+
+</body>
+</html>

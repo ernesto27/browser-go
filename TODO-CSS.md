@@ -40,6 +40,44 @@
 - [x] Word wrapping for long text - text wraps within container width
 - [x] `margin: auto` - horizontal centering
 - [x] `margin` multi-value shorthand - `margin: 10px 20px` (2/3/4 values)
+- [x] Descendant selectors - `div p`, `ul li` (implemented via `Selector.Ancestor` chain in `css/parser.go`)
+- [x] Specificity calculation - proper weighting via `[3]int` (ID, class, tag) in `css/css.go`
+
+---
+
+# BASIC CONCEPTS (CSS1 §1)
+
+### §1.7 CSS Parsing
+- [ ] CSS comments `/* */` - parser does not skip comment blocks; breaks or corrupts parsing (`css/parser.go` — `skipWhitespace()` only skips unicode spaces)
+
+### §1.3 Inheritance
+Inheritable properties fall back to the parent's value when no rule applies.
+Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle TextStyle` by value down the tree (`render/paint.go:284-313`), only overriding when a box has an explicit non-nil style. This means it affects paint only — layout-affecting properties still need CSS-level inheritance.
+
+- [x] `color` - inherited via `currentStyle.Color` in render pass
+- [x] `font-family` - inherited via `currentStyle.FontFamily` in render pass
+- [x] `font-weight` - inherited via `currentStyle.Bold` in render pass
+- [x] `font-style` - inherited via `currentStyle.Italic` in render pass
+- [x] `font-size` - inherited via `currentStyle.Size` in render pass
+- [x] `text-decoration` - inherited via `currentStyle.TextDecoration` in render pass
+- [x] `text-transform` - inherited via `currentStyle.TextTransform` in render pass
+- [x] `opacity` - inherited via `currentStyle.Opacity` in render pass
+- [x] `visibility` - inherited via `currentStyle.Visibility` in render pass
+- [ ] `text-align` - NOT in `currentStyle`; affects layout, needs CSS-level inheritance
+- [ ] `line-height` - NOT in `currentStyle`; affects layout, needs CSS-level inheritance
+- [ ] `letter-spacing` - NOT in `currentStyle`; also parsed but not applied in render
+- [ ] `word-spacing` - NOT in `currentStyle`
+
+### §5.2 Font Properties
+- [ ] `font-variant` - `normal | small-caps`
+- [ ] `font` - shorthand (font-style/variant/weight/size/line-height/family)
+- [ ] `font-size` keyword values - `xx-small`, `x-small`, `small`, `medium`, `large`, `x-large`, `xx-large`, `larger`, `smaller`
+
+### §5.3 Background Properties
+- [ ] `background-attachment` - `scroll | fixed`
+
+### §4.1.1 Box Model
+- [ ] Margin collapsing - adjacent vertical margins should collapse to the maximum value
 
 ---
 
@@ -52,10 +90,10 @@
 - [ ] `background-repeat` - repeat/no-repeat
 
 ### Border
-- [ ] `border-top-left-radius` - individual corner
-- [ ] `border-top-right-radius` - individual corner
-- [ ] `border-bottom-left-radius` - individual corner
-- [ ] `border-bottom-right-radius` - individual corner
+- [x] `border-top-left-radius` - individual corner (pixel-raster path in `render/rounded.go`)
+- [x] `border-top-right-radius` - individual corner (pixel-raster path in `render/rounded.go`)
+- [x] `border-bottom-left-radius` - individual corner (pixel-raster path in `render/rounded.go`)
+- [x] `border-bottom-right-radius` - individual corner (pixel-raster path in `render/rounded.go`)
 
 ### Box Model
 - [ ] `box-sizing` - border-box/content-box
@@ -129,12 +167,11 @@
 - [x] `vw` - viewport width
 - [x] `vh` - viewport height
 - [ ] `calc()` - calculations
-- [ ] `rgb()` / `rgba()` - color functions (`css/css.go:194` — ParseColor only handles named colors and hex)
+- [ ] `rgb()` / `rgba()` - color functions (`css/css.go:204` — ParseColor handles named colors and hex; ~80 CSS named colors now included)
 - [ ] `hsl()` / `hsla()` - color functions
 - [ ] `transparent` keyword — not recognized by ParseColor; returns nil (no background drawn)
 
 ### Selectors
-- [ ] Descendant selectors - `div p`, `ul li`
 - [ ] Child selectors - `ul > li`
 - [ ] Pseudo-classes - `:hover`, `:focus`, `:active`, `:first-child`, `:last-child`
 - [ ] Pseudo-elements - `::before`, `::after`
@@ -142,9 +179,8 @@
 - [ ] Sibling selectors - `h1 + p`, `h1 ~ p`
 
 ### Cascade & Specificity
-- [ ] Specificity calculation - proper weighting (inline > id > class > tag)
+- [x] Specificity calculation - proper weighting via `[3]int` (ID, class, tag) in `css/css.go`
 - [x] `!important` - override rules
-- [ ] Inheritance - properties inheriting from parent elements
 
 ### At-Rules (needed for WHATWG 4.2.6 style element compliance)
 - [ ] `@media` - media queries (screen, print, width conditions)
@@ -163,6 +199,7 @@
 
 ## Parsed But Not Applied
 - [ ] `cursor` - parsed but not applied in render
+- [ ] `letter-spacing` - parsed into `Style.LetterSpacing` but never read by layout or render
 - [ ] `display: block/inline` - only `none` actually works
 - [ ] `display: inline-block` - not recognized; treated as `InlineBox` without proper inline-block sizing (`layout/layout.go:178`)
 - [ ] `position: relative/fixed/sticky` - only `absolute` works
