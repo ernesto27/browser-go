@@ -283,7 +283,7 @@ func TestMatchSelectorNode(t *testing.T) {
 		},
 		{
 			name: "three-level chain: a inside li inside ul",
-			sel: Selector{TagName: "a", Ancestor: &Selector{TagName: "li", Ancestor: &Selector{TagName: "ul"}}},
+			sel:  Selector{TagName: "a", Ancestor: &Selector{TagName: "li", Ancestor: &Selector{TagName: "ul"}}},
 			node: func() *dom.Node {
 				ul := makeNode("ul", "", nil)
 				li := makeNode("li", "", ul)
@@ -293,7 +293,7 @@ func TestMatchSelectorNode(t *testing.T) {
 		},
 		{
 			name: "three-level chain no match: wrong middle element",
-			sel: Selector{TagName: "a", Ancestor: &Selector{TagName: "li", Ancestor: &Selector{TagName: "ul"}}},
+			sel:  Selector{TagName: "a", Ancestor: &Selector{TagName: "li", Ancestor: &Selector{TagName: "ul"}}},
 			node: func() *dom.Node {
 				ol := makeNode("ol", "", nil)
 				li := makeNode("li", "", ol)
@@ -557,6 +557,22 @@ func TestParseInlineStyle(t *testing.T) {
 				assert.Equal(t, "none", s.Display)
 			},
 		},
+		{
+			name:  "letter-spacing px",
+			input: "letter-spacing: 2px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 2.0, s.LetterSpacing)
+				assert.True(t, s.LetterSpacingSet)
+			},
+		},
+		{
+			name:  "letter-spacing normal",
+			input: "letter-spacing: normal",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 0.0, s.LetterSpacing)
+				assert.True(t, s.LetterSpacingSet)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -651,6 +667,24 @@ func TestImportantWithContext(t *testing.T) {
 			assert.Equal(t, tt.expectedFontSize, style.FontSize)
 		})
 	}
+}
+
+func TestLetterSpacingWithContext(t *testing.T) {
+	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
+
+	t.Run("supports em with parent font-size context", func(t *testing.T) {
+		sheet := Parse(`p { font-size: 20px; letter-spacing: 0.2em; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 20, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, 4.0, style.LetterSpacing)
+		assert.True(t, style.LetterSpacingSet)
+	})
+
+	t.Run("supports normal keyword", func(t *testing.T) {
+		sheet := Parse(`p { letter-spacing: normal; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 20, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, 0.0, style.LetterSpacing)
+		assert.True(t, style.LetterSpacingSet)
+	})
 }
 
 // TestInlineStyleImportant tests that !important is handled in inline styles

@@ -224,6 +224,17 @@ func TestBuildLayoutTreeStyles(t *testing.T) {
 	}
 }
 
+func TestBuildLayoutTreeLetterSpacingInheritance(t *testing.T) {
+	tree := buildTreeWithCSS(`<div><span>Text</span></div>`, `div { letter-spacing: 3px; }`)
+
+	divBox := findBoxByTag(tree, "div")
+	spanBox := findBoxByTag(tree, "span")
+	assert.NotNil(t, divBox)
+	assert.NotNil(t, spanBox)
+	assert.Equal(t, 3.0, divBox.Style.LetterSpacing)
+	assert.Equal(t, 3.0, spanBox.Style.LetterSpacing)
+}
+
 func TestMergeStyles(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -318,6 +329,24 @@ func TestMergeStyles(t *testing.T) {
 			base:   css.Style{Opacity: 0.5},
 			inline: css.Style{Opacity: 1.0},
 			verify: func(t *testing.T, r *css.Style) { assert.Equal(t, 0.5, r.Opacity) },
+		},
+		{
+			name:   "letter-spacing merged when explicitly set",
+			base:   css.Style{LetterSpacing: 2, LetterSpacingSet: true},
+			inline: css.Style{LetterSpacing: 0, LetterSpacingSet: true},
+			verify: func(t *testing.T, r *css.Style) {
+				assert.Equal(t, 0.0, r.LetterSpacing)
+				assert.True(t, r.LetterSpacingSet)
+			},
+		},
+		{
+			name:   "unset letter-spacing does not override",
+			base:   css.Style{LetterSpacing: 2, LetterSpacingSet: true},
+			inline: css.Style{},
+			verify: func(t *testing.T, r *css.Style) {
+				assert.Equal(t, 2.0, r.LetterSpacing)
+				assert.True(t, r.LetterSpacingSet)
+			},
 		},
 		{
 			name:   "border widths merged",

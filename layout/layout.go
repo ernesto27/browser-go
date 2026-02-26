@@ -122,6 +122,9 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 			inlineStyle := css.ParseInlineStyleWithContext(styleAttr, parentFontSize, viewport.Width, viewport.Height)
 			mergeStyles(&box.Style, &inlineStyle)
 		}
+		if parent != nil && !box.Style.LetterSpacingSet {
+			box.Style.LetterSpacing = parent.Style.LetterSpacing
+		}
 
 		if box.Style.Display == "none" {
 			return nil
@@ -272,6 +275,10 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	}
 	if inline.TextTransform != "" {
 		base.TextTransform = inline.TextTransform
+	}
+	if inline.LetterSpacingSet {
+		base.LetterSpacing = inline.LetterSpacing
+		base.LetterSpacingSet = true
 	}
 	if inline.Opacity != 1.0 {
 		base.Opacity = inline.Opacity

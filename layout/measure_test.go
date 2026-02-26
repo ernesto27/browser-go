@@ -21,14 +21,14 @@ func TestMeasureText(t *testing.T) {
 			expected float64
 		}{
 			{"empty string returns 0", "", 16, 0},
-			{"single character", "a", 16, 8},    // 1 * 16 * 0.5 = 8
+			{"single character", "a", 16, 8},              // 1 * 16 * 0.5 = 8
 			{"single character larger font", "a", 32, 16}, // 1 * 32 * 0.5 = 16
-			{"multiple characters", "hello", 16, 40}, // 5 * 16 * 0.5 = 40
+			{"multiple characters", "hello", 16, 40},      // 5 * 16 * 0.5 = 40
 			{"space counts as character", " ", 16, 8},
-			{"text with spaces", "a b", 16, 24}, // 3 * 16 * 0.5 = 24
+			{"text with spaces", "a b", 16, 24},    // 3 * 16 * 0.5 = 24
 			{"longer text", "Hello World", 16, 88}, // 11 * 16 * 0.5 = 88
 			{"zero font size", "hello", 0, 0},
-			{"small font size", "ab", 10, 10}, // 2 * 10 * 0.5 = 10
+			{"small font size", "ab", 10, 10},   // 2 * 10 * 0.5 = 10
 			{"large font size", "ab", 100, 100}, // 2 * 100 * 0.5 = 100
 		}
 
@@ -117,6 +117,26 @@ func TestMeasureTextFormula(t *testing.T) {
 	}
 }
 
+func TestMeasureTextWithSpacing(t *testing.T) {
+	originalMeasurer := TextMeasurer
+	TextMeasurer = nil
+	defer func() { TextMeasurer = originalMeasurer }()
+
+	t.Run("adds spacing between runes", func(t *testing.T) {
+		// Base width: len("abc") * 16 * 0.5 = 24
+		// Added spacing: 2 gaps * 2px = 4
+		assert.Equal(t, 28.0, MeasureTextWithSpacing("abc", 16, 2))
+	})
+
+	t.Run("negative spacing tightens width", func(t *testing.T) {
+		assert.Equal(t, 20.0, MeasureTextWithSpacing("abc", 16, -2))
+	})
+
+	t.Run("single rune has no inter-character spacing", func(t *testing.T) {
+		assert.Equal(t, 8.0, MeasureTextWithSpacing("a", 16, 10))
+	})
+}
+
 func TestWrapText(t *testing.T) {
 	// Use default estimation: len(text) * fontSize * 0.5
 	originalMeasurer := TextMeasurer
@@ -151,4 +171,17 @@ func TestWrapText(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWrapTextWithSpacing(t *testing.T) {
+	originalMeasurer := TextMeasurer
+	TextMeasurer = nil
+	defer func() { TextMeasurer = originalMeasurer }()
+
+	t.Run("spacing can force wrap", func(t *testing.T) {
+		// Without spacing, "ab cd" width = 5 * 16 * 0.5 = 40 (fits).
+		// With spacing=2, width = 40 + 4*2 = 48 (wraps in 40px).
+		lines := WrapTextWithSpacing("ab cd", 16, 40, 2)
+		assert.Equal(t, []string{"ab", "cd"}, lines)
+	})
 }

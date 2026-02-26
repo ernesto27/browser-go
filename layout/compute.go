@@ -309,7 +309,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 				// Find the widest line
 				maxWidth := 0.0
 				for _, line := range lines {
-					w := MeasureText(line, fontSize)
+					w := MeasureTextWithSpacing(line, fontSize, box.Style.LetterSpacing)
 					if w > maxWidth {
 						maxWidth = w
 					}
@@ -319,7 +319,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 				childHeight = float64(len(lines)) * lineHeight
 			} else {
 				// Wrap text to fit container width
-				child.WrappedLines = WrapText(child.Text, fontSize, innerWidth)
+				child.WrappedLines = WrapTextWithSpacing(child.Text, fontSize, innerWidth, box.Style.LetterSpacing)
 
 				lineHeight := getLineHeightFromStyle(box.Style, parentTag)
 				numLines := len(child.WrappedLines)
@@ -330,7 +330,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 				// Width is the widest wrapped line
 				maxLineWidth := 0.0
 				for _, line := range child.WrappedLines {
-					w := MeasureText(line, fontSize)
+					w := MeasureTextWithSpacing(line, fontSize, box.Style.LetterSpacing)
 					if w > maxLineWidth {
 						maxLineWidth = w
 					}
@@ -637,9 +637,9 @@ func computeInlineSize(box *LayoutBox, parentTag string) (float64, float64) {
 
 			// Check if inside a <pre> element for multi-line handling
 			if isInsidePre(box) && strings.Contains(child.Text, "\n") {
-				w, h = measurePreformattedText(child.Text, fontSize)
+				w, h = measurePreformattedText(child.Text, fontSize, box.Style.LetterSpacing)
 			} else {
-				w = MeasureText(text, fontSize)
+				w = MeasureTextWithSpacing(text, fontSize, box.Style.LetterSpacing)
 				h = getLineHeightFromStyle(box.Style, tagForSize)
 			}
 		case InlineBox:
@@ -682,9 +682,9 @@ func layoutInlineChildren(box *LayoutBox, parentTag string) {
 			var w, h float64
 			// Check if inside a <pre> element for multi-line handling
 			if isInsidePre(box) && strings.Contains(child.Text, "\n") {
-				w, h = measurePreformattedText(child.Text, fontSize)
+				w, h = measurePreformattedText(child.Text, fontSize, box.Style.LetterSpacing)
 			} else {
-				w = MeasureText(text, fontSize)
+				w = MeasureTextWithSpacing(text, fontSize, box.Style.LetterSpacing)
 				h = getLineHeightFromStyle(box.Style, tagForSize)
 			}
 
@@ -808,12 +808,20 @@ func extractColWidths(tableNode *dom.Node, tableWidth float64) []float64 {
 // measureTextWidth returns the natural (unwrapped) text width of a layout subtree
 // by recursively summing all text node widths. Used for shrink-to-fit table sizing.
 func measureTextWidth(box *LayoutBox) float64 {
+	return measureTextWidthWithSpacing(box, 0)
+}
+
+func measureTextWidthWithSpacing(box *LayoutBox, inheritedSpacing float64) float64 {
+	letterSpacing := inheritedSpacing
+	if box.Style.LetterSpacingSet || box.Style.LetterSpacing != 0 {
+		letterSpacing = box.Style.LetterSpacing
+	}
 	if box.Type == TextBox {
-		return MeasureText(box.Text, 16.0)
+		return MeasureTextWithSpacing(box.Text, 16.0, letterSpacing)
 	}
 	total := 0.0
 	for _, child := range box.Children {
-		total += measureTextWidth(child)
+		total += measureTextWidthWithSpacing(child, letterSpacing)
 	}
 	return total
 }
@@ -1054,7 +1062,7 @@ func computeTableLayout(table *LayoutBox, containerWidth float64, startX, startY
 			for _, textChild := range child.Children {
 				if textChild.Type == TextBox {
 					fontSize := 16.0
-					textWidth := MeasureText(textChild.Text, fontSize)
+					textWidth := MeasureTextWithSpacing(textChild.Text, fontSize, child.Style.LetterSpacing)
 					textChild.Rect.X = startX + (tableWidth-textWidth)/2 // centered
 					textChild.Rect.Y = yOffset
 					textChild.Rect.Width = textWidth
@@ -1273,12 +1281,16 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 	lineHeight := 24.0
 	maxY := startY
 
-	var layoutInline func(box *LayoutBox)
-	layoutInline = func(box *LayoutBox) {
+	var layoutInline func(box *LayoutBox, inheritedSpacing float64)
+	layoutInline = func(box *LayoutBox, inheritedSpacing float64) {
+		letterSpacing := inheritedSpacing
+		if box.Style.LetterSpacingSet || box.Style.LetterSpacing != 0 {
+			letterSpacing = box.Style.LetterSpacing
+		}
 		switch box.Type {
 		case TextBox:
 			fontSize := 16.0
-			lines := WrapText(box.Text, fontSize, width)
+			lines := WrapTextWithSpacing(box.Text, fontSize, width, letterSpacing)
 			box.Rect.X = currentX
 			box.Rect.Y = currentY
 			if len(lines) > 1 {
@@ -1292,7 +1304,7 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 					maxY = currentY
 				}
 			} else {
-				textWidth := MeasureText(box.Text, fontSize)
+				textWidth := MeasureTextWithSpacing(box.Text, fontSize, letterSpacing)
 				box.Rect.Width = textWidth
 				box.Rect.Height = lineHeight
 				currentX += textWidth
@@ -1307,7 +1319,7 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 			prevY := currentY // capture before children may advance it via nested blocks
 			childStartX := currentX
 			for _, child := range box.Children {
-				layoutInline(child)
+				layoutInline(child, letterSpacing)
 			}
 			box.Rect.Width = currentX - childStartX
 			box.Rect.Height = lineHeight
@@ -1333,7 +1345,7 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 			box.Rect.Y = currentY
 			beforeY := currentY
 			for _, child := range box.Children {
-				layoutInline(child)
+				layoutInline(child, letterSpacing)
 			}
 			// Advance currentY to the furthest point reached by children (maxY).
 			// If nothing was drawn (empty block), leave currentY unchanged — don't
@@ -1372,13 +1384,13 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 
 		default:
 			for _, child := range box.Children {
-				layoutInline(child)
+				layoutInline(child, letterSpacing)
 			}
 		}
 	}
 
 	for _, child := range cell.Children {
-		layoutInline(child)
+		layoutInline(child, cell.Style.LetterSpacing)
 	}
 
 	return maxY - startY
@@ -1459,7 +1471,7 @@ func isInsidePre(box *LayoutBox) bool {
 }
 
 // measurePreformattedText calculates width and height for multi-line text inside <pre>
-func measurePreformattedText(text string, fontSize float64) (width, height float64) {
+func measurePreformattedText(text string, fontSize, letterSpacing float64) (width, height float64) {
 	// Expand tabs to spaces for proper alignment
 	text = dom.ExpandTabs(text, 8)
 	lines := strings.Split(text, "\n")
@@ -1468,7 +1480,7 @@ func measurePreformattedText(text string, fontSize float64) (width, height float
 	// Find widest line
 	maxWidth := 0.0
 	for _, line := range lines {
-		lw := MeasureText(line, fontSize)
+		lw := MeasureTextWithSpacing(line, fontSize, letterSpacing)
 		if lw > maxWidth {
 			maxWidth = lw
 		}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Typography CSS Test - letter-spacing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .sample {
+            font-size: 24px;
+            margin: 12px 0;
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .normal {
+            letter-spacing: normal;
+        }
+
+        .wide {
+            letter-spacing: 8px;
+        }
+
+        .tight {
+            letter-spacing: -1px;
+        }
+
+        .label {
+            font-size: 14px;
+            color: #333;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Typography CSS - letter-spacing</h1>
+    <p>Visual test for <code>letter-spacing</code> support.</p>
+
+    <p class="label">normal</p>
+    <div class="sample normal">LETTER SPACING TEST</div>
+
+    <p class="label">letter-spacing: 8px (should look much wider if supported)</p>
+    <div class="sample wide">LETTER SPACING TEST</div>
+
+    <p class="label">letter-spacing: -1px (should look tighter if supported)</p>
+    <div class="sample tight">LETTER SPACING TEST</div>
+</body>
+</html>

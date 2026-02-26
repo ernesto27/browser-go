@@ -14,45 +14,47 @@ const (
 )
 
 type Style struct {
-	Color           color.Color
-	BackgroundColor color.Color
-	BackgroundImage string
-	FontSize        float64
-	LineHeight      float64
-	Bold            bool
-	Italic          bool
-	MarginTop       float64
-	MarginBottom    float64
-	MarginLeft      float64
-	MarginRight     float64
-	MarginLeftAuto  bool
-	MarginRightAuto bool
-	PaddingTop      float64
-	PaddingBottom   float64
-	PaddingLeft     float64
-	PaddingRight    float64
-	TextAlign       string
-	VerticalAlign   string
-	Display         string
-	Float           string
-	Position        string
-	Top             float64
-	Left            float64
-	Right           float64
-	Bottom          float64
-	TextDecoration  string
-	Opacity         float64
-	Visibility      string
-	Cursor          string
-	TextTransform   string
-	Width           float64
-	WidthPercent    float64 // percentage width (e.g., 25 means 25%)
-	Height          float64
-	MinWidth        float64
-	MaxWidth        float64
-	MinHeight       float64
-	MaxHeight       float64
-	FontFamily      []string
+	Color            color.Color
+	BackgroundColor  color.Color
+	BackgroundImage  string
+	FontSize         float64
+	LineHeight       float64
+	Bold             bool
+	Italic           bool
+	MarginTop        float64
+	MarginBottom     float64
+	MarginLeft       float64
+	MarginRight      float64
+	MarginLeftAuto   bool
+	MarginRightAuto  bool
+	PaddingTop       float64
+	PaddingBottom    float64
+	PaddingLeft      float64
+	PaddingRight     float64
+	TextAlign        string
+	VerticalAlign    string
+	Display          string
+	Float            string
+	Position         string
+	Top              float64
+	Left             float64
+	Right            float64
+	Bottom           float64
+	TextDecoration   string
+	Opacity          float64
+	Visibility       string
+	Cursor           string
+	TextTransform    string
+	LetterSpacing    float64
+	LetterSpacingSet bool
+	Width            float64
+	WidthPercent     float64 // percentage width (e.g., 25 means 25%)
+	Height           float64
+	MinWidth         float64
+	MaxWidth         float64
+	MinHeight        float64
+	MaxHeight        float64
+	FontFamily       []string
 
 	// Border properties
 	BorderTopWidth          float64
@@ -626,6 +628,11 @@ func applyDeclaration(style *Style, property, value string) {
 		style.TextDecoration = value
 	case "text-transform":
 		style.TextTransform = value
+	case "letter-spacing":
+		if ls, ok := parseLetterSpacingWithContext(value, style.FontSize, DefaultViewportWidth, DefaultViewportHeight); ok {
+			style.LetterSpacing = ls
+			style.LetterSpacingSet = true
+		}
 	case "opacity":
 		if op, err := strconv.ParseFloat(value, 64); err == nil {
 			if op < 0 {
@@ -784,6 +791,36 @@ func parseMarginValue(value string, fontSize, vw, vh float64) (float64, bool) {
 	return ParseSizeWithContext(value, fontSize, vw, vh), false
 }
 
+// parseLetterSpacingWithContext parses CSS letter-spacing values.
+// Supports: normal, px, em, vh/vw, and unitless numeric values.
+func parseLetterSpacingWithContext(value string, fontSize, viewportWidth, viewportHeight float64) (float64, bool) {
+	v := strings.TrimSpace(strings.ToLower(value))
+	if v == "" {
+		return 0, false
+	}
+	if v == "normal" {
+		return 0, true
+	}
+	num := v
+	switch {
+	case strings.HasSuffix(v, "px"):
+		num = strings.TrimSuffix(v, "px")
+	case strings.HasSuffix(v, "em"):
+		num = strings.TrimSuffix(v, "em")
+	case strings.HasSuffix(v, "vh"):
+		num = strings.TrimSuffix(v, "vh")
+	case strings.HasSuffix(v, "vw"):
+		num = strings.TrimSuffix(v, "vw")
+	}
+	if _, err := strconv.ParseFloat(num, 64); err != nil {
+		return 0, false
+	}
+	if num != v {
+		return ParseSizeWithContext(v, fontSize, viewportWidth, viewportHeight), true
+	}
+	return ParseSizeWithContext(v, fontSize, viewportWidth, viewportHeight), true
+}
+
 func applyDeclarationWithContext(style *Style, property, value string, baseFontSize, viewportWidth, viewportHeight float64) {
 	switch property {
 	case "font-size":
@@ -871,6 +908,11 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 		}
 	case "line-height":
 		style.LineHeight = parseLineHeight(value, style.FontSize)
+	case "letter-spacing":
+		if ls, ok := parseLetterSpacingWithContext(value, style.FontSize, viewportWidth, viewportHeight); ok {
+			style.LetterSpacing = ls
+			style.LetterSpacingSet = true
+		}
 	default:
 		// Fall back to original for non-size properties
 		applyDeclaration(style, property, value)

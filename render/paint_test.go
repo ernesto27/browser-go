@@ -264,3 +264,53 @@ func TestToRomanUpper(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildDisplayListCarriesLetterSpacing(t *testing.T) {
+	tests := []struct {
+		name     string
+		html     string
+		cssText  string
+		expected float64
+	}{
+		{
+			name:     "inline letter-spacing applied",
+			html:     `<p style="letter-spacing: 4px;">AB</p>`,
+			expected: 4,
+		},
+		{
+			name:     "inherited letter-spacing applied",
+			html:     `<div style="letter-spacing: 3px;"><span>AB</span></div>`,
+			expected: 3,
+		},
+		{
+			name:     "stylesheet letter-spacing applied",
+			html:     `<p class="wide">AB</p>`,
+			cssText:  `.wide { letter-spacing: 2px; }`,
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := dom.Parse(strings.NewReader(tt.html))
+			sheet := css.Parse(tt.cssText)
+			viewport := layout.Viewport{Width: 800, Height: 600}
+			layoutRoot := layout.BuildLayoutTree(doc, sheet, viewport, css.MatchContext{})
+			layout.ComputeLayout(layoutRoot, 800)
+
+			commands := BuildDisplayList(layoutRoot, InputState{}, LinkStyler{})
+			found := false
+			for _, cmd := range commands {
+				drawText, ok := cmd.(DrawText)
+				if !ok {
+					continue
+				}
+				if drawText.Text == "AB" {
+					assert.Equal(t, tt.expected, drawText.LetterSpacing)
+					found = true
+				}
+			}
+			assert.True(t, found, "expected to find DrawText command for AB")
+		})
+	}
+}

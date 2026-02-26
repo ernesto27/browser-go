@@ -1,6 +1,9 @@
 package layout
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // MeasureTextFunc is a function that measures text width given text, fontSize, bold, italic
 type MeasureTextFunc func(text string, fontSize float64, bold bool, italic bool) float64
@@ -24,9 +27,31 @@ func MeasureText(text string, fontSize float64) float64 {
 	return float64(len(text)) * avgCharWidth
 }
 
+// MeasureTextWithSpacing returns text width including CSS letter-spacing.
+func MeasureTextWithSpacing(text string, fontSize, letterSpacing float64) float64 {
+	width := MeasureText(text, fontSize)
+	if letterSpacing == 0 {
+		return width
+	}
+	runeCount := utf8.RuneCountInString(text)
+	if runeCount <= 1 {
+		return width
+	}
+	width += letterSpacing * float64(runeCount-1)
+	if width < 0 {
+		return 0
+	}
+	return width
+}
+
 // WrapText breaks text into lines that fit within maxWidth.
 // Returns slice of lines. Words are not broken mid-word.
 func WrapText(text string, fontSize float64, maxWidth float64) []string {
+	return WrapTextWithSpacing(text, fontSize, maxWidth, 0)
+}
+
+// WrapTextWithSpacing breaks text into lines that fit maxWidth using letter-spacing.
+func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing float64) []string {
 	if maxWidth <= 0 {
 		return []string{text}
 	}
@@ -54,7 +79,7 @@ func WrapText(text string, fontSize float64, maxWidth float64) []string {
 		}
 		testLine += word
 
-		lineWidth := MeasureText(testLine, fontSize)
+		lineWidth := MeasureTextWithSpacing(testLine, fontSize, letterSpacing)
 
 		if lineWidth <= maxWidth || currentLine.Len() == 0 {
 			// Word fits, or it's the first word (must include even if too long)

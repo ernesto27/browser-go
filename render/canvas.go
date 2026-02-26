@@ -265,15 +265,35 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 			}
 
 		case DrawText:
-			text := canvas.NewText(c.Text, c.Color)
-			text.TextSize = c.Size
-			text.TextStyle = fyne.TextStyle{
+			textStyle := fyne.TextStyle{
 				Bold:      c.Bold,
 				Italic:    c.Italic,
 				Monospace: c.Monospace,
 			}
-			text.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
-			objects = append(objects, text)
+			if c.LetterSpacing == 0 {
+				text := canvas.NewText(c.Text, c.Color)
+				text.TextSize = c.Size
+				text.TextStyle = textStyle
+				text.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
+				objects = append(objects, text)
+			} else {
+				x := c.X
+				runes := []rune(c.Text)
+				for i, r := range runes {
+					ch := string(r)
+					text := canvas.NewText(ch, c.Color)
+					text.TextSize = c.Size
+					text.TextStyle = textStyle
+					text.Move(fyne.NewPos(float32(x), float32(c.Y)))
+					objects = append(objects, text)
+
+					advance := float64(c.Size) * 0.5
+					x += advance
+					if i < len(runes)-1 {
+						x += c.LetterSpacing
+					}
+				}
+			}
 
 			// Draw text decoration lines
 			if c.Underline || c.DottedUnderline || c.Strikethrough {

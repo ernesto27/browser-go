@@ -1,8 +1,10 @@
 package render
 
 import (
+	"image/color"
 	"testing"
 
+	"fyne.io/fyne/v2/canvas"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,4 +118,27 @@ func TestIsSVG(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestRenderToCanvasDrawTextLetterSpacing(t *testing.T) {
+	cmds := []DisplayCommand{
+		DrawText{
+			Text:          "ABC",
+			X:             10,
+			Y:             10,
+			Width:         100,
+			Color:         color.Black,
+			Size:          14,
+			LetterSpacing: 3,
+		},
+	}
+
+	objects := RenderToCanvas(cmds, "", "", false, nil)
+	textCount := 0
+	for _, obj := range objects {
+		if _, ok := obj.(*canvas.Text); ok {
+			textCount++
+		}
+	}
+	assert.Equal(t, 3, textCount, "expected one canvas.Text object per rune when letter-spacing is set")
 }
