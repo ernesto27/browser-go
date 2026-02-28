@@ -48,9 +48,11 @@ type TextStyle struct {
 	FontFamily     []string
 	TextDecoration string
 	TextTransform  string
-	LetterSpacing  float64
-	Opacity        float64
-	Visibility     string
+
+	Opacity       float64
+	Visibility    string
+	LetterSpacing float64
+	LineHeight    float64
 }
 
 type DrawInput struct {
@@ -157,11 +159,12 @@ func isTextSelected(box *layout.LayoutBox, state InputState) bool {
 // DefaultStyle returns the default text style
 func DefaultStyle() TextStyle {
 	return TextStyle{
-		Color:   ColorBlack,
-		Size:    SizeNormal,
-		Bold:    false,
-		Italic:  false,
-		Opacity: 1.0,
+		Color:      ColorBlack,
+		Size:       SizeNormal,
+		Bold:       false,
+		Italic:     false,
+		Opacity:    1.0,
+		LineHeight: float64(SizeNormal) * 1.2,
 	}
 }
 
@@ -293,6 +296,9 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	}
 	if box.Style.FontSize > 0 {
 		currentStyle.Size = float32(box.Style.FontSize)
+		if box.Style.LineHeight == 0 {
+			currentStyle.LineHeight = box.Style.FontSize * 1.2
+		}
 	}
 	if box.Style.Bold {
 		currentStyle.Bold = true
@@ -314,6 +320,11 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Style.LetterSpacingSet {
 		currentStyle.LetterSpacing = box.Style.LetterSpacing
 	}
+
+	if box.Style.LineHeight > 0 {
+		currentStyle.LineHeight = box.Style.LineHeight
+	}
+
 	if box.Style.Opacity > 0 {
 		currentStyle.Opacity = box.Style.Opacity
 	}
@@ -510,7 +521,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			}
 		} else if len(box.WrappedLines) > 1 {
 			// Render wrapped lines
-			lineHeight := float64(currentStyle.Size) * 1.2
+			lineHeight := currentStyle.LineHeight
 			y := box.Rect.Y
 			for _, line := range box.WrappedLines {
 				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform)

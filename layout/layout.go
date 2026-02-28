@@ -129,6 +129,10 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 			box.Style.LetterSpacing = parent.Style.LetterSpacing
 		}
 
+		if parent != nil && box.Style.LineHeight == 0 {
+			box.Style.LineHeight = parent.Style.LineHeight
+		}
+
 		if box.Style.Display == "none" {
 			return nil
 		}

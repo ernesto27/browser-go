@@ -17,6 +17,33 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Line-Height Inheritance</h2>
+
+    <div style="line-height: 3.5; background-color: #ffeedd; padding: 10px;">
+        Parent &lt;div&gt; sets line-height: 2.5
+        <p style="background-color: #ffd8bb;">
+            This &lt;p&gt; has NO explicit line-height.<br>
+            It should inherit 2.5 from the parent div.<br>
+            If lines are tightly packed, inheritance is broken.
+        </p>
+    </div>
+
+    <br>
+
+    <div style="line-height: 2; background-color: #eeddff; padding: 10px;">
+        Grandparent &lt;div&gt; sets line-height: 2
+        <div style="background-color: #ddeeff; padding: 8px; margin: 8px;">
+            Middle &lt;div&gt;: no line-height (should inherit 2 from grandparent)
+            <p style="background-color: #cce8ff;">
+                Child &lt;p&gt;: no line-height set<br>
+                Should also inherit 2 from grandparent.<br>
+                Tests multi-level inheritance.
+            </p>
+        </div>
+    </div>
+
+    <hr>
+
     <h2>Text Align Inheritance Checks</h2>
     <div style="text-align: center; background-color: #eef; padding: 8px;">
         Parent has text-align: center (inheritance check)
