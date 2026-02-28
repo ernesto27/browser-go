@@ -235,6 +235,31 @@ func TestBuildLayoutTreeLetterSpacingInheritance(t *testing.T) {
 	assert.Equal(t, 3.0, spanBox.Style.LetterSpacing)
 }
 
+func TestBuildLayoutTreeTextAlignInheritance(t *testing.T) {
+	tree := buildTreeWithCSS(`<div><p><span>Text</span></p></div>`, `div { text-align: center; }`)
+
+	divBox := findBoxByTag(tree, "div")
+	pBox := findBoxByTag(tree, "p")
+	spanBox := findBoxByTag(tree, "span")
+	assert.NotNil(t, divBox)
+	assert.NotNil(t, pBox)
+	assert.NotNil(t, spanBox)
+	assert.Equal(t, "center", divBox.Style.TextAlign)
+	assert.Equal(t, "center", pBox.Style.TextAlign)
+	assert.Equal(t, "center", spanBox.Style.TextAlign)
+}
+
+func TestBuildLayoutTreeTextAlignOverride(t *testing.T) {
+	tree := buildTreeWithCSS(`<div><p><span>Text</span></p></div>`, `div { text-align: center; } p { text-align: right; }`)
+
+	pBox := findBoxByTag(tree, "p")
+	spanBox := findBoxByTag(tree, "span")
+	assert.NotNil(t, pBox)
+	assert.NotNil(t, spanBox)
+	assert.Equal(t, "right", pBox.Style.TextAlign)
+	assert.Equal(t, "right", spanBox.Style.TextAlign)
+}
+
 func TestMergeStyles(t *testing.T) {
 	tests := []struct {
 		name   string

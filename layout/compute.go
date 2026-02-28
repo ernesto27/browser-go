@@ -613,7 +613,7 @@ func applyLineAlignment(lineBoxes []*LayoutBox, innerX, innerWidth float64, text
 
 	// Apply offset to all boxes
 	for _, b := range lineBoxes {
-		b.Rect.X += offset
+		offsetBox(b, offset, 0)
 	}
 }
 

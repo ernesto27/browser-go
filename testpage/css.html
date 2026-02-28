@@ -17,6 +17,18 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Text Align Inheritance Checks</h2>
+    <div style="text-align: center; background-color: #eef; padding: 8px;">
+        Parent has text-align: center (inheritance check)
+        <p>This paragraph should inherit center alignment from parent.</p>
+        <span>This inline span should also inherit center alignment.</span>
+    </div>
+    <div style="text-align: center; background-color: #fee; padding: 8px; margin-top: 8px;">
+        Parent has text-align: center (override check)
+        <p style="text-align: left;">This paragraph explicitly sets left alignment and should override parent.</p>
+        <span>This span has no override and should remain centered.</span>
+    </div>
+
     <hr>
 
     <h2>Viewport Units Test (vh/vw)</h2>

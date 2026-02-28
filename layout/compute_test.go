@@ -182,10 +182,10 @@ func TestGetLineHeight(t *testing.T) {
 
 func TestGetLineHeightFromStyle(t *testing.T) {
 	tests := []struct {
-		name        string
-		lineHeight  float64
-		tagName     string
-		expected    float64
+		name       string
+		lineHeight float64
+		tagName    string
+		expected   float64
 	}{
 		{"style has line-height", 32.0, "p", 32.0},
 		{"style has line-height overrides tag default", 50.0, "h1", 50.0},
@@ -444,6 +444,22 @@ func TestApplyLineAlignment(t *testing.T) {
 			textAlign:  "",
 			expectedX:  []float64{0},
 		},
+		{
+			name: "center alignment offsets inline descendants",
+			boxes: []*LayoutBox{
+				{
+					Type: InlineBox,
+					Rect: Rect{X: 0, Width: 40},
+					Children: []*LayoutBox{
+						{Type: TextBox, Rect: Rect{X: 0, Width: 40}},
+					},
+				},
+			},
+			innerX:     0,
+			innerWidth: 100,
+			textAlign:  "center",
+			expectedX:  []float64{30},
+		},
 	}
 
 	for _, tt := range tests {
@@ -451,6 +467,10 @@ func TestApplyLineAlignment(t *testing.T) {
 			applyLineAlignment(tt.boxes, tt.innerX, tt.innerWidth, tt.textAlign)
 			for i, box := range tt.boxes {
 				assert.Equal(t, tt.expectedX[i], box.Rect.X)
+			}
+
+			if tt.name == "center alignment offsets inline descendants" {
+				assert.Equal(t, 30.0, tt.boxes[0].Children[0].Rect.X)
 			}
 		})
 	}
@@ -1142,9 +1162,9 @@ func TestTableCellSpacingAttribute(t *testing.T) {
 
 func TestTableBorderAttribute(t *testing.T) {
 	tests := []struct {
-		name        string
-		html        string
-		wantBorder  int
+		name       string
+		html       string
+		wantBorder int
 	}{
 		{
 			name:       "no border attribute defaults to 0",
