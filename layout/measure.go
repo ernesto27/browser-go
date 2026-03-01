@@ -44,14 +44,32 @@ func MeasureTextWithSpacing(text string, fontSize, letterSpacing float64) float6
 	return width
 }
 
+// MeasureTextWithWordSpacing returns text width including CSS word-spacing.
+// Word spacing applies only between word boundaries (space/tab runs).
+func MeasureTextWithWordSpacing(text string, fontSize, wordSpacing float64) float64 {
+	width := MeasureText(text, fontSize)
+	if wordSpacing == 0 {
+		return width
+	}
+	wordGaps := countWordGaps(text)
+	if wordGaps == 0 {
+		return width
+	}
+	width += wordSpacing * float64(wordGaps)
+	if width < 0 {
+		return 0
+	}
+	return width
+}
+
 // WrapText breaks text into lines that fit within maxWidth.
 // Returns slice of lines. Words are not broken mid-word.
 func WrapText(text string, fontSize float64, maxWidth float64) []string {
-	return WrapTextWithSpacing(text, fontSize, maxWidth, 0)
+	return WrapTextWithSpacing(text, fontSize, maxWidth, 0, 0)
 }
 
-// WrapTextWithSpacing breaks text into lines that fit maxWidth using letter-spacing.
-func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing float64) []string {
+// WrapTextWithSpacing breaks text into lines that fit maxWidth using letter-spacing and word-spacing.
+func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing, wordSpacing float64) []string {
 	if maxWidth <= 0 {
 		return []string{text}
 	}
@@ -79,7 +97,7 @@ func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing float64)
 		}
 		testLine += word
 
-		lineWidth := MeasureTextWithSpacing(testLine, fontSize, letterSpacing)
+		lineWidth := MeasureTextWithSpacingAndWordSpacing(testLine, fontSize, letterSpacing, wordSpacing)
 
 		if lineWidth <= maxWidth || currentLine.Len() == 0 {
 			// Word fits, or it's the first word (must include even if too long)
@@ -110,4 +128,36 @@ func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing float64)
 	}
 
 	return lines
+}
+
+func MeasureTextWithSpacingAndWordSpacing(text string, fontSize, letterSpacing, wordSpacing float64) float64 {
+	width := MeasureTextWithSpacing(text, fontSize, letterSpacing)
+	if wordSpacing == 0 {
+		return width
+	}
+	width += wordSpacing * float64(countWordGaps(text))
+	if width < 0 {
+		return 0
+	}
+	return width
+}
+
+func countWordGaps(text string) int {
+	if text == "" {
+		return 0
+	}
+	inSpace := false
+	wordGaps := 0
+	for _, r := range text {
+		switch r {
+		case ' ', '\t':
+			if !inSpace {
+				inSpace = true
+				wordGaps++
+			}
+		default:
+			inSpace = false
+		}
+	}
+	return wordGaps
 }

@@ -235,6 +235,17 @@ func TestBuildLayoutTreeLetterSpacingInheritance(t *testing.T) {
 	assert.Equal(t, 3.0, spanBox.Style.LetterSpacing)
 }
 
+func TestBuildLayoutTreeWordSpacingInheritance(t *testing.T) {
+	tree := buildTreeWithCSS(`<div><span>Text</span></div>`, `div { word-spacing: 4px; }`)
+
+	divBox := findBoxByTag(tree, "div")
+	spanBox := findBoxByTag(tree, "span")
+	assert.NotNil(t, divBox)
+	assert.NotNil(t, spanBox)
+	assert.Equal(t, 4.0, divBox.Style.WordSpacing)
+	assert.Equal(t, 4.0, spanBox.Style.WordSpacing)
+}
+
 func TestBuildLayoutTreeTextAlignInheritance(t *testing.T) {
 	tree := buildTreeWithCSS(`<div><p><span>Text</span></p></div>`, `div { text-align: center; }`)
 
@@ -371,6 +382,24 @@ func TestMergeStyles(t *testing.T) {
 			verify: func(t *testing.T, r *css.Style) {
 				assert.Equal(t, 2.0, r.LetterSpacing)
 				assert.True(t, r.LetterSpacingSet)
+			},
+		},
+		{
+			name:   "word-spacing merged when explicitly set",
+			base:   css.Style{WordSpacing: 2, WordSpacingSet: true},
+			inline: css.Style{WordSpacing: 0, WordSpacingSet: true},
+			verify: func(t *testing.T, r *css.Style) {
+				assert.Equal(t, 0.0, r.WordSpacing)
+				assert.True(t, r.WordSpacingSet)
+			},
+		},
+		{
+			name:   "unset word-spacing does not override",
+			base:   css.Style{WordSpacing: 2, WordSpacingSet: true},
+			inline: css.Style{},
+			verify: func(t *testing.T, r *css.Style) {
+				assert.Equal(t, 2.0, r.WordSpacing)
+				assert.True(t, r.WordSpacingSet)
 			},
 		},
 		{

@@ -314,3 +314,53 @@ func TestBuildDisplayListCarriesLetterSpacing(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildDisplayListCarriesWordSpacing(t *testing.T) {
+	tests := []struct {
+		name     string
+		html     string
+		cssText  string
+		expected float64
+	}{
+		{
+			name:     "inline word-spacing applied",
+			html:     `<p style="word-spacing: 5px;">A B</p>`,
+			expected: 5,
+		},
+		{
+			name:     "inherited word-spacing applied",
+			html:     `<div style="word-spacing: 3px;"><span>A B</span></div>`,
+			expected: 3,
+		},
+		{
+			name:     "stylesheet word-spacing applied",
+			html:     `<p class="wide">A B</p>`,
+			cssText:  `.wide { word-spacing: 2px; }`,
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := dom.Parse(strings.NewReader(tt.html))
+			sheet := css.Parse(tt.cssText)
+			viewport := layout.Viewport{Width: 800, Height: 600}
+			layoutRoot := layout.BuildLayoutTree(doc, sheet, viewport, css.MatchContext{})
+			layout.ComputeLayout(layoutRoot, 800)
+
+			commands := BuildDisplayList(layoutRoot, InputState{}, LinkStyler{})
+			found := false
+			for _, cmd := range commands {
+				drawText, ok := cmd.(DrawText)
+				if !ok {
+					continue
+				}
+				if drawText.Text == "A B" {
+					assert.Equal(t, tt.expected, drawText.WordSpacing)
+					found = true
+				}
+			}
+			assert.True(t, found, "expected to find DrawText command for A B")
+		})
+	}
+}

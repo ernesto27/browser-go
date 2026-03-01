@@ -52,6 +52,7 @@ type TextStyle struct {
 	Opacity       float64
 	Visibility    string
 	LetterSpacing float64
+	WordSpacing   float64
 	LineHeight    float64
 }
 
@@ -195,6 +196,7 @@ type DrawText struct {
 	X, Y            float64
 	Width           float64
 	LetterSpacing   float64
+	WordSpacing     float64
 	Color           color.Color
 	Size            float32
 	Bold            bool
@@ -319,6 +321,9 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	}
 	if box.Style.LetterSpacingSet {
 		currentStyle.LetterSpacing = box.Style.LetterSpacing
+	}
+	if box.Style.WordSpacingSet {
+		currentStyle.WordSpacing = box.Style.WordSpacing
 	}
 
 	if box.Style.LineHeight > 0 {
@@ -508,6 +513,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				*commands = append(*commands, DrawText{
 					Text: line, X: box.Rect.X, Y: y, Width: box.Rect.Width,
 					LetterSpacing:   currentStyle.LetterSpacing,
+					WordSpacing:     currentStyle.WordSpacing,
 					Size:            currentStyle.Size,
 					Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
 					Bold:            currentStyle.Bold,
@@ -528,6 +534,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				*commands = append(*commands, DrawText{
 					Text: transformedLine, X: box.Rect.X, Y: y, Width: box.Rect.Width,
 					LetterSpacing:   currentStyle.LetterSpacing,
+					WordSpacing:     currentStyle.WordSpacing,
 					Size:            currentStyle.Size,
 					Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
 					Bold:            currentStyle.Bold,
@@ -543,6 +550,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			*commands = append(*commands, DrawText{
 				Text: text, X: box.Rect.X, Y: box.Rect.Y, Width: box.Rect.Width,
 				LetterSpacing:   currentStyle.LetterSpacing,
+				WordSpacing:     currentStyle.WordSpacing,
 				Size:            currentStyle.Size,
 				Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
 				Bold:            currentStyle.Bold,

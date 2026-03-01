@@ -181,7 +181,7 @@ func TestWrapTextWithSpacing(t *testing.T) {
 	t.Run("spacing can force wrap", func(t *testing.T) {
 		// Without spacing, "ab cd" width = 5 * 16 * 0.5 = 40 (fits).
 		// With spacing=2, width = 40 + 4*2 = 48 (wraps in 40px).
-		lines := WrapTextWithSpacing("ab cd", 16, 40, 2)
+		lines := WrapTextWithSpacing("ab cd", 16, 40, 2, 0)
 		assert.Equal(t, []string{"ab", "cd"}, lines)
 	})
 }

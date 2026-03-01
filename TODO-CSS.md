@@ -65,7 +65,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `visibility` - inherited via `currentStyle.Visibility` in render pass
 - [x] `text-align` - inherited in layout tree style propagation before line layout
 - [x] `line-height` - NOT in `currentStyle`; affects layout, needs CSS-level inheritance
-- [ ] `letter-spacing` - NOT in `currentStyle`; also parsed but not applied in render
+- [x] `letter-spacing` - NOT in `currentStyle`; also parsed but not applied in render
 - [ ] `word-spacing` - NOT in `currentStyle`
 
 ### §5.2 Font Properties

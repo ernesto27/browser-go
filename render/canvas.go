@@ -44,6 +44,42 @@ type ImageRequest struct {
 	OnLoad         func()
 }
 
+type wordSegment struct {
+	text  string
+	isGap bool
+}
+
+func splitWordSpacingSegments(text string) []wordSegment {
+	if text == "" {
+		return nil
+	}
+	var segments []wordSegment
+	var current strings.Builder
+	inGap := false
+
+	flush := func() {
+		if current.Len() == 0 {
+			return
+		}
+		segments = append(segments, wordSegment{
+			text:  current.String(),
+			isGap: inGap,
+		})
+		current.Reset()
+	}
+
+	for _, r := range text {
+		isSpace := r == ' ' || r == '\t'
+		if isSpace != inGap && current.Len() > 0 {
+			flush()
+		}
+		inGap = isSpace
+		current.WriteRune(r)
+	}
+	flush()
+	return segments
+}
+
 // renderTextFieldObjects creates canvas objects for input/textarea fields
 func renderTextFieldObjects(x, y, width, height float64, value, placeholder string, isFocused, isDisabled, isValid bool) []fyne.CanvasObject {
 	var objects []fyne.CanvasObject
@@ -270,13 +306,29 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 				Italic:    c.Italic,
 				Monospace: c.Monospace,
 			}
-			if c.LetterSpacing == 0 {
+			switch {
+			case c.LetterSpacing == 0 && c.WordSpacing == 0:
 				text := canvas.NewText(c.Text, c.Color)
 				text.TextSize = c.Size
 				text.TextStyle = textStyle
 				text.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
 				objects = append(objects, text)
-			} else {
+			case c.LetterSpacing == 0 && c.WordSpacing != 0:
+				x := c.X
+				for _, segment := range splitWordSpacingSegments(c.Text) {
+					text := canvas.NewText(segment.text, c.Color)
+					text.TextSize = c.Size
+					text.TextStyle = textStyle
+					text.Move(fyne.NewPos(float32(x), float32(c.Y)))
+					objects = append(objects, text)
+
+					segWidth := float64(text.MinSize().Width)
+					x += segWidth
+					if segment.isGap {
+						x += c.WordSpacing
+					}
+				}
+			default:
 				x := c.X
 				runes := []rune(c.Text)
 				for i, r := range runes {
@@ -291,6 +343,9 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 					x += advance
 					if i < len(runes)-1 {
 						x += c.LetterSpacing
+						if r == ' ' || r == '\t' {
+							x += c.WordSpacing
+						}
 					}
 				}
 			}

@@ -573,6 +573,22 @@ func TestParseInlineStyle(t *testing.T) {
 				assert.True(t, s.LetterSpacingSet)
 			},
 		},
+		{
+			name:  "word-spacing px",
+			input: "word-spacing: 6px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 6.0, s.WordSpacing)
+				assert.True(t, s.WordSpacingSet)
+			},
+		},
+		{
+			name:  "word-spacing normal",
+			input: "word-spacing: normal",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 0.0, s.WordSpacing)
+				assert.True(t, s.WordSpacingSet)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -684,6 +700,24 @@ func TestLetterSpacingWithContext(t *testing.T) {
 		style := ApplyStylesheetWithContext(sheet, node, 20, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
 		assert.Equal(t, 0.0, style.LetterSpacing)
 		assert.True(t, style.LetterSpacingSet)
+	})
+}
+
+func TestWordSpacingWithContext(t *testing.T) {
+	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
+
+	t.Run("supports em with parent font-size context", func(t *testing.T) {
+		sheet := Parse(`p { font-size: 20px; word-spacing: 0.25em; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 20, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, 5.0, style.WordSpacing)
+		assert.True(t, style.WordSpacingSet)
+	})
+
+	t.Run("supports normal keyword", func(t *testing.T) {
+		sheet := Parse(`p { word-spacing: normal; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 20, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, 0.0, style.WordSpacing)
+		assert.True(t, style.WordSpacingSet)
 	})
 }
 
