@@ -11,6 +11,24 @@ const (
 	DefaultFontSize       = 16.0
 	DefaultViewportWidth  = 0.0
 	DefaultViewportHeight = 0.0
+
+	ListStyleNone       = "none"
+	ListStyleDisc       = "disc"
+	ListStyleCircle     = "circle"
+	ListStyleSquare     = "square"
+	ListStyleDecimal    = "decimal"
+	ListStyleLowerAlpha = "lower-alpha"
+	ListStyleLowerLatin = "lower-latin"
+	ListStyleUpperAlpha = "upper-alpha"
+	ListStyleUpperLatin = "upper-latin"
+	ListStyleLowerRoman = "lower-roman"
+	ListStyleUpperRoman = "upper-roman"
+
+	ListMarkerNumeric    = "1"
+	ListMarkerLowerAlpha = "a"
+	ListMarkerUpperAlpha = "A"
+	ListMarkerLowerRoman = "i"
+	ListMarkerUpperRoman = "I"
 )
 
 type Style struct {
@@ -81,6 +99,8 @@ type Style struct {
 	LeftSet   bool
 	RightSet  bool
 	BottomSet bool
+
+	ListStyleType string
 }
 
 func DefaultStyle() Style {
@@ -713,6 +733,9 @@ func applyDeclaration(style *Style, property, value string) {
 		style.BorderBottomLeftRadius = ParseSize(value)
 	case "border-bottom-right-radius":
 		style.BorderBottomRightRadius = ParseSize(value)
+
+	case "list-style-type":
+		style.ListStyleType = value
 
 	case "width":
 		if strings.HasSuffix(strings.TrimSpace(value), "%") {

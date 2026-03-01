@@ -209,17 +209,20 @@ func TestFormatListMarker(t *testing.T) {
 		listType string
 		expected string
 	}{
-		{"decimal 1", 1, "1", "1."},
-		{"decimal 10", 10, "1", "10."},
-		{"lowercase a", 1, "a", "a."},
-		{"lowercase c", 3, "a", "c."},
-		{"uppercase A", 1, "A", "A."},
-		{"uppercase C", 3, "A", "C."},
-		{"roman lowercase i", 1, "i", "i."},
-		{"roman lowercase iv", 4, "i", "iv."},
-		{"roman uppercase I", 1, "I", "I."},
-		{"roman uppercase IV", 4, "I", "IV."},
-		{"roman uppercase X", 10, "I", "X."},
+		{"decimal 1", 1, css.ListMarkerNumeric, "1."},
+		{"decimal 10", 10, css.ListMarkerNumeric, "10."},
+		{"lowercase a", 1, css.ListMarkerLowerAlpha, "a."},
+		{"lowercase c", 3, css.ListMarkerLowerAlpha, "c."},
+		{"uppercase A", 1, css.ListMarkerUpperAlpha, "A."},
+		{"uppercase C", 3, css.ListMarkerUpperAlpha, "C."},
+		{"roman lowercase i", 1, css.ListMarkerLowerRoman, "i."},
+		{"roman lowercase iv", 4, css.ListMarkerLowerRoman, "iv."},
+		{"roman uppercase I", 1, css.ListMarkerUpperRoman, "I."},
+		{"roman uppercase IV", 4, css.ListMarkerUpperRoman, "IV."},
+		{"roman uppercase X", 10, css.ListMarkerUpperRoman, "X."},
+		{"disc", 1, css.ListStyleDisc, "•"},
+		{"circle", 1, css.ListStyleCircle, "◦"},
+		{"square", 1, css.ListStyleSquare, "■"},
 	}
 
 	for _, tt := range tests {

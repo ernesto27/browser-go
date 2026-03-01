@@ -17,9 +17,48 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
-    <h2>Word Spacing Test (Not Implemented)</h2>
+    <h2>List Style Test (Not Implemented)</h2>
+    <ul style="list-style-type: disc;">
+        <li>Disc bullet (default)</li>
+        <li>Second item</li>
+    </ul>
+    <ul style="list-style-type: circle;">
+        <li>Circle bullet</li>
+        <li>Second item</li>
+    </ul>
+    <ul style="list-style-type: square;">
+        <li>Square bullet</li>
+        <li>Second item</li>
+    </ul>
+    <ol style="list-style-type: decimal;">
+        <li>Decimal numbered</li>
+        <li>Second item</li>
+    </ol>
+    <ul style="list-style-type: none;">
+        <li>No bullet (none)</li>
+        <li>Second item</li>
+    </ul>
+
+    <h2>Letter Spacing Test</h2>
+    <p style="letter-spacing: 0px; background-color: #e0f7fa;">
+        This line has letter-spacing: 0px (normal spacing for comparison).
+    </p>
+    <p style="letter-spacing: 5px; background-color: #fff3c4;">
+        This line has letter-spacing: 5px (wider gaps between characters).
+    </p>
+    <p style="letter-spacing: -1px; background-color: #e0f7fa;">
+        This line has letter-spacing: -1px (tighter characters).
+    </p>
+
+    <h2>Word Spacing Test</h2>
     <p style="word-spacing: 12px; background-color: #fff3c4;">
         This line should have wide gaps between words if word-spacing is supported.
+    </p>
+    <p style="word-spacing: 0px; background-color: #e0f7fa;">
+        This line has word-spacing: 0px (normal spacing for comparison).
+    </p>
+    <p style="word-spacing: 25px; background-color: #fff3c4;">
+        Extra wide word spacing at 25px between each word.
     </p>
 
     <h2>Line-Height Inheritance</h2>

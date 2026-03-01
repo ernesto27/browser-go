@@ -66,7 +66,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `text-align` - inherited in layout tree style propagation before line layout
 - [x] `line-height` - NOT in `currentStyle`; affects layout, needs CSS-level inheritance
 - [x] `letter-spacing` - NOT in `currentStyle`; also parsed but not applied in render
-- [ ] `word-spacing` - NOT in `currentStyle`
+- [x] `word-spacing` - NOT in `currentStyle`
 
 ### §5.2 Font Properties
 - [ ] `font-variant` - `normal | small-caps`

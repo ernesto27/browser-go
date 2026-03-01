@@ -495,12 +495,8 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 		text := css.ApplyTextTransform(box.Text, currentStyle.TextTransform)
 
-		if isListItem, isOrdered, index, listType := getListInfo(box); isListItem {
-			if isOrdered {
-				text = formatListMarker(index, listType) + " " + text
-			} else {
-				text = "• " + text
-			}
+		if isListItem, _, index, listType := getListInfo(box); isListItem {
+			text = formatListMarker(index, listType) + " " + text
 		}
 
 		if currentStyle.Monospace && strings.Contains(text, "\n") {
@@ -813,6 +809,26 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 		listType = typeAttr
 	}
 
+	if li.Parent.Style.ListStyleType != "" {
+		switch li.Parent.Style.ListStyleType {
+			case css.ListStyleNone:
+				return false, false, 0, ""
+			case css.ListStyleDisc, css.ListStyleCircle, css.ListStyleSquare:
+				listType = li.Parent.Style.ListStyleType
+			case css.ListStyleDecimal:
+				listType = css.ListMarkerNumeric
+			case css.ListStyleLowerAlpha, css.ListStyleLowerLatin:
+				listType = css.ListMarkerLowerAlpha
+			case css.ListStyleUpperAlpha, css.ListStyleUpperLatin:
+				listType = css.ListMarkerUpperAlpha
+			case css.ListStyleLowerRoman:
+				listType = css.ListMarkerLowerRoman
+			case css.ListStyleUpperRoman:
+				listType = css.ListMarkerUpperRoman
+			}
+
+	}
+
 	_, isReversed := li.Parent.Node.Attributes["reversed"]
 
 	// Count total items first (needed for reversed default start)
@@ -863,14 +879,20 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 
 func formatListMarker(index int, listType string) string {
 	switch listType {
-	case "a":
+	case css.ListMarkerLowerAlpha:
 		return string(rune('a'+index-1)) + "."
-	case "A":
+	case css.ListMarkerUpperAlpha:
 		return string(rune('A'+index-1)) + "."
-	case "i":
+	case css.ListMarkerLowerRoman:
 		return toRomanLower(index) + "."
-	case "I":
+	case css.ListMarkerUpperRoman:
 		return toRomanUpper(index) + "."
+	case css.ListStyleDisc:
+		return "•"
+	case css.ListStyleCircle:
+		return "◦"
+	case css.ListStyleSquare:
+		return "■"
 	default:
 		return fmt.Sprintf("%d.", index)
 	}

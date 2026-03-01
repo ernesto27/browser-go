@@ -303,6 +303,9 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	if inline.Cursor != "" {
 		base.Cursor = inline.Cursor
 	}
+	if inline.ListStyleType != "" {
+		base.ListStyleType = inline.ListStyleType
+	}
 	// Border properties
 	if inline.BorderTopWidth > 0 {
 		base.BorderTopWidth = inline.BorderTopWidth
