@@ -734,6 +734,10 @@ func applyDeclaration(style *Style, property, value string) {
 	case "border-bottom-right-radius":
 		style.BorderBottomRightRadius = ParseSize(value)
 
+	case "list-style":
+		if listType, ok := parseListStyleShorthand(value); ok {
+			style.ListStyleType = listType
+		}
 	case "list-style-type":
 		style.ListStyleType = value
 
@@ -1239,6 +1243,28 @@ func parseBackgroundShorthand(value string) (color.Color, string) {
 	}
 
 	return bgColor, bgImage
+}
+
+func parseListStyleShorthand(value string) (string, bool) {
+	for _, token := range strings.Fields(value) {
+		token = strings.ToLower(token)
+		switch token {
+		case ListStyleNone,
+			ListStyleDisc,
+			ListStyleCircle,
+			ListStyleSquare,
+			ListStyleDecimal,
+			ListStyleLowerAlpha,
+			ListStyleLowerLatin,
+			ListStyleUpperAlpha,
+			ListStyleUpperLatin,
+			ListStyleLowerRoman,
+			ListStyleUpperRoman:
+			return token, true
+		}
+	}
+
+	return "", false
 }
 
 func splitBackgroundValue(value string) []string {

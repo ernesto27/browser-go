@@ -589,6 +589,27 @@ func TestParseInlineStyle(t *testing.T) {
 				assert.True(t, s.WordSpacingSet)
 			},
 		},
+		{
+			name:  "list-style shorthand square",
+			input: "list-style: square",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, ListStyleSquare, s.ListStyleType)
+			},
+		},
+		{
+			name:  "list-style shorthand ignores position",
+			input: "list-style: circle inside",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, ListStyleCircle, s.ListStyleType)
+			},
+		},
+		{
+			name:  "list-style shorthand ignores image",
+			input: "list-style: url(test.png) decimal",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, ListStyleDecimal, s.ListStyleType)
+			},
+		},
 	}
 
 	for _, tt := range tests {
