@@ -244,6 +244,16 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 	yOffset := startY + box.Margin.Top + box.Padding.Top + box.Style.BorderTopWidth
 
+	if box.Style.Width > 0 && box.Style.BoxSizing != "border-box" {
+		box.Rect.Width = box.Style.Width + box.Style.PaddingLeft + box.Style.PaddingRight + box.Style.BorderLeftWidth +
+			box.Style.BorderRightWidth
+	}
+
+	if box.Style.Height > 0 && box.Style.BoxSizing != "border-box" {
+		box.Style.Height = box.Style.Height + box.Style.PaddingTop + box.Style.PaddingBottom + box.Style.BorderTopWidth +
+			box.Style.BorderBottomWidth
+	}
+
 	// Line state for inline flow
 	currentX := innerX
 	lineStartY := yOffset

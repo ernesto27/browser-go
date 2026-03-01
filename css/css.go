@@ -78,6 +78,7 @@ type Style struct {
 	MinHeight        float64
 	MaxHeight        float64
 	FontFamily       []string
+	BoxSizing        string
 
 	// Border properties
 	BorderTopWidth          float64
@@ -702,6 +703,8 @@ func applyDeclaration(style *Style, property, value string) {
 	case "bottom":
 		style.Bottom = ParseSize(value)
 		style.BottomSet = true
+	case "box-sizing":
+		style.BoxSizing = value
 
 	case "text-decoration":
 		style.TextDecoration = value

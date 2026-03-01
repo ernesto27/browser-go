@@ -412,6 +412,10 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 		base.Float = inline.Float
 	}
 
+	if inline.BoxSizing != "" {
+		base.BoxSizing = inline.BoxSizing
+	}
+
 	if len(inline.FontFamily) > 0 {
 		base.FontFamily = inline.FontFamily
 	}

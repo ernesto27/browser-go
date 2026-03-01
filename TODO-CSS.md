@@ -70,7 +70,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 
 ### §5.2 Font Properties
 - [x] `font-variant` - `normal | small-caps`
-- [ ] `font` - shorthand (font-style/variant/weight/size/line-height/family)
+- [x] `font` - shorthand (font-style/variant/weight/size/line-height/family)
 - [x] `font-size` keyword values - `xx-small`, `x-small`, `small`, `medium`, `large`, `x-large`, `xx-large`, `larger`, `smaller`
 
 ### §5.3 Background Properties

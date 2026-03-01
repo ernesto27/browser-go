@@ -17,6 +17,36 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Box-Sizing Test</h2>
+    <p>Testing box-sizing: content-box (default) vs border-box.</p>
+
+    <p><strong>content-box (default):</strong> width/height = content only. Padding and border add to total size.</p>
+    <div style="width: 200px; height: 50px; padding: 20px; border: 5px solid red; background-color: lightcoral; box-sizing: content-box;">
+        content-box: 200 + 40pad + 10bdr = 250px
+    </div>
+
+    <br>
+
+    <p><strong>border-box:</strong> width/height includes padding and border. Total stays 200px.</p>
+    <div style="width: 200px; height: 50px; padding: 20px; border: 5px solid blue; background-color: lightblue; box-sizing: border-box;">
+        border-box: 200px total
+    </div>
+
+    <br>
+
+    <p>Side-by-side (both width: 200px, padding: 20px, border: 5px):</p>
+    <div style="background-color: #eee; padding: 10px;">
+        <div style="width: 200px; padding: 20px; border: 5px solid green; background-color: lightgreen; box-sizing: content-box;">
+            content-box: wider than 200px
+        </div>
+        <br>
+        <div style="width: 200px; padding: 20px; border: 5px solid purple; background-color: plum; box-sizing: border-box;">
+            border-box: exactly 200px
+        </div>
+    </div>
+
+    <hr>
+
     <h2>Font Shorthand Test</h2>
     <p>Testing CSS <code>font</code> shorthand (style/variant/weight/size/line-height/family).</p>
 
@@ -748,36 +778,6 @@
     <p class="mono">Monospace via external CSS class (.mono)</p>
     <p class="code-block">Code block style from external CSS (.code-block)</p>
     <p class="sans">Sans-serif via external CSS class (.sans)</p>
-
-    <hr>
-
-    <h2>Box-Sizing Test</h2>
-    <p>Testing box-sizing: content-box (default) vs border-box.</p>
-
-    <p><strong>content-box (default):</strong> width/height = content only. Padding and border are added outside.</p>
-    <div style="width: 200px; height: 50px; padding: 20px; border: 5px solid red; background-color: lightcoral; box-sizing: content-box;">
-        200px + 40px padding + 10px border = 250px total
-    </div>
-
-    <br>
-
-    <p><strong>border-box:</strong> width/height = content + padding + border. Total size stays 200px.</p>
-    <div style="width: 200px; height: 50px; padding: 20px; border: 5px solid blue; background-color: lightblue; box-sizing: border-box;">
-        200px total (content shrinks to fit)
-    </div>
-
-    <br>
-
-    <p>Side-by-side comparison (both have width: 200px):</p>
-    <div style="background-color: #eee; padding: 10px;">
-        <div style="width: 200px; padding: 20px; border: 5px solid green; background-color: lightgreen; box-sizing: content-box;">
-            content-box: wider than 200px
-        </div>
-        <br>
-        <div style="width: 200px; padding: 20px; border: 5px solid purple; background-color: plum; box-sizing: border-box;">
-            border-box: exactly 200px
-        </div>
-    </div>
 
     <hr>
 

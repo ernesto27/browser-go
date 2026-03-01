@@ -585,6 +585,102 @@ func TestComputeLayout(t *testing.T) {
 	}
 }
 
+func TestBoxSizing(t *testing.T) {
+	tests := []struct {
+		name           string
+		html           string
+		containerWidth float64
+		verify         func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			name:           "content-box adds padding and border to width",
+			html:           `<div style="width: 200px; padding: 20px; border: 5px solid red; box-sizing: content-box;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				// 200 + 20*2 padding + 5*2 border = 250
+				assert.Equal(t, 250.0, div.Rect.Width)
+			},
+		},
+		{
+			name:           "border-box keeps width as declared",
+			html:           `<div style="width: 200px; padding: 20px; border: 5px solid red; box-sizing: border-box;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				assert.Equal(t, 200.0, div.Rect.Width)
+			},
+		},
+		{
+			name:           "default (no box-sizing) behaves like content-box",
+			html:           `<div style="width: 200px; padding: 20px; border: 5px solid red;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				// default is content-box: 200 + 40 + 10 = 250
+				assert.Equal(t, 250.0, div.Rect.Width)
+			},
+		},
+		{
+			name:           "content-box adds padding and border to height",
+			html:           `<div style="height: 100px; padding: 10px; border: 5px solid red; box-sizing: content-box;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				// 100 + 10*2 padding + 5*2 border = 130
+				assert.Equal(t, 130.0, div.Rect.Height)
+			},
+		},
+		{
+			name:           "border-box keeps height as declared",
+			html:           `<div style="height: 100px; padding: 10px; border: 5px solid red; box-sizing: border-box;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				assert.Equal(t, 100.0, div.Rect.Height)
+			},
+		},
+		{
+			name:           "no explicit width ignores box-sizing",
+			html:           `<div style="padding: 20px; box-sizing: content-box;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				// No width set — should use container width (minus body margin), not 0 + padding
+				assert.Greater(t, div.Rect.Width, 100.0)
+			},
+		},
+		{
+			name:           "content-box with only padding no border",
+			html:           `<div style="width: 300px; padding: 15px; box-sizing: content-box;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				// 300 + 15*2 = 330
+				assert.Equal(t, 330.0, div.Rect.Width)
+			},
+		},
+		{
+			name:           "content-box with only border no padding",
+			html:           `<div style="width: 300px; border: 10px solid black; box-sizing: content-box;">X</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				// 300 + 10*2 = 320
+				assert.Equal(t, 320.0, div.Rect.Width)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, tt.containerWidth)
+			tt.verify(t, tree)
+		})
+	}
+}
+
 func TestGetCellRowSpan(t *testing.T) {
 	tests := []struct {
 		name     string
