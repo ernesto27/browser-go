@@ -424,6 +424,10 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 		base.BackgroundImage = inline.BackgroundImage
 	}
 
+	if inline.BackgroundSize != "" {
+		base.BackgroundSize = inline.BackgroundSize
+	}
+
 	if inline.TopSet {
 		base.Top = inline.Top
 		base.TopSet = true

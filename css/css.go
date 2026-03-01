@@ -35,6 +35,7 @@ type Style struct {
 	Color            color.Color
 	BackgroundColor  color.Color
 	BackgroundImage  string
+	BackgroundSize   string
 	FontSize         float64
 	FontVariant      string
 	LineHeight       float64
@@ -605,6 +606,15 @@ func applyDeclaration(style *Style, property, value string) {
 
 		if bgImage != "" {
 			style.BackgroundImage = bgImage
+		}
+
+	case "background-size":
+		v := strings.TrimSpace(strings.ToLower(value))
+		switch v {
+		case "cover", "contain", "auto":
+			style.BackgroundSize = v
+		default:
+			style.BackgroundSize = v
 		}
 
 	case "font-size":

@@ -215,6 +215,7 @@ type DrawImage struct {
 	AltText        string
 	ReferrerPolicy string
 	Node           *dom.Node
+	SizeMode       string
 }
 
 type DrawHR struct {
@@ -368,8 +369,9 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 	if box.Style.BackgroundImage != "" && !isHidden {
 		*commands = append(*commands, DrawImage{
-			Rect: box.Rect,
-			URL:  box.Style.BackgroundImage,
+			Rect:     box.Rect,
+			URL:      box.Style.BackgroundImage,
+			SizeMode: box.Style.BackgroundSize,
 		})
 	}
 

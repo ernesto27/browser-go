@@ -971,3 +971,26 @@ func TestBackgroundShorthandInlineStyle(t *testing.T) {
 		})
 	}
 }
+
+func TestBackgroundSize(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"cover keyword", "background-size: cover", "cover"},
+		{"contain keyword", "background-size: contain", "contain"},
+		{"auto keyword", "background-size: auto", "auto"},
+		{"explicit two values", "background-size: 200px 100px", "200px 100px"},
+		{"explicit single value", "background-size: 200px", "200px"},
+		{"uppercase normalized", "background-size: Cover", "cover"},
+		{"with extra spaces", "background-size:  contain ", "contain"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			style := ParseInlineStyle(tt.input)
+			assert.Equal(t, tt.expected, style.BackgroundSize)
+		})
+	}
+}

@@ -17,6 +17,44 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Background Size Test (Not Implemented)</h2>
+    <p>Testing background-size property: cover, contain, and explicit sizes.</p>
+
+    <!-- Test 1: background-size: cover -->
+    <div style="width: 300px; height: 150px; background-image: url(https://picsum.photos/600/400); background-size: cover; border: 2px solid black;">
+    </div>
+    <p>Box above: background-size: cover (fills box, may crop image)</p>
+
+    <br>
+
+    <!-- Test 2: background-size: contain -->
+    <div style="width: 300px; height: 150px; background-image: url(https://picsum.photos/600/400); background-size: contain; border: 2px solid black; background-color: lightgray;">
+    </div>
+    <p>Box above: background-size: contain (fits entire image, may leave gaps)</p>
+
+    <br>
+
+    <!-- Test 3: background-size: auto (natural size) -->
+    <div style="width: 300px; height: 150px; background-image: url(https://picsum.photos/100/100); background-size: auto; border: 2px solid black; background-color: #eee;">
+    </div>
+    <p>Box above: background-size: auto (natural image size, 100x100 in a 300x150 box)</p>
+
+    <br>
+
+    <!-- Test 4: Explicit pixel size -->
+    <div style="width: 300px; height: 150px; background-image: url(https://picsum.photos/600/400); background-size: 150px 75px; border: 2px solid black; background-color: #eee;">
+    </div>
+    <p>Box above: background-size: 150px 75px (explicit dimensions, half the box)</p>
+
+    <br>
+
+    <!-- Test 5: Single value (width only, height auto) -->
+    <div style="width: 300px; height: 150px; background-image: url(https://picsum.photos/600/400); background-size: 200px; border: 2px solid black; background-color: #eee;">
+    </div>
+    <p>Box above: background-size: 200px (width=200px, height=auto preserving aspect ratio)</p>
+
+    <hr>
+
     <h2>Font Size Keyword Values</h2>
     <div style="background-color: #f5f5f5; padding: 10px; margin-bottom: 12px;">
         <p style="font-size: xx-small;">xx-small</p>

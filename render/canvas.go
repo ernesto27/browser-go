@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 
+	"browser/css"
 	"browser/dom"
 	"browser/utils"
 
@@ -411,6 +412,12 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 				altText.Move(fyne.NewPos(float32(c.X)+22, float32(c.Y)+4))
 				objects = append(objects, altText)
 			} else if img != nil {
+				if c.SizeMode != "" && img.Image != nil {
+					handled := renderBackgroundSized(img, c, &objects)
+					if handled {
+						continue
+					}
+				}
 				img.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
 				objects = append(objects, img)
 			} else {
@@ -804,6 +811,106 @@ func isLocalFile(path string) bool {
 	if len(path) > 0 && path[0] == '/' && (len(path) < 2 || path[1] != '/') {
 		return true
 	}
+	return false
+}
+
+// renderBackgroundSized handles background-size modes (contain, cover, auto, explicit).
+// Creates a fresh canvas.Image with correct dimensions and appends to objects.
+// Returns true if handled (caller should continue), false to use default rendering.
+func renderBackgroundSized(img *canvas.Image, c DrawImage, objects *[]fyne.CanvasObject) bool {
+	bounds := img.Image.Bounds()
+	imgW := float64(bounds.Dx())
+	imgH := float64(bounds.Dy())
+	if imgW <= 0 || imgH <= 0 || c.Width <= 0 || c.Height <= 0 {
+		return false
+	}
+
+	sizeMode := strings.ToLower(strings.TrimSpace(c.SizeMode))
+
+	switch sizeMode {
+	case "contain":
+		scaleX := c.Width / imgW
+		scaleY := c.Height / imgH
+		scale := scaleX
+		if scaleY < scaleX {
+			scale = scaleY
+		}
+		newW := float32(imgW * scale)
+		newH := float32(imgH * scale)
+		offsetX := float32(c.X) + (float32(c.Width)-newW)/2
+		offsetY := float32(c.Y) + (float32(c.Height)-newH)/2
+
+		sized := canvas.NewImageFromImage(img.Image)
+		sized.FillMode = canvas.ImageFillStretch
+		sized.SetMinSize(fyne.NewSize(newW, newH))
+		sized.Resize(fyne.NewSize(newW, newH))
+		sized.Move(fyne.NewPos(offsetX, offsetY))
+		*objects = append(*objects, sized)
+		return true
+
+	case "cover":
+		boxRatio := c.Width / c.Height
+		imgRatio := imgW / imgH
+		var cropRect image.Rectangle
+		if imgRatio > boxRatio {
+			newW := int(imgH * boxRatio)
+			offset := (int(imgW) - newW) / 2
+			cropRect = image.Rect(offset, 0, offset+newW, int(imgH))
+		} else {
+			newH := int(imgW / boxRatio)
+			offset := (int(imgH) - newH) / 2
+			cropRect = image.Rect(0, offset, int(imgW), offset+newH)
+		}
+		type subImager interface {
+			SubImage(r image.Rectangle) image.Image
+		}
+		srcImg := img.Image
+		if si, ok := srcImg.(subImager); ok {
+			srcImg = si.SubImage(cropRect)
+		}
+		sized := canvas.NewImageFromImage(srcImg)
+		sized.FillMode = canvas.ImageFillStretch
+		w := float32(c.Width)
+		h := float32(c.Height)
+		sized.SetMinSize(fyne.NewSize(w, h))
+		sized.Resize(fyne.NewSize(w, h))
+		sized.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
+		*objects = append(*objects, sized)
+		return true
+
+	case "auto":
+		sized := canvas.NewImageFromImage(img.Image)
+		sized.FillMode = canvas.ImageFillOriginal
+		sized.SetMinSize(fyne.NewSize(float32(imgW), float32(imgH)))
+		sized.Resize(fyne.NewSize(float32(imgW), float32(imgH)))
+		sized.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
+		*objects = append(*objects, sized)
+		return true
+
+	default:
+		// Explicit sizes like "200px 100px" or "200px"
+		var w, h float64
+		parts := strings.Fields(sizeMode)
+		if len(parts) == 2 {
+			w = css.ParseSize(parts[0])
+			h = css.ParseSize(parts[1])
+		} else if len(parts) == 1 {
+			w = css.ParseSize(parts[0])
+			if w > 0 && imgW > 0 {
+				h = w * (imgH / imgW)
+			}
+		}
+		if w > 0 && h > 0 {
+			sized := canvas.NewImageFromImage(img.Image)
+			sized.FillMode = canvas.ImageFillStretch
+			sized.SetMinSize(fyne.NewSize(float32(w), float32(h)))
+			sized.Resize(fyne.NewSize(float32(w), float32(h)))
+			sized.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
+			*objects = append(*objects, sized)
+			return true
+		}
+	}
+
 	return false
 }
 

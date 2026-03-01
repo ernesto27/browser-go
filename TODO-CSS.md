@@ -86,7 +86,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 ### Background
 - [x] `background` - shorthand (color and url)
 - [ ] `background-position` - position
-- [ ] `background-size` - cover/contain/size
+- [~] `background-size` - cover/contain/size (partial: parsing + storage done, Fyne rendering has sizing issues)
 - [ ] `background-repeat` - repeat/no-repeat
 
 ### Border
