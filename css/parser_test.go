@@ -134,9 +134,80 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
+			name:  "font shorthand expands to longhands",
+			input: `p { font: italic small-caps bold 16px/24px "Open Sans", serif; }`,
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors: []Selector{{TagName: "p"}},
+						Declarations: []Declaration{
+							{Property: "font-style", Value: "italic"},
+							{Property: "font-variant", Value: "small-caps"},
+							{Property: "font-weight", Value: "bold"},
+							{Property: "font-size", Value: "16px"},
+							{Property: "line-height", Value: "24px"},
+							{Property: "font-family", Value: `"Open Sans", serif`},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "font shorthand minimal resets omitted properties",
+			input: "p { font: 14px Arial; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors: []Selector{{TagName: "p"}},
+						Declarations: []Declaration{
+							{Property: "font-style", Value: "normal"},
+							{Property: "font-variant", Value: "normal"},
+							{Property: "font-weight", Value: "normal"},
+							{Property: "font-size", Value: "14px"},
+							{Property: "line-height", Value: "normal"},
+							{Property: "font-family", Value: "Arial"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "font shorthand propagates important",
+			input: "p { font: 14px Arial !important; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors: []Selector{{TagName: "p"}},
+						Declarations: []Declaration{
+							{Property: "font-style", Value: "normal", Important: true},
+							{Property: "font-variant", Value: "normal", Important: true},
+							{Property: "font-weight", Value: "normal", Important: true},
+							{Property: "font-size", Value: "14px", Important: true},
+							{Property: "line-height", Value: "normal", Important: true},
+							{Property: "font-family", Value: "Arial", Important: true},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "invalid font shorthand is dropped",
+			input: "p { color: blue; font: nonsense 14px Arial; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors: []Selector{{TagName: "p"}},
+						Declarations: []Declaration{
+							{Property: "color", Value: "blue"},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "multiline stylesheet",
 			input: `
-				body {
+					body {
 					background-color: white;
 					font-size: 14px;
 				}
@@ -247,9 +318,9 @@ func TestParse(t *testing.T) {
 
 func TestParseDescendantSelector(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     string
-		wantSels  []Selector
+		name     string
+		input    string
+		wantSels []Selector
 	}{
 		{
 			name:  "simple tag - no ancestor",

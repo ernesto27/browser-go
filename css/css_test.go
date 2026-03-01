@@ -610,6 +610,40 @@ func TestParseInlineStyle(t *testing.T) {
 				assert.Equal(t, ListStyleDecimal, s.ListStyleType)
 			},
 		},
+		{
+			name:  "font shorthand full",
+			input: `font: italic small-caps 700 18px/1.5 "Open Sans", serif`,
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 18.0, s.FontSize)
+				assert.Equal(t, 27.0, s.LineHeight)
+				assert.True(t, s.Italic)
+				assert.True(t, s.Bold)
+				assert.Equal(t, "small-caps", s.FontVariant)
+				assert.Equal(t, []string{"Open Sans", "serif"}, s.FontFamily)
+			},
+		},
+		{
+			name:  "font shorthand resets omitted optional properties",
+			input: "font-style: italic; font-weight: bold; line-height: 2; font: 16px Arial",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 16.0, s.FontSize)
+				assert.Equal(t, 19.2, s.LineHeight)
+				assert.False(t, s.Italic)
+				assert.False(t, s.Bold)
+				assert.Equal(t, "normal", s.FontVariant)
+				assert.Equal(t, []string{"Arial"}, s.FontFamily)
+			},
+		},
+		{
+			name:  "invalid font shorthand ignored",
+			input: "color: blue; font: nonsense 18px Arial; font-size: 20px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 20.0, s.FontSize)
+				assert.False(t, s.Bold)
+				assert.False(t, s.Italic)
+				assert.True(t, colorsEqual(s.Color, color.RGBA{0, 0, 255, 255}))
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -838,6 +872,79 @@ func TestInlineStyleImportant(t *testing.T) {
 				"expected %v, got %v", tt.expectedColor, style.Color)
 		})
 	}
+}
+
+func TestFontWeightValues(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"normal keyword", "font-weight: normal", false},
+		{"bold keyword", "font-weight: bold", true},
+		{"lighter keyword", "font-weight: lighter", false},
+		{"bolder keyword", "font-weight: bolder", true},
+		{"numeric 500", "font-weight: 500", false},
+		{"numeric 700", "font-weight: 700", true},
+		{"invalid token ignored", "font-weight: bold; font-weight: banana", true},
+		{"out of range numeric ignored", "font-weight: bold; font-weight: 950", true},
+		{"invalid numeric step ignored", "font-weight: bold; font-weight: 650", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			style := ParseInlineStyle(tt.input)
+			assert.Equal(t, tt.expected, style.Bold)
+		})
+	}
+}
+
+func TestInlineFontShorthandImportant(t *testing.T) {
+	style := ParseInlineStyle(`font: italic bold 20px/2 Arial !important; font-weight: normal; line-height: 1`)
+	assert.Equal(t, 20.0, style.FontSize)
+	assert.Equal(t, 40.0, style.LineHeight)
+	assert.True(t, style.Bold)
+	assert.True(t, style.Italic)
+	assert.Equal(t, []string{"Arial"}, style.FontFamily)
+}
+
+func TestParseInlineStyleWithContextFontShorthand(t *testing.T) {
+	style := ParseInlineStyleWithContext(`font: italic 1.5em/2 "Open Sans", serif`, 20, DefaultViewportWidth, DefaultViewportHeight)
+	assert.Equal(t, 30.0, style.FontSize)
+	assert.Equal(t, 60.0, style.LineHeight)
+	assert.True(t, style.Italic)
+	assert.False(t, style.Bold)
+	assert.Equal(t, "normal", style.FontVariant)
+	assert.Equal(t, []string{"Open Sans", "serif"}, style.FontFamily)
+}
+
+func TestStylesheetFontShorthandCascade(t *testing.T) {
+	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
+
+	t.Run("later longhand overrides non-important shorthand", func(t *testing.T) {
+		sheet := Parse(`
+			p { font: italic 16px/2 Arial; }
+			p { font-style: normal; }
+		`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, 16.0, style.FontSize)
+		assert.Equal(t, 32.0, style.LineHeight)
+		assert.False(t, style.Italic)
+		assert.Equal(t, []string{"Arial"}, style.FontFamily)
+	})
+
+	t.Run("important shorthand blocks later non-important longhands", func(t *testing.T) {
+		sheet := Parse(`
+			p { font: italic bold 20px/2 Arial !important; }
+			p { font-weight: normal; line-height: 1; font-style: normal; }
+		`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, 20.0, style.FontSize)
+		assert.Equal(t, 40.0, style.LineHeight)
+		assert.True(t, style.Bold)
+		assert.True(t, style.Italic)
+		assert.Equal(t, []string{"Arial"}, style.FontFamily)
+	})
 }
 
 func TestParseLineHeight(t *testing.T) {

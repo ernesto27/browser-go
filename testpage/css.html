@@ -17,6 +17,27 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Font Shorthand Test</h2>
+    <p>Testing CSS <code>font</code> shorthand (style/variant/weight/size/line-height/family).</p>
+
+    <p style="font: italic small-caps bold 20px/30px 'Helvetica Neue', Arial, sans-serif; background-color: #eef; padding: 8px;">
+        Full shorthand: italic + small-caps + bold + 20px/30px + Helvetica/Arial stack.
+    </p>
+
+    <p style="font: 18px/1.5 Georgia, serif; background-color: #efe; padding: 8px;">
+        Size + line-height + family: 18px / 1.5 Georgia.
+    </p>
+
+    <p style="font: 16px 'Courier New', monospace; background-color: #fee; padding: 8px;">
+        Minimal shorthand: only size + family (other font props reset to normal).
+    </p>
+
+    <p style="font: nonsense 18px Arial; background-color: #f8f8f8; padding: 8px;">
+        Invalid shorthand: should be ignored entirely (fallback/default font behavior).
+    </p>
+
+    <hr>
+
     <h2>Background Size Test (Not Implemented)</h2>
     <p>Testing background-size property: cover, contain, and explicit sizes.</p>
 

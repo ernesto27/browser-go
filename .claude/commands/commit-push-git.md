@@ -8,3 +8,5 @@ Run the following steps:
 4. Commit with that message using a HEREDOC.
 5. Run `git push origin HEAD` to push to the current branch.
 6. Confirm success with the commit hash and branch name.
+
+do not add this   Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>

@@ -148,6 +148,12 @@ func (p *Parser) parseDeclarations() []Declaration {
 		}
 		decl := p.parseDeclaration()
 		if decl.Property != "" {
+			if strings.EqualFold(decl.Property, "font") {
+				if expanded, ok := expandFontShorthand(decl.Value, decl.Important); ok {
+					decls = append(decls, expanded...)
+				}
+				continue
+			}
 			decls = append(decls, decl)
 		}
 	}

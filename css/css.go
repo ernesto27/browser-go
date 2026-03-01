@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -124,11 +125,10 @@ func stripImportant(value string) (cleanValue string, isImportant bool) {
 	return value, false
 }
 
-func ParseInlineStyle(styleAttr string) Style {
-	style := DefaultStyle()
-	importantProps := make(map[string]bool) // Track !important properties
-
+func parseInlineDeclarations(styleAttr string) []Declaration {
 	parts := strings.Split(styleAttr, ";")
+	decls := make([]Declaration, 0, len(parts))
+
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if part == "" {
@@ -142,19 +142,35 @@ func ParseInlineStyle(styleAttr string) Style {
 
 		property := strings.TrimSpace(kv[0])
 		value := strings.TrimSpace(kv[1])
-
-		// Check for !important flag
 		value, important := stripImportant(value)
 
-		// Skip if property was set with !important and new value is not
-		if importantProps[property] && !important {
+		if strings.EqualFold(property, "font") {
+			if expanded, ok := expandFontShorthand(value, important); ok {
+				decls = append(decls, expanded...)
+			}
 			continue
 		}
 
-		applyDeclaration(&style, property, value)
+		decls = append(decls, Declaration{Property: property, Value: value, Important: important})
+	}
 
-		if important {
-			importantProps[property] = true
+	return decls
+}
+
+func ParseInlineStyle(styleAttr string) Style {
+	style := DefaultStyle()
+	importantProps := make(map[string]bool) // Track !important properties
+
+	for _, decl := range parseInlineDeclarations(styleAttr) {
+		// Skip if property was set with !important and new value is not
+		if importantProps[decl.Property] && !decl.Important {
+			continue
+		}
+
+		applyDeclaration(&style, decl.Property, decl.Value)
+
+		if decl.Important {
+			importantProps[decl.Property] = true
 		}
 	}
 	return style
@@ -624,7 +640,9 @@ func applyDeclaration(style *Style, property, value string) {
 	case "line-height":
 		style.LineHeight = parseLineHeight(value, style.FontSize)
 	case "font-weight":
-		style.Bold = (value == "bold")
+		if bold, ok := parseFontWeightValue(value); ok {
+			style.Bold = bold
+		}
 	case "font-style":
 		style.Italic = (value == "italic")
 	case "font-family":
@@ -854,6 +872,243 @@ func ParseFontFamily(value string) []string {
 	}
 
 	return fonts
+}
+
+func parseFontWeightValue(value string) (bool, bool) {
+	v := strings.TrimSpace(strings.ToLower(value))
+	switch v {
+	case "normal", "lighter":
+		return false, true
+	case "bold", "bolder":
+		return true, true
+	}
+
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return false, false
+	}
+	if n < 100 || n > 900 || n%100 != 0 {
+		return false, false
+	}
+
+	return n >= 600, true
+}
+
+func isFontStyleToken(token string) bool {
+	switch token {
+	case "normal", "italic", "oblique":
+		return true
+	default:
+		return false
+	}
+}
+
+func isFontVariantToken(token string) bool {
+	switch token {
+	case "normal", "small-caps":
+		return true
+	default:
+		return false
+	}
+}
+
+func isFontWeightToken(token string) bool {
+	_, ok := parseFontWeightValue(token)
+	return ok
+}
+
+func isFontSizeToken(token string) bool {
+	return parseFontSizeWithContext(token, DefaultFontSize, DefaultViewportWidth, DefaultViewportHeight) > 0
+}
+
+func isValidFontLineHeightToken(token string) bool {
+	v := strings.TrimSpace(strings.ToLower(token))
+	if v == "normal" {
+		return true
+	}
+	if strings.HasSuffix(v, "px") {
+		n := strings.TrimSuffix(v, "px")
+		size, err := strconv.ParseFloat(n, 64)
+		return err == nil && size >= 0
+	}
+	multiplier, err := strconv.ParseFloat(v, 64)
+	return err == nil && multiplier >= 0
+}
+
+func splitFontShorthandTokens(value string) ([]string, bool) {
+	var tokens []string
+	var current strings.Builder
+	inQuote := rune(0)
+
+	flush := func() {
+		if current.Len() > 0 {
+			tokens = append(tokens, current.String())
+			current.Reset()
+		}
+	}
+
+	for _, ch := range value {
+		if inQuote != 0 {
+			current.WriteRune(ch)
+			if ch == inQuote {
+				inQuote = 0
+			}
+			continue
+		}
+
+		if ch == '"' || ch == '\'' {
+			inQuote = ch
+			current.WriteRune(ch)
+			continue
+		}
+
+		if ch == '/' {
+			flush()
+			tokens = append(tokens, "/")
+			continue
+		}
+
+		if unicode.IsSpace(ch) {
+			flush()
+			continue
+		}
+
+		current.WriteRune(ch)
+	}
+
+	if inQuote != 0 {
+		return nil, false
+	}
+
+	flush()
+	return tokens, true
+}
+
+func expandFontShorthand(value string, important bool) ([]Declaration, bool) {
+	tokens, ok := splitFontShorthandTokens(value)
+	if !ok || len(tokens) == 0 {
+		return nil, false
+	}
+
+	style := "normal"
+	variant := "normal"
+	weight := "normal"
+	lineHeight := "normal"
+	styleSet := false
+	variantSet := false
+	weightSet := false
+
+	size := ""
+	i := 0
+	for i < len(tokens) {
+		token := strings.TrimSpace(tokens[i])
+		if token == "" {
+			i++
+			continue
+		}
+
+		lower := strings.ToLower(token)
+
+		if token == "/" {
+			return nil, false
+		}
+
+		if lower == "normal" {
+			switch {
+			case !styleSet:
+				styleSet = true
+			case !variantSet:
+				variantSet = true
+			case !weightSet:
+				weightSet = true
+			default:
+				return nil, false
+			}
+			i++
+			continue
+		}
+
+		if isFontStyleToken(lower) {
+			if styleSet {
+				return nil, false
+			}
+			style = lower
+			styleSet = true
+			i++
+			continue
+		}
+
+		if isFontVariantToken(lower) {
+			if variantSet {
+				return nil, false
+			}
+			variant = lower
+			variantSet = true
+			i++
+			continue
+		}
+
+		if isFontWeightToken(lower) {
+			if weightSet {
+				return nil, false
+			}
+			weight = lower
+			weightSet = true
+			i++
+			continue
+		}
+
+		if isFontSizeToken(token) {
+			size = token
+			i++
+			break
+		}
+
+		return nil, false
+	}
+
+	if size == "" {
+		return nil, false
+	}
+
+	if i < len(tokens) && tokens[i] == "/" {
+		i++
+		if i >= len(tokens) {
+			return nil, false
+		}
+		if !isValidFontLineHeightToken(tokens[i]) {
+			return nil, false
+		}
+		lineHeight = strings.TrimSpace(strings.ToLower(tokens[i]))
+		i++
+	}
+
+	if i >= len(tokens) {
+		return nil, false
+	}
+
+	for _, token := range tokens[i:] {
+		if token == "/" {
+			return nil, false
+		}
+	}
+
+	family := strings.TrimSpace(strings.Join(tokens[i:], " "))
+	if family == "" {
+		return nil, false
+	}
+	if len(ParseFontFamily(family)) == 0 {
+		return nil, false
+	}
+
+	return []Declaration{
+		{Property: "font-style", Value: style, Important: important},
+		{Property: "font-variant", Value: variant, Important: important},
+		{Property: "font-weight", Value: weight, Important: important},
+		{Property: "font-size", Value: strings.TrimSpace(size), Important: important},
+		{Property: "line-height", Value: lineHeight, Important: important},
+		{Property: "font-family", Value: family, Important: important},
+	}, true
 }
 
 // parseMarginValue returns the size and whether it's "auto"
@@ -1089,37 +1344,21 @@ func ParseInlineStyleWithContext(styleAttr string, parentFontSize, viewportWidth
 	style := DefaultStyle()
 	importantProps := make(map[string]bool) // Track !important properties
 
-	parts := strings.Split(styleAttr, ";")
+	decls := parseInlineDeclarations(styleAttr)
 
 	// First pass: find font-size
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part == "" {
-			continue
-		}
-
-		kv := strings.SplitN(part, ":", 2)
-		if len(kv) != 2 {
-			continue
-		}
-
-		property := strings.TrimSpace(kv[0])
-		value := strings.TrimSpace(kv[1])
-
-		// Check for !important flag
-		value, important := stripImportant(value)
-
-		if property == "font-size" {
+	for _, decl := range decls {
+		if decl.Property == "font-size" {
 			// Skip if already set with !important and new value is not
-			if importantProps["font-size"] && !important {
+			if importantProps["font-size"] && !decl.Important {
 				continue
 			}
 
-			if size := parseFontSizeWithContext(value, parentFontSize, viewportWidth, viewportHeight); size > 0 {
+			if size := parseFontSizeWithContext(decl.Value, parentFontSize, viewportWidth, viewportHeight); size > 0 {
 				style.FontSize = size
 			}
 
-			if important {
+			if decl.Important {
 				importantProps["font-size"] = true
 			}
 		}
@@ -1131,33 +1370,17 @@ func ParseInlineStyleWithContext(styleAttr string, parentFontSize, viewportWidth
 	}
 
 	// Second pass: apply other properties
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part == "" {
-			continue
-		}
-
-		kv := strings.SplitN(part, ":", 2)
-		if len(kv) != 2 {
-			continue
-		}
-
-		property := strings.TrimSpace(kv[0])
-		value := strings.TrimSpace(kv[1])
-
-		// Check for !important flag
-		value, important := stripImportant(value)
-
-		if property != "font-size" {
+	for _, decl := range decls {
+		if decl.Property != "font-size" {
 			// Skip if already set with !important and new value is not
-			if importantProps[property] && !important {
+			if importantProps[decl.Property] && !decl.Important {
 				continue
 			}
 
-			applyDeclarationWithContext(&style, property, value, style.FontSize, viewportWidth, viewportHeight)
+			applyDeclarationWithContext(&style, decl.Property, decl.Value, style.FontSize, viewportWidth, viewportHeight)
 
-			if important {
-				importantProps[property] = true
+			if decl.Important {
+				importantProps[decl.Property] = true
 			}
 		}
 	}
