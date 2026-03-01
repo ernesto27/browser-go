@@ -2,18 +2,22 @@ package css
 
 import "strings"
 
-// ApplyTextTransform transforms text based on CSS text-transform property
-func ApplyTextTransform(text, transform string) string {
+// ApplyTextTransform transforms text based on CSS text-transform and font-variant.
+func ApplyTextTransform(text, transform, variant string) string {
 	switch transform {
 	case "uppercase":
-		return strings.ToUpper(text)
+		text = strings.ToUpper(text)
 	case "lowercase":
-		return strings.ToLower(text)
+		text = strings.ToLower(text)
 	case "capitalize":
-		return CapitalizeWords(text)
-	default:
-		return text
+		text = CapitalizeWords(text)
 	}
+
+	if strings.ToLower(variant) == "small-caps" {
+		return strings.ToUpper(text)
+	}
+
+	return text
 }
 
 // CapitalizeWords capitalizes the first letter of each word

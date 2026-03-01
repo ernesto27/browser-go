@@ -236,6 +236,9 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	if inline.FontSize > 0 {
 		base.FontSize = inline.FontSize
 	}
+	if inline.FontVariant != "" {
+		base.FontVariant = inline.FontVariant
+	}
 	if inline.LineHeight > 0 {
 		base.LineHeight = inline.LineHeight
 	}

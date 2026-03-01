@@ -7,38 +7,44 @@ func TestApplyTextTransform(t *testing.T) {
 		name      string
 		text      string
 		transform string
+		variant   string
 		want      string
 	}{
 		// uppercase
-		{"uppercase basic", "hello world", "uppercase", "HELLO WORLD"},
-		{"uppercase mixed", "Hello World", "uppercase", "HELLO WORLD"},
-		{"uppercase already upper", "HELLO", "uppercase", "HELLO"},
-		{"uppercase empty", "", "uppercase", ""},
+		{"uppercase basic", "hello world", "uppercase", "", "HELLO WORLD"},
+		{"uppercase mixed", "Hello World", "uppercase", "", "HELLO WORLD"},
+		{"uppercase already upper", "HELLO", "uppercase", "", "HELLO"},
+		{"uppercase empty", "", "uppercase", "", ""},
 
 		// lowercase
-		{"lowercase basic", "HELLO WORLD", "lowercase", "hello world"},
-		{"lowercase mixed", "Hello World", "lowercase", "hello world"},
-		{"lowercase already lower", "hello", "lowercase", "hello"},
-		{"lowercase empty", "", "lowercase", ""},
+		{"lowercase basic", "HELLO WORLD", "lowercase", "", "hello world"},
+		{"lowercase mixed", "Hello World", "lowercase", "", "hello world"},
+		{"lowercase already lower", "hello", "lowercase", "", "hello"},
+		{"lowercase empty", "", "lowercase", "", ""},
 
 		// capitalize
-		{"capitalize basic", "hello world", "capitalize", "Hello World"},
-		{"capitalize from upper", "HELLO WORLD", "capitalize", "Hello World"},
-		{"capitalize mixed", "hELLO wORLD", "capitalize", "Hello World"},
-		{"capitalize single word", "hello", "capitalize", "Hello"},
-		{"capitalize empty", "", "capitalize", ""},
+		{"capitalize basic", "hello world", "capitalize", "", "Hello World"},
+		{"capitalize from upper", "HELLO WORLD", "capitalize", "", "Hello World"},
+		{"capitalize mixed", "hELLO wORLD", "capitalize", "", "Hello World"},
+		{"capitalize single word", "hello", "capitalize", "", "Hello"},
+		{"capitalize empty", "", "capitalize", "", ""},
+
+		// small-caps
+		{"small-caps basic", "Hello World", "", "small-caps", "HELLO WORLD"},
+		{"small-caps after capitalize", "hello world", "capitalize", "small-caps", "HELLO WORLD"},
+		{"small-caps preserves uppercase", "HELLO", "", "small-caps", "HELLO"},
 
 		// none/default
-		{"none preserves text", "Hello World", "none", "Hello World"},
-		{"empty transform preserves text", "Hello World", "", "Hello World"},
-		{"unknown transform preserves text", "Hello World", "invalid", "Hello World"},
+		{"none preserves text", "Hello World", "none", "", "Hello World"},
+		{"empty transform preserves text", "Hello World", "", "", "Hello World"},
+		{"unknown transform preserves text", "Hello World", "invalid", "", "Hello World"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ApplyTextTransform(tt.text, tt.transform)
+			got := ApplyTextTransform(tt.text, tt.transform, tt.variant)
 			if got != tt.want {
-				t.Errorf("ApplyTextTransform(%q, %q) = %q, want %q", tt.text, tt.transform, got, tt.want)
+				t.Errorf("ApplyTextTransform(%q, %q, %q) = %q, want %q", tt.text, tt.transform, tt.variant, got, tt.want)
 			}
 		})
 	}

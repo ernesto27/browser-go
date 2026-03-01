@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,6 +122,9 @@ func TestIsSVG(t *testing.T) {
 }
 
 func TestRenderToCanvasDrawTextLetterSpacing(t *testing.T) {
+	app := test.NewApp()
+	defer app.Quit()
+
 	cmds := []DisplayCommand{
 		DrawText{
 			Text:          "ABC",
@@ -144,6 +148,9 @@ func TestRenderToCanvasDrawTextLetterSpacing(t *testing.T) {
 }
 
 func TestRenderToCanvasDrawTextWordSpacing(t *testing.T) {
+	app := test.NewApp()
+	defer app.Quit()
+
 	cmds := []DisplayCommand{
 		DrawText{
 			Text:        "A B",

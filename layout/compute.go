@@ -633,7 +633,7 @@ func computeInlineSize(box *LayoutBox, parentTag string) (float64, float64) {
 		switch child.Type {
 		case TextBox:
 			fontSize := getFontSize(tagForSize)
-			text := css.ApplyTextTransform(child.Text, box.Style.TextTransform)
+			text := css.ApplyTextTransform(child.Text, box.Style.TextTransform, box.Style.FontVariant)
 
 			// Check if inside a <pre> element for multi-line handling
 			if isInsidePre(box) && strings.Contains(child.Text, "\n") {
@@ -677,7 +677,7 @@ func layoutInlineChildren(box *LayoutBox, parentTag string) {
 		switch child.Type {
 		case TextBox:
 			fontSize := getFontSize(tagForSize)
-			text := css.ApplyTextTransform(child.Text, box.Style.TextTransform)
+			text := css.ApplyTextTransform(child.Text, box.Style.TextTransform, box.Style.FontVariant)
 
 			var w, h float64
 			// Check if inside a <pre> element for multi-line handling

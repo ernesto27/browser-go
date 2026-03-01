@@ -36,6 +36,7 @@ type Style struct {
 	BackgroundColor  color.Color
 	BackgroundImage  string
 	FontSize         float64
+	FontVariant      string
 	LineHeight       float64
 	Bold             bool
 	Italic           bool
@@ -592,6 +593,8 @@ func applyDeclaration(style *Style, property, value string) {
 		style.Italic = (value == "italic")
 	case "font-family":
 		style.FontFamily = ParseFontFamily(value)
+	case "font-variant":
+		style.FontVariant = value
 	case "margin":
 		m := ParseSize(value)
 		style.MarginTop = m

@@ -48,6 +48,7 @@ type TextStyle struct {
 	FontFamily     []string
 	TextDecoration string
 	TextTransform  string
+	FontVariant    string
 
 	Opacity       float64
 	Visibility    string
@@ -319,6 +320,9 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Style.TextTransform != "" {
 		currentStyle.TextTransform = box.Style.TextTransform
 	}
+	if box.Style.FontVariant != "" {
+		currentStyle.FontVariant = box.Style.FontVariant
+	}
 	if box.Style.LetterSpacingSet {
 		currentStyle.LetterSpacing = box.Style.LetterSpacing
 	}
@@ -493,7 +497,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 		}
 
-		text := css.ApplyTextTransform(box.Text, currentStyle.TextTransform)
+		text := css.ApplyTextTransform(box.Text, currentStyle.TextTransform, currentStyle.FontVariant)
 
 		if isListItem, _, index, listType := getListInfo(box); isListItem {
 			text = formatListMarker(index, listType) + " " + text
@@ -526,7 +530,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			lineHeight := currentStyle.LineHeight
 			y := box.Rect.Y
 			for _, line := range box.WrappedLines {
-				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform)
+				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform, currentStyle.FontVariant)
 				*commands = append(*commands, DrawText{
 					Text: transformedLine, X: box.Rect.X, Y: y, Width: box.Rect.Width,
 					LetterSpacing:   currentStyle.LetterSpacing,
@@ -811,21 +815,21 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 
 	if li.Parent.Style.ListStyleType != "" {
 		switch li.Parent.Style.ListStyleType {
-			case css.ListStyleNone:
-				return false, false, 0, ""
-			case css.ListStyleDisc, css.ListStyleCircle, css.ListStyleSquare:
-				listType = li.Parent.Style.ListStyleType
-			case css.ListStyleDecimal:
-				listType = css.ListMarkerNumeric
-			case css.ListStyleLowerAlpha, css.ListStyleLowerLatin:
-				listType = css.ListMarkerLowerAlpha
-			case css.ListStyleUpperAlpha, css.ListStyleUpperLatin:
-				listType = css.ListMarkerUpperAlpha
-			case css.ListStyleLowerRoman:
-				listType = css.ListMarkerLowerRoman
-			case css.ListStyleUpperRoman:
-				listType = css.ListMarkerUpperRoman
-			}
+		case css.ListStyleNone:
+			return false, false, 0, ""
+		case css.ListStyleDisc, css.ListStyleCircle, css.ListStyleSquare:
+			listType = li.Parent.Style.ListStyleType
+		case css.ListStyleDecimal:
+			listType = css.ListMarkerNumeric
+		case css.ListStyleLowerAlpha, css.ListStyleLowerLatin:
+			listType = css.ListMarkerLowerAlpha
+		case css.ListStyleUpperAlpha, css.ListStyleUpperLatin:
+			listType = css.ListMarkerUpperAlpha
+		case css.ListStyleLowerRoman:
+			listType = css.ListMarkerLowerRoman
+		case css.ListStyleUpperRoman:
+			listType = css.ListMarkerUpperRoman
+		}
 
 	}
 
