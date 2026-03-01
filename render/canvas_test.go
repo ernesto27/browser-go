@@ -142,3 +142,26 @@ func TestRenderToCanvasDrawTextLetterSpacing(t *testing.T) {
 	}
 	assert.Equal(t, 3, textCount, "expected one canvas.Text object per rune when letter-spacing is set")
 }
+
+func TestRenderToCanvasDrawTextWordSpacing(t *testing.T) {
+	cmds := []DisplayCommand{
+		DrawText{
+			Text:        "A B",
+			X:           10,
+			Y:           10,
+			Width:       100,
+			Color:       color.Black,
+			Size:        14,
+			WordSpacing: 4,
+		},
+	}
+
+	objects := RenderToCanvas(cmds, "", "", false, nil)
+	textCount := 0
+	for _, obj := range objects {
+		if _, ok := obj.(*canvas.Text); ok {
+			textCount++
+		}
+	}
+	assert.Equal(t, 3, textCount, "expected one canvas.Text object per rune when word-spacing is set")
+}
