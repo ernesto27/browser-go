@@ -225,6 +225,32 @@ func ParseSizeWithContext(value string, baseFontSize float64, viewportWidth, vie
 	return 0
 }
 
+func parseFontSizeWithContext(value string, parentFontSize, viewportWidth, viewportHeight float64) float64 {
+	value = strings.TrimSpace(strings.ToLower(value))
+	switch value {
+	case "xx-small":
+		return DefaultFontSize * 0.60
+	case "x-small":
+		return DefaultFontSize * 0.75
+	case "small":
+		return DefaultFontSize * 0.89
+	case "medium":
+		return DefaultFontSize
+	case "large":
+		return DefaultFontSize * 1.20
+	case "x-large":
+		return DefaultFontSize * 1.50
+	case "xx-large":
+		return DefaultFontSize * 2.00
+	case "larger":
+		return parentFontSize * 1.20
+	case "smaller":
+		return parentFontSize / 1.20
+	default:
+		return ParseSizeWithContext(value, parentFontSize, viewportWidth, viewportHeight)
+	}
+}
+
 // ParseColor converts color names or hex to color.Color
 func ParseColor(value string) color.Color {
 	value = strings.ToLower(value)
@@ -582,7 +608,7 @@ func applyDeclaration(style *Style, property, value string) {
 		}
 
 	case "font-size":
-		if size := ParseSize(value); size > 0 {
+		if size := parseFontSizeWithContext(value, DefaultFontSize, DefaultViewportWidth, DefaultViewportHeight); size > 0 {
 			style.FontSize = size
 		}
 	case "line-height":
@@ -859,7 +885,7 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 	switch property {
 	case "font-size":
 		// font-size em is relative to PARENT's font-size
-		if size := ParseSizeWithContext(value, baseFontSize, viewportWidth, viewportHeight); size > 0 {
+		if size := parseFontSizeWithContext(value, baseFontSize, viewportWidth, viewportHeight); size > 0 {
 			style.FontSize = size
 		}
 	case "margin":
@@ -1000,7 +1026,7 @@ func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize
 					continue
 				}
 
-				if size := ParseSizeWithContext(decl.Value, parentFontSize, viewportWidth, viewportHeight); size > 0 {
+				if size := parseFontSizeWithContext(decl.Value, parentFontSize, viewportWidth, viewportHeight); size > 0 {
 					style.FontSize = size
 				}
 
@@ -1079,7 +1105,7 @@ func ParseInlineStyleWithContext(styleAttr string, parentFontSize, viewportWidth
 				continue
 			}
 
-			if size := ParseSizeWithContext(value, parentFontSize, viewportWidth, viewportHeight); size > 0 {
+			if size := parseFontSizeWithContext(value, parentFontSize, viewportWidth, viewportHeight); size > 0 {
 				style.FontSize = size
 			}
 

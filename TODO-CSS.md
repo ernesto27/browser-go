@@ -69,9 +69,9 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `word-spacing` - NOT in `currentStyle`
 
 ### §5.2 Font Properties
-- [ ] `font-variant` - `normal | small-caps`
+- [x] `font-variant` - `normal | small-caps`
 - [ ] `font` - shorthand (font-style/variant/weight/size/line-height/family)
-- [ ] `font-size` keyword values - `xx-small`, `x-small`, `small`, `medium`, `large`, `x-large`, `xx-large`, `larger`, `smaller`
+- [x] `font-size` keyword values - `xx-small`, `x-small`, `small`, `medium`, `large`, `x-large`, `xx-large`, `larger`, `smaller`
 
 ### §5.3 Background Properties
 - [ ] `background-attachment` - `scroll | fixed`
@@ -143,8 +143,8 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [ ] `filter` - blur/brightness/etc
 
 ### List
-- [ ] `list-style` - shorthand
-- [ ] `list-style-type` - disc/circle/square/decimal/none
+- [x] `list-style` - shorthand
+- [x] `list-style-type` - disc/circle/square/decimal/none
 - [ ] `list-style-position` - inside/outside
 - [ ] `list-style-image` - custom marker
 

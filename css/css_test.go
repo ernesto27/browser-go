@@ -706,6 +706,56 @@ func TestImportantWithContext(t *testing.T) {
 	}
 }
 
+func TestFontSizeKeywordsWithContext(t *testing.T) {
+	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
+	tests := []struct {
+		name       string
+		css        string
+		parentSize float64
+		expected   float64
+	}{
+		{"xx-small", `p { font-size: xx-small; }`, 20.0, 9.6},
+		{"x-small", `p { font-size: x-small; }`, 20.0, 12.0},
+		{"small", `p { font-size: small; }`, 20.0, 14.24},
+		{"medium", `p { font-size: medium; }`, 20.0, 16.0},
+		{"large", `p { font-size: large; }`, 20.0, 19.2},
+		{"x-large", `p { font-size: x-large; }`, 20.0, 24.0},
+		{"xx-large", `p { font-size: xx-large; }`, 20.0, 32.0},
+		{"larger", `p { font-size: larger; }`, 20.0, 24.0},
+		{"smaller", `p { font-size: smaller; }`, 20.0, 16.6666666667},
+		{"invalid keyword ignored", `p { font-size: banana; }`, 16.0, 16.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sheet := Parse(tt.css)
+			style := ApplyStylesheetWithContext(sheet, node, tt.parentSize, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+			assert.InDelta(t, tt.expected, style.FontSize, 0.0001)
+		})
+	}
+}
+
+func TestParseInlineStyleWithContextFontSizeKeywords(t *testing.T) {
+	tests := []struct {
+		name       string
+		styleAttr  string
+		parentSize float64
+		expected   float64
+	}{
+		{"absolute keyword", "font-size: x-large", 20.0, 24.0},
+		{"relative larger", "font-size: larger", 20.0, 24.0},
+		{"relative smaller", "font-size: smaller", 20.0, 16.6666666667},
+		{"invalid keyword ignored", "font-size: banana", 16.0, 16.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			style := ParseInlineStyleWithContext(tt.styleAttr, tt.parentSize, DefaultViewportWidth, DefaultViewportHeight)
+			assert.InDelta(t, tt.expected, style.FontSize, 0.0001)
+		})
+	}
+}
+
 func TestLetterSpacingWithContext(t *testing.T) {
 	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
 
