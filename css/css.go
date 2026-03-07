@@ -53,6 +53,7 @@ type Style struct {
 	PaddingLeft      float64
 	PaddingRight     float64
 	TextAlign        string
+	WhiteSpace       string
 	VerticalAlign    string
 	Display          string
 	Float            string
@@ -109,10 +110,11 @@ type Style struct {
 
 func DefaultStyle() Style {
 	return Style{
-		FontSize: DefaultFontSize,
-		Bold:     false,
-		Italic:   false,
-		Opacity:  1.0,
+		FontSize:   DefaultFontSize,
+		Bold:       false,
+		Italic:     false,
+		Opacity:    1.0,
+		WhiteSpace: "normal",
 	}
 }
 
@@ -680,6 +682,11 @@ func applyDeclaration(style *Style, property, value string) {
 		style.PaddingRight = ParseSize(value)
 	case "text-align":
 		style.TextAlign = value
+	case "white-space":
+		switch value {
+		case "normal", "nowrap":
+			style.WhiteSpace = value
+		}
 	case "vertical-align":
 		switch value {
 		case "top", "middle", "bottom", "baseline":

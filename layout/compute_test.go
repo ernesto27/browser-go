@@ -1080,6 +1080,36 @@ func TestTableCellTextWrapping(t *testing.T) {
 	}
 }
 
+func TestWhiteSpaceNoWrap(t *testing.T) {
+	t.Run("block text stays on one line with nowrap", func(t *testing.T) {
+		tree := buildTree(`<div style="width: 100px; white-space: nowrap;">Hello Wonderful World</div>`)
+		ComputeLayout(tree, 600)
+
+		div := findBoxByTag(tree, "div")
+		assert.NotNil(t, div)
+
+		textBox := findTextBoxInSubtree(div, "Hello Wonderful World")
+		assert.NotNil(t, textBox)
+		assert.Len(t, textBox.WrappedLines, 0)
+		assert.Equal(t, 24.0, textBox.Rect.Height)
+		assert.Greater(t, textBox.Rect.Width, 100.0)
+	})
+
+	t.Run("table cell text stays on one line with nowrap", func(t *testing.T) {
+		tree := buildTree(`<table><tr><td style="width: 100px; white-space: nowrap;">Hello World</td></tr></table>`)
+		ComputeLayout(tree, 600)
+
+		cell := findCellByText(tree, "Hello World")
+		assert.NotNil(t, cell)
+
+		textBox := findTextBoxInSubtree(cell, "Hello World")
+		assert.NotNil(t, textBox)
+		assert.Len(t, textBox.WrappedLines, 0)
+		assert.Equal(t, 24.0, textBox.Rect.Height)
+		assert.Greater(t, textBox.Rect.Width, 84.0)
+	})
+}
+
 func TestTableCellVerticalAlign(t *testing.T) {
 	// "Hello World" in a 100px cell wraps to 2 lines:
 	//   content height = 2 * 24 = 48px

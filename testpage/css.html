@@ -17,6 +17,38 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>White Space Test (Not Implemented)</h2>
+    <p>Testing <code>white-space</code> values <code>normal</code> and <code>nowrap</code>.</p>
+
+    <div style="width: 220px; border: 1px solid black; padding: 6px; background-color: #f7f7f7;">
+        This is a long line with default white-space behavior, so it should wrap onto multiple lines in a narrow box.
+    </div>
+    <p>Box above: default <code>white-space: normal</code></p>
+
+    <br>
+
+    <div style="width: 220px; border: 1px solid black; padding: 6px; background-color: #eef6ff; white-space: nowrap;">
+        This is a long line with white-space nowrap, so it should stay on a single line and overflow horizontally.
+    </div>
+    <p>Box above: <code>white-space: nowrap</code></p>
+
+    <hr>
+
+    <h2>Text Overflow Test (Not Implemented)</h2>
+    <p>Testing <code>text-overflow</code> with <code>ellipsis</code> and <code>clip</code>. This usually also needs <code>overflow: hidden</code> and <code>white-space: nowrap</code>.</p>
+
+    <div style="width: 220px; border: 1px solid black; padding: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; background-color: #f5f5f5;">
+        This is a very long line that should end with an ellipsis if text-overflow is supported.
+    </div>
+    <p>Box above: <code>text-overflow: ellipsis</code></p>
+
+    <br>
+
+    <div style="width: 220px; border: 1px solid black; padding: 6px; overflow: hidden; white-space: nowrap; text-overflow: clip; background-color: #eef6ff;">
+        This is a very long line that should be clipped without an ellipsis if text-overflow is supported.
+    </div>
+    <p>Box above: <code>text-overflow: clip</code></p>
+
     <h2>Box-Sizing Test</h2>
     <p>Testing box-sizing: content-box (default) vs border-box.</p>
 

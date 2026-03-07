@@ -558,6 +558,20 @@ func TestParseInlineStyle(t *testing.T) {
 			},
 		},
 		{
+			name:  "white-space nowrap",
+			input: "white-space: nowrap",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "nowrap", s.WhiteSpace)
+			},
+		},
+		{
+			name:  "white-space normal",
+			input: "white-space: normal",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "normal", s.WhiteSpace)
+			},
+		},
+		{
 			name:  "letter-spacing px",
 			input: "letter-spacing: 2px",
 			verify: func(t *testing.T, s Style) {
@@ -823,6 +837,22 @@ func TestWordSpacingWithContext(t *testing.T) {
 		style := ApplyStylesheetWithContext(sheet, node, 20, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
 		assert.Equal(t, 0.0, style.WordSpacing)
 		assert.True(t, style.WordSpacingSet)
+	})
+}
+
+func TestWhiteSpaceWithContext(t *testing.T) {
+	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
+
+	t.Run("supports nowrap", func(t *testing.T) {
+		sheet := Parse(`p { white-space: nowrap; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "nowrap", style.WhiteSpace)
+	})
+
+	t.Run("supports normal", func(t *testing.T) {
+		sheet := Parse(`p { white-space: normal; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "normal", style.WhiteSpace)
 	})
 }
 

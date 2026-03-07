@@ -327,6 +327,10 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 				childWidth = maxWidth
 				childHeight = float64(len(lines)) * lineHeight
+			} else if box.Style.WhiteSpace == "nowrap" {
+				child.WrappedLines = nil
+				childWidth = MeasureTextWithSpacingAndWordSpacing(child.Text, fontSize, box.Style.LetterSpacing, box.Style.WordSpacing)
+				childHeight = getLineHeightFromStyle(box.Style, parentTag)
 			} else {
 				// Wrap text to fit container width
 				child.WrappedLines = WrapTextWithSpacing(child.Text, fontSize, innerWidth, box.Style.LetterSpacing, box.Style.WordSpacing)
@@ -1295,39 +1299,55 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 	lineHeight := 24.0
 	maxY := startY
 
-	var layoutInline func(box *LayoutBox, inheritedLetterSpacing, inheritedWordSpacing float64)
-	layoutInline = func(box *LayoutBox, inheritedLetterSpacing, inheritedWordSpacing float64) {
+	var layoutInline func(box *LayoutBox, inheritedLetterSpacing, inheritedWordSpacing float64, inheritedWhiteSpace string)
+	layoutInline = func(box *LayoutBox, inheritedLetterSpacing, inheritedWordSpacing float64, inheritedWhiteSpace string) {
 		letterSpacing := inheritedLetterSpacing
 		wordSpacing := inheritedWordSpacing
+		whiteSpace := inheritedWhiteSpace
 		if box.Style.LetterSpacingSet || box.Style.LetterSpacing != 0 {
 			letterSpacing = box.Style.LetterSpacing
 		}
 		if box.Style.WordSpacingSet || box.Style.WordSpacing != 0 {
 			wordSpacing = box.Style.WordSpacing
 		}
+		if box.Style.WhiteSpace != "" {
+			whiteSpace = box.Style.WhiteSpace
+		}
 		switch box.Type {
 		case TextBox:
 			fontSize := 16.0
-			lines := WrapTextWithSpacing(box.Text, fontSize, width, letterSpacing, wordSpacing)
 			box.Rect.X = currentX
 			box.Rect.Y = currentY
-			if len(lines) > 1 {
-				box.WrappedLines = lines
-				box.Rect.Width = width
-				totalHeight := float64(len(lines)) * lineHeight
-				box.Rect.Height = totalHeight
-				currentY += totalHeight
-				currentX = startX
-				if currentY > maxY {
-					maxY = currentY
-				}
-			} else {
+			if whiteSpace == "nowrap" {
+				box.WrappedLines = nil
 				textWidth := MeasureTextWithSpacingAndWordSpacing(box.Text, fontSize, letterSpacing, wordSpacing)
 				box.Rect.Width = textWidth
 				box.Rect.Height = lineHeight
 				currentX += textWidth
 				if currentY+lineHeight > maxY {
 					maxY = currentY + lineHeight
+				}
+			} else {
+				lines := WrapTextWithSpacing(box.Text, fontSize, width, letterSpacing, wordSpacing)
+				if len(lines) > 1 {
+					box.WrappedLines = lines
+					box.Rect.Width = width
+					totalHeight := float64(len(lines)) * lineHeight
+					box.Rect.Height = totalHeight
+					currentY += totalHeight
+					currentX = startX
+					if currentY > maxY {
+						maxY = currentY
+					}
+				} else {
+					box.WrappedLines = lines
+					textWidth := MeasureTextWithSpacingAndWordSpacing(box.Text, fontSize, letterSpacing, wordSpacing)
+					box.Rect.Width = textWidth
+					box.Rect.Height = lineHeight
+					currentX += textWidth
+					if currentY+lineHeight > maxY {
+						maxY = currentY + lineHeight
+					}
 				}
 			}
 
@@ -1337,7 +1357,7 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 			prevY := currentY // capture before children may advance it via nested blocks
 			childStartX := currentX
 			for _, child := range box.Children {
-				layoutInline(child, letterSpacing, wordSpacing)
+				layoutInline(child, letterSpacing, wordSpacing, whiteSpace)
 			}
 			box.Rect.Width = currentX - childStartX
 			box.Rect.Height = lineHeight
@@ -1363,7 +1383,7 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 			box.Rect.Y = currentY
 			beforeY := currentY
 			for _, child := range box.Children {
-				layoutInline(child, letterSpacing, wordSpacing)
+				layoutInline(child, letterSpacing, wordSpacing, whiteSpace)
 			}
 			// Advance currentY to the furthest point reached by children (maxY).
 			// If nothing was drawn (empty block), leave currentY unchanged — don't
@@ -1402,13 +1422,13 @@ func computeCellContent(cell *LayoutBox, width float64, startX, startY float64) 
 
 		default:
 			for _, child := range box.Children {
-				layoutInline(child, letterSpacing, wordSpacing)
+				layoutInline(child, letterSpacing, wordSpacing, whiteSpace)
 			}
 		}
 	}
 
 	for _, child := range cell.Children {
-		layoutInline(child, cell.Style.LetterSpacing, cell.Style.WordSpacing)
+		layoutInline(child, cell.Style.LetterSpacing, cell.Style.WordSpacing, cell.Style.WhiteSpace)
 	}
 
 	return maxY - startY

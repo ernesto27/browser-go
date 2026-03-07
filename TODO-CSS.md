@@ -107,7 +107,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [ ] `letter-spacing` - character spacing
 - [ ] `word-spacing` - word spacing
 - [ ] `text-shadow` - text shadow
-- [ ] `white-space` - whitespace handling
+- [~] `white-space` - partial: `normal` and `nowrap` supported; `pre`, `pre-wrap`, and `pre-line` not yet implemented
 - [ ] `text-overflow` - ellipsis/clip
 - [ ] `text-indent` - first line indent
 - [ ] `vertical-align` - inline alignment
