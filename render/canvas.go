@@ -302,6 +302,20 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 			}
 
 		case DrawText:
+			displayText := c.Text
+
+			if c.TextOverflow != "" && c.Width > 0 {
+				textWidth := measureTextWidth(c.Text, c.Size, c.LetterSpacing, c.WordSpacing)
+				if textWidth > c.Width {
+					switch c.TextOverflow {
+					case "ellipsis":
+						displayText = truncateTextWithEllipsis(c.Text, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
+					case "clip":
+						displayText = truncateTextClip(c.Text, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
+					}
+				}
+			}
+
 			textStyle := fyne.TextStyle{
 				Bold:      c.Bold,
 				Italic:    c.Italic,
@@ -309,14 +323,14 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 			}
 			switch {
 			case c.LetterSpacing == 0 && c.WordSpacing == 0:
-				text := canvas.NewText(c.Text, c.Color)
+				text := canvas.NewText(displayText, c.Color)
 				text.TextSize = c.Size
 				text.TextStyle = textStyle
 				text.Move(fyne.NewPos(float32(c.X), float32(c.Y)))
 				objects = append(objects, text)
 			case c.LetterSpacing == 0 && c.WordSpacing != 0:
 				x := c.X
-				for _, segment := range splitWordSpacingSegments(c.Text) {
+				for _, segment := range splitWordSpacingSegments(displayText) {
 					text := canvas.NewText(segment.text, c.Color)
 					text.TextSize = c.Size
 					text.TextStyle = textStyle
@@ -331,7 +345,7 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 				}
 			default:
 				x := c.X
-				runes := []rune(c.Text)
+				runes := []rune(displayText)
 				for i, r := range runes {
 					ch := string(r)
 					text := canvas.NewText(ch, c.Color)
@@ -1151,4 +1165,59 @@ func decodeSVG(data []byte) (image.Image, error) {
 	icon.Draw(raster, 1.0)
 
 	return rgba, nil
+}
+
+// measureTextWidth returns the pixel width of text accounting for letter-spacing and word-spacing.
+func measureTextWidth(text string, fontSize float32, letterSpacing, wordSpacing float64) float64 {
+	if text == "" {
+		return 0
+	}
+	baseWidth := float64(fyne.MeasureText(text, fontSize, fyne.TextStyle{}).Width)
+	if letterSpacing != 0 {
+		// letter-spacing adds extra space after each character except the last
+		baseWidth += letterSpacing * float64(len([]rune(text))-1)
+	}
+	if wordSpacing != 0 {
+		spaces := strings.Count(text, " ")
+		baseWidth += wordSpacing * float64(spaces)
+	}
+	return baseWidth
+}
+
+func truncateTextWithEllipsis(text string, maxWidth float64, fontSize float32, letterSpacing, wordSpacing float64) string {
+	ellipsis := "..."
+	ellipsisWidth := measureTextWidth(ellipsis, fontSize, letterSpacing, wordSpacing)
+
+	if maxWidth <= ellipsisWidth {
+		return ellipsis
+	}
+
+	availableWidth := maxWidth - ellipsisWidth
+	result := []rune(text)
+
+	for len(result) > 0 {
+		candidate := string(result)
+		w := measureTextWidth(candidate, fontSize, letterSpacing, wordSpacing)
+		if w <= availableWidth {
+			return candidate + ellipsis
+		}
+		result = result[:len(result)-1]
+	}
+
+	return ellipsis
+}
+
+func truncateTextClip(text string, maxWidth float64, fontSize float32, letterSpacing, wordSpacing float64) string {
+	result := []rune(text)
+
+	for len(result) > 0 {
+		candidate := string(result)
+		w := measureTextWidth(candidate, fontSize, letterSpacing, wordSpacing)
+		if w <= maxWidth {
+			return candidate
+		}
+		result = result[:len(result)-1]
+	}
+
+	return ""
 }

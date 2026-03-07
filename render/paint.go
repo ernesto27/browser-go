@@ -54,7 +54,30 @@ type TextStyle struct {
 	Visibility    string
 	LetterSpacing float64
 	WordSpacing   float64
+	TextOverflow  string
+	OverFlow      string
 	LineHeight    float64
+}
+
+func (ts TextStyle) newDrawText(text string, x, y, width float64) DrawText {
+	return DrawText{
+		Text:            text,
+		X:               x,
+		Y:               y,
+		Width:           width,
+		LetterSpacing:   ts.LetterSpacing,
+		WordSpacing:     ts.WordSpacing,
+		Size:            ts.Size,
+		Color:           applyOpacity(ts.Color, ts.Opacity),
+		Bold:            ts.Bold,
+		Italic:          ts.Italic,
+		Monospace:       ts.Monospace || fontStackHasMonospace(ts.FontFamily),
+		Underline:       ts.TextDecoration == TextDecorationUnderline,
+		DottedUnderline: ts.TextDecoration == TextDecorationDottedUnderline,
+		Strikethrough:   ts.TextDecoration == TextDecorationLineThrough,
+		TextTransform:   ts.TextTransform,
+		TextOverflow:    ts.TextOverflow,
+	}
 }
 
 type DrawInput struct {
@@ -207,6 +230,7 @@ type DrawText struct {
 	DottedUnderline bool
 	Strikethrough   bool
 	TextTransform   string
+	TextOverflow    string
 }
 
 type DrawImage struct {
@@ -340,6 +364,12 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	}
 	if box.Style.Visibility != "" {
 		currentStyle.Visibility = box.Style.Visibility
+	}
+	if box.Style.TextOverflow != "" {
+		currentStyle.TextOverflow = box.Style.TextOverflow
+	}
+	if box.Style.Overflow != "" {
+		currentStyle.OverFlow = box.Style.Overflow
 	}
 
 	isHidden := currentStyle.Visibility == "hidden"
@@ -512,19 +542,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			lineHeight := float64(currentStyle.Size) * 1.5
 			y := box.Rect.Y
 			for _, line := range lines {
-				*commands = append(*commands, DrawText{
-					Text: line, X: box.Rect.X, Y: y, Width: box.Rect.Width,
-					LetterSpacing:   currentStyle.LetterSpacing,
-					WordSpacing:     currentStyle.WordSpacing,
-					Size:            currentStyle.Size,
-					Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
-					Bold:            currentStyle.Bold,
-					Italic:          currentStyle.Italic,
-					Monospace:       currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
-					Underline:       currentStyle.TextDecoration == TextDecorationUnderline,
-					DottedUnderline: currentStyle.TextDecoration == TextDecorationDottedUnderline,
-					Strikethrough:   currentStyle.TextDecoration == TextDecorationLineThrough,
-				})
+				*commands = append(*commands, currentStyle.newDrawText(line, box.Rect.X, y, box.Rect.Width))
 				y += lineHeight
 			}
 		} else if len(box.WrappedLines) > 1 {
@@ -533,35 +551,17 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			y := box.Rect.Y
 			for _, line := range box.WrappedLines {
 				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform, currentStyle.FontVariant)
-				*commands = append(*commands, DrawText{
-					Text: transformedLine, X: box.Rect.X, Y: y, Width: box.Rect.Width,
-					LetterSpacing:   currentStyle.LetterSpacing,
-					WordSpacing:     currentStyle.WordSpacing,
-					Size:            currentStyle.Size,
-					Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
-					Bold:            currentStyle.Bold,
-					Italic:          currentStyle.Italic,
-					Monospace:       currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
-					Underline:       currentStyle.TextDecoration == TextDecorationUnderline,
-					DottedUnderline: currentStyle.TextDecoration == TextDecorationDottedUnderline,
-					Strikethrough:   currentStyle.TextDecoration == TextDecorationLineThrough,
-				})
+				*commands = append(*commands, currentStyle.newDrawText(transformedLine, box.Rect.X, y, box.Rect.Width))
 				y += lineHeight
 			}
 		} else {
-			*commands = append(*commands, DrawText{
-				Text: text, X: box.Rect.X, Y: box.Rect.Y, Width: box.Rect.Width,
-				LetterSpacing:   currentStyle.LetterSpacing,
-				WordSpacing:     currentStyle.WordSpacing,
-				Size:            currentStyle.Size,
-				Color:           applyOpacity(currentStyle.Color, currentStyle.Opacity),
-				Bold:            currentStyle.Bold,
-				Italic:          currentStyle.Italic,
-				Monospace:       currentStyle.Monospace || fontStackHasMonospace(currentStyle.FontFamily),
-				Underline:       currentStyle.TextDecoration == TextDecorationUnderline,
-				DottedUnderline: currentStyle.TextDecoration == TextDecorationDottedUnderline,
-				Strikethrough:   currentStyle.TextDecoration == TextDecorationLineThrough,
-			})
+			// For text-overflow, use the parent container's width as the clipping boundary
+			// because the text box's own width is the natural (unwrapped) text width.
+			drawWidth := box.Rect.Width
+			if currentStyle.TextOverflow != "" && box.Parent != nil {
+				drawWidth = box.Parent.Rect.Width - box.Parent.Padding.Left - box.Parent.Padding.Right
+			}
+			*commands = append(*commands, currentStyle.newDrawText(text, box.Rect.X, box.Rect.Y, drawWidth))
 		}
 	}
 

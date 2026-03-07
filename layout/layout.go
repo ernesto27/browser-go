@@ -128,6 +128,14 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 		if parent != nil && box.Style.WhiteSpace == "" {
 			box.Style.WhiteSpace = parent.Style.WhiteSpace
 		}
+
+		if parent != nil && box.Style.TextOverflow == "" {
+			box.Style.TextOverflow = parent.Style.TextOverflow
+		}
+		if parent != nil && box.Style.Overflow == "" {
+			box.Style.Overflow = parent.Style.Overflow
+		}
+
 		if parent != nil && !box.Style.LetterSpacingSet {
 			box.Style.LetterSpacing = parent.Style.LetterSpacing
 		}
@@ -283,6 +291,13 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	if inline.WhiteSpace != "" {
 		base.WhiteSpace = inline.WhiteSpace
 	}
+	if inline.TextOverflow != "" {
+		base.TextOverflow = inline.TextOverflow
+	}
+	if inline.Overflow != "" {
+		base.Overflow = inline.Overflow
+	}
+
 	if inline.VerticalAlign != "" {
 		base.VerticalAlign = inline.VerticalAlign
 	}

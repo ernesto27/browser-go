@@ -572,6 +572,27 @@ func TestParseInlineStyle(t *testing.T) {
 			},
 		},
 		{
+			name:  "text-overflow ellipsis",
+			input: "text-overflow: ellipsis",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "ellipsis", s.TextOverflow)
+			},
+		},
+		{
+			name:  "text-overflow clip",
+			input: "text-overflow: clip",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "clip", s.TextOverflow)
+			},
+		},
+		{
+			name:  "overflow hidden",
+			input: "overflow: hidden",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "hidden", s.Overflow)
+			},
+		},
+		{
 			name:  "letter-spacing px",
 			input: "letter-spacing: 2px",
 			verify: func(t *testing.T, s Style) {
@@ -853,6 +874,22 @@ func TestWhiteSpaceWithContext(t *testing.T) {
 		sheet := Parse(`p { white-space: normal; }`)
 		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
 		assert.Equal(t, "normal", style.WhiteSpace)
+	})
+}
+
+func TestTextOverflowWithContext(t *testing.T) {
+	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
+
+	t.Run("supports ellipsis", func(t *testing.T) {
+		sheet := Parse(`p { text-overflow: ellipsis; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "ellipsis", style.TextOverflow)
+	})
+
+	t.Run("supports clip", func(t *testing.T) {
+		sheet := Parse(`p { text-overflow: clip; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "clip", style.TextOverflow)
 	})
 }
 

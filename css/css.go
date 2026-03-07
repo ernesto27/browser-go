@@ -54,6 +54,8 @@ type Style struct {
 	PaddingRight     float64
 	TextAlign        string
 	WhiteSpace       string
+	Overflow         string
+	TextOverflow     string
 	VerticalAlign    string
 	Display          string
 	Float            string
@@ -686,6 +688,16 @@ func applyDeclaration(style *Style, property, value string) {
 		switch value {
 		case "normal", "nowrap":
 			style.WhiteSpace = value
+		}
+	case "text-overflow":
+		switch value {
+		case "clip", "ellipsis":
+			style.TextOverflow = value
+		}
+	case "overflow":
+		switch value {
+		case "visible", "hidden", "scroll", "auto":
+			style.Overflow = value
 		}
 	case "vertical-align":
 		switch value {

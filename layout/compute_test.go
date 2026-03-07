@@ -1110,6 +1110,18 @@ func TestWhiteSpaceNoWrap(t *testing.T) {
 	})
 }
 
+func TestTextOverflowEllipsis(t *testing.T) {
+	t.Run("text-overflow stored in style", func(t *testing.T) {
+		tree := buildTree(`<div style="width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hello World This Is Long</div>`)
+		ComputeLayout(tree, 600)
+
+		div := findBoxByTag(tree, "div")
+		assert.NotNil(t, div)
+		assert.Equal(t, "ellipsis", div.Style.TextOverflow)
+		assert.Equal(t, "hidden", div.Style.Overflow)
+	})
+}
+
 func TestTableCellVerticalAlign(t *testing.T) {
 	// "Hello World" in a 100px cell wraps to 2 lines:
 	//   content height = 2 * 24 = 48px

@@ -97,7 +97,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 
 ### Box Model
 - [ ] `box-sizing` - border-box/content-box
-- [ ] `overflow` - visible/hidden/scroll/auto
+- [~] `overflow` - partial: `hidden` and `visible` parsed; only used for `text-overflow` clipping, no scroll/auto
 - [ ] `overflow-x` - horizontal overflow
 - [ ] `overflow-y` - vertical overflow
 - [ ] `clear` - clear floats
@@ -108,7 +108,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [ ] `word-spacing` - word spacing
 - [ ] `text-shadow` - text shadow
 - [~] `white-space` - partial: `normal` and `nowrap` supported; `pre`, `pre-wrap`, and `pre-line` not yet implemented
-- [ ] `text-overflow` - ellipsis/clip
+- [x] `text-overflow` - ellipsis/clip
 - [ ] `text-indent` - first line indent
 - [ ] `vertical-align` - inline alignment
 
