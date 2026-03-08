@@ -75,3 +75,9 @@ var (
 var (
 	ColorHR = color.Gray{Y: 180}
 )
+
+// Scrollbar colors
+var (
+	ColorScrollbarTrack = color.RGBA{240, 240, 240, 255} // Light gray track
+	ColorScrollbarThumb = color.RGBA{190, 190, 190, 255} // Darker gray thumb
+)

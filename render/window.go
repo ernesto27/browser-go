@@ -65,6 +65,11 @@ type Browser struct {
 	fileInputValues  map[*dom.Node]string
 	invalidNodes     map[*dom.Node]bool
 
+	scrollOffsets    map[*dom.Node]float64 // Horizontal scroll offset per overflow container
+	scrollDragNode   *dom.Node             // Which node's scrollbar is being dragged
+	scrollDragStartX float64               // Mouse X at drag start
+	scrollDragStartOff float64             // Scroll offset at drag start
+
 	onJSClick        func(node *dom.Node) bool // Returns true if preventDefault was called
 	onBeforeNavigate func() bool               // Returns true if navigation should proceed
 
@@ -117,6 +122,7 @@ func NewBrowser(width, height float32) *Browser {
 		checkboxValue:   make(map[*dom.Node]bool),
 		fileInputValues: make(map[*dom.Node]string),
 		invalidNodes:    make(map[*dom.Node]bool),
+		scrollOffsets:   make(map[*dom.Node]float64),
 	}
 	// Create URL entry
 	b.urlEntry = widget.NewEntry()
@@ -675,6 +681,41 @@ func (b *Browser) SetExternalCSS(cssContent string) {
 	b.externalCSS = cssContent
 }
 
+// findScrollbarAt walks the layout tree and returns the LayoutBox whose horizontal
+// scrollbar track contains the point (x, y), or nil if none.
+func findScrollbarAt(box *layout.LayoutBox, x, y float64) *layout.LayoutBox {
+	if box == nil {
+		return nil
+	}
+
+	// Check children first (deepest match wins)
+	for _, child := range box.Children {
+		if hit := findScrollbarAt(child, x, y); hit != nil {
+			return hit
+		}
+	}
+
+	// Check if this box has a scrollbar and the point is in the track area
+	overflowX := box.Style.EffectiveOverflowX()
+	if overflowX != "scroll" && overflowX != "auto" {
+		return nil
+	}
+	switch box.Type {
+	case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
+	default:
+		return nil
+	}
+
+	trackX := box.Rect.X + box.Style.BorderLeftWidth
+	trackW := box.Rect.Width - box.Style.BorderLeftWidth - box.Style.BorderRightWidth
+	trackY := box.Rect.Y + box.Rect.Height - box.Padding.Bottom - box.Style.BorderBottomWidth - ScrollbarHeight
+
+	if x >= trackX && x <= trackX+trackW && y >= trackY && y <= trackY+ScrollbarHeight {
+		return box
+	}
+	return nil
+}
+
 func (b *Browser) handleMouseDown(x, y float64) {
 	// Clear previous selection
 	hadSelection := b.selectedText != ""
@@ -684,6 +725,42 @@ func (b *Browser) handleMouseDown(x, y float64) {
 
 	if b.layoutTree == nil {
 		if hadSelection {
+			b.repaint()
+		}
+		return
+	}
+
+	// Check if click is on a scrollbar track
+	if scrollBox := findScrollbarAt(b.layoutTree, x, y); scrollBox != nil && scrollBox.Node != nil {
+		b.scrollDragNode = scrollBox.Node
+		b.scrollDragStartX = x
+		b.scrollDragStartOff = b.scrollOffsets[scrollBox.Node]
+
+		// Compute max scroll for click-to-position (jump thumb to click position)
+		containerRight := scrollBox.Rect.X + scrollBox.Rect.Width - scrollBox.Padding.Right - scrollBox.Style.BorderRightWidth
+		contentRight := maxChildRight(scrollBox)
+		contentWidth := contentRight - scrollBox.Rect.X
+		visibleWidth := scrollBox.Rect.Width - scrollBox.Style.BorderLeftWidth - scrollBox.Style.BorderRightWidth
+		maxScroll := contentWidth - visibleWidth
+		if maxScroll < 0 {
+			maxScroll = 0
+		}
+
+		// Map click X to scroll ratio
+		trackX := scrollBox.Rect.X + scrollBox.Style.BorderLeftWidth
+		trackW := scrollBox.Rect.Width - scrollBox.Style.BorderLeftWidth - scrollBox.Style.BorderRightWidth
+		if trackW > 0 && maxScroll > 0 && contentRight > containerRight {
+			ratio := (x - trackX) / trackW
+			newOffset := ratio * maxScroll
+			if newOffset < 0 {
+				newOffset = 0
+			}
+			if newOffset > maxScroll {
+				newOffset = maxScroll
+			}
+			b.scrollOffsets[scrollBox.Node] = newOffset
+			b.scrollDragStartOff = newOffset
+			b.scrollDragStartX = x
 			b.repaint()
 		}
 		return
@@ -705,6 +782,38 @@ func (b *Browser) handleMouseDown(x, y float64) {
 }
 
 func (b *Browser) handleDrag(x, y float64) {
+	// Handle scrollbar drag
+	if b.scrollDragNode != nil {
+		scrollBox := b.findLayoutBoxByNode(b.scrollDragNode)
+		if scrollBox == nil {
+			b.scrollDragNode = nil
+			return
+		}
+
+		contentRight := maxChildRight(scrollBox)
+		contentWidth := contentRight - scrollBox.Rect.X
+		visibleWidth := scrollBox.Rect.Width - scrollBox.Style.BorderLeftWidth - scrollBox.Style.BorderRightWidth
+		maxScroll := contentWidth - visibleWidth
+		if maxScroll <= 0 {
+			return
+		}
+
+		trackW := scrollBox.Rect.Width - scrollBox.Style.BorderLeftWidth - scrollBox.Style.BorderRightWidth
+		deltaX := x - b.scrollDragStartX
+		// Convert pixel delta to scroll delta (proportional to track vs content)
+		scrollDelta := deltaX * (contentWidth / trackW)
+		newOffset := b.scrollDragStartOff + scrollDelta
+		if newOffset < 0 {
+			newOffset = 0
+		}
+		if newOffset > maxScroll {
+			newOffset = maxScroll
+		}
+		b.scrollOffsets[b.scrollDragNode] = newOffset
+		b.repaint()
+		return
+	}
+
 	if b.selectionStart == nil || b.layoutTree == nil {
 		return
 	}
@@ -718,6 +827,14 @@ func (b *Browser) handleDrag(x, y float64) {
 
 	b.selectedText = b.collectSelectedText()
 	b.repaint()
+}
+
+// findLayoutBoxByNode searches the layout tree for the box associated with the given DOM node.
+func (b *Browser) findLayoutBoxByNode(node *dom.Node) *layout.LayoutBox {
+	if b.layoutTree == nil || node == nil {
+		return nil
+	}
+	return findBoxByNode(b.layoutTree, node)
 }
 
 func (b *Browser) collectSelectedText() string {
@@ -769,12 +886,15 @@ func (b *Browser) createContentScroll(objects []fyne.CanvasObject) *container.Sc
 		b.handleClick(float64(x), float64(y))
 	}, b.layoutTree, b)
 
-	// Wire up handlers for text selection
+	// Wire up handlers for text selection and scrollbar interaction
 	clickable.onDrag = func(x, y float32) {
 		b.handleDrag(float64(x), float64(y))
 	}
 	clickable.onMouseDown = func(x, y float32) {
 		b.handleMouseDown(float64(x), float64(y))
+	}
+	clickable.onDragEnd = func() {
+		b.scrollDragNode = nil
 	}
 
 	scroll := container.NewScroll(clickable)
@@ -1042,6 +1162,7 @@ func (b *Browser) repaint() {
 		CheckboxValues:  b.checkboxValue,
 		FileInputValues: b.fileInputValues,
 		InvalidNodes:    b.invalidNodes,
+		ScrollOffsets:   b.scrollOffsets,
 		SelectionStart:  b.selectionStart,
 		SelectionEnd:    b.selectionEnd,
 	}, LinkStyler{

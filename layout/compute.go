@@ -13,6 +13,7 @@ const (
 	DefaultMargin      = 8.0
 	DefaultImageWidth  = 200.0
 	DefaultImageHeight = 150.0
+	ScrollbarHeight    = 12.0
 )
 
 // getDefaultLineHeight returns default line heights for different elements
@@ -500,6 +501,15 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		box.Rect.Height = box.Style.Height
 	} else {
 		box.Rect.Height = yOffset - startY + box.Margin.Bottom + box.Padding.Bottom + box.Style.BorderBottomWidth
+	}
+
+	// Reserve space for horizontal scrollbar when overflow-x is scroll/auto
+	overflowX := box.Style.EffectiveOverflowX()
+	if overflowX == "scroll" || overflowX == "auto" {
+		switch box.Type {
+		case BlockBox, TableCellBox, TableBox, FieldsetBox:
+			box.Rect.Height += ScrollbarHeight
+		}
 	}
 
 	if box.Style.MinHeight > 0 && box.Rect.Height < box.Style.MinHeight {

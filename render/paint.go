@@ -58,9 +58,11 @@ type TextStyle struct {
 	OverflowX     string
 	OverflowY     string
 	OverFlow      string
-	ClipRight     float64
-	ClipBottom    float64
-	LineHeight    float64
+	ClipLeft       float64
+	ClipRight      float64
+	ClipBottom     float64
+	LineHeight     float64
+	ScrollOffsetX  float64 // Horizontal scroll offset applied to children
 }
 
 func (ts TextStyle) newDrawText(text string, x, y, width float64) DrawText {
@@ -136,13 +138,14 @@ type DrawCheckbox struct {
 
 // InputState holds all interactive form state for rendering
 type InputState struct {
-	InputValues     map[*dom.Node]string // Text input values
-	FocusedNode     *dom.Node            // Currently focused input/textarea
-	OpenSelectNode  *dom.Node            // Which select dropdown is open
-	RadioValues     map[string]*dom.Node // Selected radio per group (key: name attr)
-	CheckboxValues  map[*dom.Node]bool   // Checked state per check
-	FileInputValues map[*dom.Node]string // Selected filename per file input
-	InvalidNodes    map[*dom.Node]bool   // Nodes with invalid input
+	InputValues     map[*dom.Node]string  // Text input values
+	FocusedNode     *dom.Node             // Currently focused input/textarea
+	OpenSelectNode  *dom.Node             // Which select dropdown is open
+	RadioValues     map[string]*dom.Node  // Selected radio per group (key: name attr)
+	CheckboxValues  map[*dom.Node]bool    // Checked state per check
+	FileInputValues map[*dom.Node]string  // Selected filename per file input
+	InvalidNodes    map[*dom.Node]bool    // Nodes with invalid input
+	ScrollOffsets   map[*dom.Node]float64 // Horizontal scroll offset per overflow container
 
 	SelectionStart *SelectionPoint
 	SelectionEnd   *SelectionPoint
@@ -239,6 +242,7 @@ type DrawText struct {
 	TextOverflow    string
 	OverflowX       string
 	OverflowY       string
+	ClipLeftOffset  float64 // Amount to trim from the left side of text
 }
 
 type DrawImage struct {
@@ -304,6 +308,12 @@ func BuildDisplayLayers(root *layout.LayoutBox, state InputState, linkStyler Lin
 	paintLayoutBox(root, &fixedCommands, DefaultStyle(), state, linkStyler, paintFixedOnly, false)
 
 	return normalCommands, fixedCommands
+}
+
+// scrolledRect returns a copy of the box rect with ScrollOffsetX applied.
+func scrolledRect(r layout.Rect, offsetX float64) layout.Rect {
+	r.X -= offsetX
+	return r
 }
 
 func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler, layer paintLayer, ancestorFixed bool) {
@@ -389,10 +399,23 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	effectiveOverflowX := effectiveOverflow(currentStyle.OverflowX, currentStyle.OverFlow)
 	effectiveOverflowY := effectiveOverflow(currentStyle.OverflowY, currentStyle.OverFlow)
 
+	currentStyle.ClipLeft = computeClipStart(effectiveOverflowX, box.Type, box.Rect.X, box.Style.BorderLeftWidth, currentStyle.ClipLeft)
 	currentStyle.ClipRight = computeClip(effectiveOverflowX, box.Type, box.Rect.X, box.Rect.Width, box.Padding.Right, box.Style.BorderRightWidth, currentStyle.ClipRight)
 	currentStyle.ClipBottom = computeClip(effectiveOverflowY, box.Type, box.Rect.Y, box.Rect.Height, box.Padding.Bottom, box.Style.BorderBottomWidth, currentStyle.ClipBottom)
 
+	// Reserve space for horizontal scrollbar so content doesn't render underneath it
+	if needsHorizontalScrollbar(box, currentStyle) {
+		scrollbarTop := box.Rect.Y + box.Rect.Height - box.Padding.Bottom - box.Style.BorderBottomWidth - ScrollbarHeight
+		if currentStyle.ClipBottom == 0 || scrollbarTop < currentStyle.ClipBottom {
+			currentStyle.ClipBottom = scrollbarTop
+		}
+	}
+
 	isHidden := currentStyle.Visibility == "hidden"
+
+	// Compute scroll-adjusted rect for this box (shifted by parent's scroll offset)
+	boxRect := scrolledRect(box.Rect, currentStyle.ScrollOffsetX)
+
 
 	// Draw background if set
 	if box.Style.BackgroundColor != nil && !isHidden {
@@ -407,7 +430,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			bl = box.Style.BorderRadius
 		}
 		*commands = append(*commands, DrawRect{
-			Rect:              box.Rect,
+			Rect:              boxRect,
 			Color:             applyOpacity(box.Style.BackgroundColor, currentStyle.Opacity),
 			CornerRadius:      box.Style.BorderRadius,
 			TopLeftRadius:     tl,
@@ -419,7 +442,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 	if box.Style.BackgroundImage != "" && !isHidden {
 		*commands = append(*commands, DrawImage{
-			Rect:     box.Rect,
+			Rect:     boxRect,
 			URL:      box.Style.BackgroundImage,
 			SizeMode: box.Style.BackgroundSize,
 		})
@@ -429,25 +452,25 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if !isHidden {
 		if box.Style.BorderTopWidth > 0 && box.Style.BorderTopStyle != "none" && box.Style.BorderTopColor != nil {
 			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: box.Rect.Width, Height: box.Style.BorderTopWidth},
+				Rect:  layout.Rect{X: boxRect.X, Y: boxRect.Y, Width: boxRect.Width, Height: box.Style.BorderTopWidth},
 				Color: applyOpacity(box.Style.BorderTopColor, currentStyle.Opacity),
 			})
 		}
 		if box.Style.BorderBottomWidth > 0 && box.Style.BorderBottomStyle != "none" && box.Style.BorderBottomColor != nil {
 			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: box.Rect.X, Y: box.Rect.Y + box.Rect.Height - box.Style.BorderBottomWidth, Width: box.Rect.Width, Height: box.Style.BorderBottomWidth},
+				Rect:  layout.Rect{X: boxRect.X, Y: boxRect.Y + boxRect.Height - box.Style.BorderBottomWidth, Width: boxRect.Width, Height: box.Style.BorderBottomWidth},
 				Color: applyOpacity(box.Style.BorderBottomColor, currentStyle.Opacity),
 			})
 		}
 		if box.Style.BorderLeftWidth > 0 && box.Style.BorderLeftStyle != "none" && box.Style.BorderLeftColor != nil {
 			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: box.Style.BorderLeftWidth, Height: box.Rect.Height},
+				Rect:  layout.Rect{X: boxRect.X, Y: boxRect.Y, Width: box.Style.BorderLeftWidth, Height: boxRect.Height},
 				Color: applyOpacity(box.Style.BorderLeftColor, currentStyle.Opacity),
 			})
 		}
 		if box.Style.BorderRightWidth > 0 && box.Style.BorderRightStyle != "none" && box.Style.BorderRightColor != nil {
 			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: box.Rect.X + box.Rect.Width - box.Style.BorderRightWidth, Y: box.Rect.Y, Width: box.Style.BorderRightWidth, Height: box.Rect.Height},
+				Rect:  layout.Rect{X: boxRect.X + boxRect.Width - box.Style.BorderRightWidth, Y: boxRect.Y, Width: box.Style.BorderRightWidth, Height: boxRect.Height},
 				Color: applyOpacity(box.Style.BorderRightColor, currentStyle.Opacity),
 			})
 		}
@@ -521,7 +544,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			currentStyle.Monospace = true
 			if box.Style.BackgroundColor == nil && !isHidden {
 				*commands = append(*commands, DrawRect{
-					Rect:  box.Rect,
+					Rect:  boxRect,
 					Color: color.RGBA{245, 245, 245, 255},
 				})
 			}
@@ -531,7 +554,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			currentStyle.Color = color.RGBA{0, 0, 0, 255}
 			if !isHidden {
 				*commands = append(*commands, DrawRect{
-					Rect:  box.Rect,
+					Rect:  boxRect,
 					Color: color.RGBA{255, 255, 0, 255},
 				})
 			}
@@ -543,7 +566,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Type == layout.TextBox && box.Text != "" && !isHidden {
 		if isTextSelected(box, state) {
 			*commands = append(*commands, DrawRect{
-				Rect:  box.Rect,
+				Rect:  boxRect,
 				Color: color.RGBA{0, 120, 215, 128}, // Selection blue
 			})
 
@@ -560,32 +583,32 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			text = dom.ExpandTabs(text, 8)
 			lines := strings.Split(text, "\n")
 			lineHeight := float64(currentStyle.Size) * 1.5
-			y := box.Rect.Y
+			y := boxRect.Y
 			for _, line := range lines {
-				*commands = append(*commands, currentStyle.newDrawText(line, box.Rect.X, y, box.Rect.Width))
+				*commands = append(*commands, currentStyle.newDrawText(line, boxRect.X, y, boxRect.Width))
 				y += lineHeight
 			}
 		} else if len(box.WrappedLines) > 1 {
 			// Render wrapped lines
 			lineHeight := currentStyle.LineHeight
-			y := box.Rect.Y
+			y := boxRect.Y
 			for _, line := range box.WrappedLines {
 				if currentStyle.ClipBottom > 0 && y >= currentStyle.ClipBottom {
 					break
 				}
 				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform, currentStyle.FontVariant)
-				*commands = append(*commands, currentStyle.newDrawText(transformedLine, box.Rect.X, y, box.Rect.Width))
+				*commands = append(*commands, currentStyle.newDrawText(transformedLine, boxRect.X, y, boxRect.Width))
 				y += lineHeight
 			}
 		} else {
 			// For horizontal overflow handling, use the parent container's width as the clipping
 			// boundary because the text box's own width is the natural (unwrapped) text width.
-			drawWidth := box.Rect.Width
-			if effectiveOverflowX != "visible" && effectiveOverflowX != "" && box.Parent != nil {
+			drawWidth := boxRect.Width
+			if effectiveOverflowX != "visible" && effectiveOverflowX != "" && box.Parent != nil && currentStyle.ScrollOffsetX == 0 {
 				drawWidth = box.Parent.Rect.Width - box.Parent.Padding.Left - box.Parent.Padding.Right
 			}
 			if currentStyle.ClipRight > 0 {
-				clipWidth := currentStyle.ClipRight - box.Rect.X
+				clipWidth := currentStyle.ClipRight - boxRect.X
 				if clipWidth <= 0 {
 					return
 				}
@@ -595,12 +618,21 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			}
 
 			if currentStyle.ClipBottom > 0 {
-				if currentStyle.ClipBottom-box.Rect.Y <= 0 {
+				if currentStyle.ClipBottom-boxRect.Y <= 0 {
 					return
 				}
 			}
 
-			*commands = append(*commands, currentStyle.newDrawText(text, box.Rect.X, box.Rect.Y, drawWidth))
+			dt := currentStyle.newDrawText(text, boxRect.X, boxRect.Y, drawWidth)
+			if currentStyle.ClipLeft > 0 && boxRect.X < currentStyle.ClipLeft {
+				dt.ClipLeftOffset = currentStyle.ClipLeft - boxRect.X
+				dt.X = currentStyle.ClipLeft
+				dt.Width -= dt.ClipLeftOffset
+				if dt.Width <= 0 {
+					return
+				}
+			}
+			*commands = append(*commands, dt)
 		}
 	}
 
@@ -608,7 +640,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Type == layout.ImageBox && box.Node != nil && !isHidden {
 		if src := box.Node.Attributes["src"]; src != "" {
 			*commands = append(*commands, DrawImage{
-				Rect:           box.Rect,
+				Rect:           boxRect,
 				URL:            src,
 				AltText:        box.Node.Attributes["alt"],
 				ReferrerPolicy: box.Node.Attributes["referrerpolicy"],
@@ -619,7 +651,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 	if box.Type == layout.HRBox && !isHidden {
 		*commands = append(*commands, DrawHR{
-			Rect: box.Rect,
+			Rect: boxRect,
 		})
 	}
 
@@ -656,7 +688,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		}
 
 		*commands = append(*commands, DrawInput{
-			Rect:        box.Rect,
+			Rect:        boxRect,
 			Placeholder: placeholder,
 			Value:       value,
 			InputType:   inputType,
@@ -669,7 +701,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 	if box.Type == layout.ButtonBox && !isHidden {
 		*commands = append(*commands, DrawButton{
-			Rect: box.Rect,
+			Rect: boxRect,
 			Text: getButtonTextFromBox(box),
 		})
 	}
@@ -686,7 +718,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		}
 
 		*commands = append(*commands, DrawTextarea{
-			Rect:        box.Rect,
+			Rect:        boxRect,
 			Placeholder: box.Node.Attributes["placeholder"],
 			Value:       value,
 			IsFocused:   isFocused,
@@ -720,7 +752,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		fmt.Printf("Select: options=%v, isOpen=%v, openSelectNode=%p, box.Node=%p\n", options, isOpen, state.OpenSelectNode, box.Node)
 
 		*commands = append(*commands, DrawSelect{
-			Rect:          box.Rect,
+			Rect:          boxRect,
 			Options:       options,
 			SelectedValue: selectedValue,
 			IsOpen:        isOpen,
@@ -743,7 +775,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		_, isDisabled := box.Node.Attributes["disabled"]
 
 		*commands = append(*commands, DrawRadio{
-			Rect:       box.Rect,
+			Rect:       boxRect,
 			IsChecked:  isChecked,
 			IsDisabled: isDisabled,
 		})
@@ -757,7 +789,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 		_, isDisabled := box.Node.Attributes["disabled"]
 		*commands = append(*commands, DrawCheckbox{
-			Rect:       box.Rect,
+			Rect:       boxRect,
 			IsChecked:  isChecked,
 			IsDisabled: isDisabled,
 		})
@@ -781,7 +813,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		}
 
 		*commands = append(*commands, DrawFieldset{
-			Rect:         box.Rect,
+			Rect:         boxRect,
 			LegendX:      legendX,
 			LegendY:      legendY,
 			LegendWidth:  legendWidth,
@@ -796,7 +828,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		_, isDisabled := box.Node.Attributes["disabled"]
 
 		*commands = append(*commands, DrawFileInput{
-			Rect:       box.Rect,
+			Rect:       boxRect,
 			Filename:   filename,
 			IsDisabled: isDisabled,
 		})
@@ -806,15 +838,25 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Type == layout.TableCellBox && box.TableBorder > 0 {
 		borderColor := color.Gray{Y: 180}
 		bw := float64(box.TableBorder)
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: box.Rect.Width, Height: bw}, Color: borderColor})
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y + box.Rect.Height - bw, Width: box.Rect.Width, Height: bw}, Color: borderColor})
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X, Y: box.Rect.Y, Width: bw, Height: box.Rect.Height}, Color: borderColor})
-		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: box.Rect.X + box.Rect.Width - bw, Y: box.Rect.Y, Width: bw, Height: box.Rect.Height}, Color: borderColor})
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: boxRect.X, Y: boxRect.Y, Width: boxRect.Width, Height: bw}, Color: borderColor})
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: boxRect.X, Y: boxRect.Y + boxRect.Height - bw, Width: boxRect.Width, Height: bw}, Color: borderColor})
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: boxRect.X, Y: boxRect.Y, Width: bw, Height: boxRect.Height}, Color: borderColor})
+		*commands = append(*commands, DrawRect{Rect: layout.Rect{X: boxRect.X + boxRect.Width - bw, Y: boxRect.Y, Width: bw, Height: boxRect.Height}, Color: borderColor})
+	}
+
+	// Apply horizontal scroll offset for this container's children
+	scrollOffsetX := 0.0
+	if box.Node != nil && state.ScrollOffsets != nil {
+		if offset, ok := state.ScrollOffsets[box.Node]; ok {
+			scrollOffsetX = offset
+		}
 	}
 
 	// Paint children with input state
 	// Skip children for elements that render their own content
 	if box.Type != layout.ButtonBox && box.Type != layout.SelectBox {
+		childStyle := currentStyle
+		childStyle.ScrollOffsetX += scrollOffsetX
 		for _, child := range box.Children {
 			// Skip LegendBox - DrawFieldset already renders the legend text
 			if child.Type == layout.LegendBox {
@@ -824,9 +866,12 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			if currentStyle.ClipBottom > 0 && child.Rect.Y >= currentStyle.ClipBottom {
 				continue
 			}
-			paintLayoutBox(child, commands, currentStyle, state, linkStyler, layer, isFixed)
+			paintLayoutBox(child, commands, childStyle, state, linkStyler, layer, isFixed)
 		}
 	}
+
+	// Draw horizontal scrollbar if overflow-x is scroll/auto
+	drawHorizontalScrollbar(box, commands, currentStyle, state)
 }
 
 // getListInfo returns (isListItem, isOrdered, itemIndex)
@@ -1009,6 +1054,21 @@ func effectiveOverflow(axisValue, shorthand string) string {
 	return shorthand
 }
 
+// computeClipStart calculates the left/top clip boundary for overflow containers.
+func computeClipStart(overflow string, boxType layout.BoxType, pos, border, currentClip float64) float64 {
+	if overflow == "" || overflow == "visible" {
+		return currentClip
+	}
+	switch boxType {
+	case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
+		clip := pos + border
+		if currentClip == 0 || clip > currentClip {
+			return clip
+		}
+	}
+	return currentClip
+}
+
 // computeClip calculates the clip boundary for a given axis if overflow is not visible.
 func computeClip(overflow string, boxType layout.BoxType, pos, size, padding, border, currentClip float64) float64 {
 	if overflow == "" || overflow == "visible" {
@@ -1034,4 +1094,114 @@ func fontStackHasMonospace(fonts []string) bool {
 		}
 	}
 	return false
+}
+
+// Scrollbar constants
+const (
+	ScrollbarHeight        = layout.ScrollbarHeight
+	ScrollbarThumbMinWidth = 20.0
+	scrollbarThumbPadding  = 2.0
+)
+
+// needsHorizontalScrollbar returns true if the box will render a horizontal scrollbar.
+func needsHorizontalScrollbar(box *layout.LayoutBox, style TextStyle) bool {
+	switch box.Type {
+	case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
+	default:
+		return false
+	}
+	overflowX := effectiveOverflow(style.OverflowX, style.OverFlow)
+	switch overflowX {
+	case "scroll":
+		return true
+	case "auto":
+		containerRight := box.Rect.X + box.Rect.Width - box.Padding.Right - box.Style.BorderRightWidth
+		return maxChildRight(box) > containerRight
+	default:
+		return false
+	}
+}
+
+// maxChildRight returns the rightmost edge (X + Width) among all children of the box.
+func maxChildRight(box *layout.LayoutBox) float64 {
+	maxRight := 0.0
+	for _, child := range box.Children {
+		right := child.Rect.X + child.Rect.Width
+		if right > maxRight {
+			maxRight = right
+		}
+	}
+	return maxRight
+}
+
+// drawHorizontalScrollbar appends DrawRect commands for a horizontal scrollbar
+// track and thumb when overflow-x is "scroll" or "auto" (with overflow).
+func drawHorizontalScrollbar(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState) {
+	if !needsHorizontalScrollbar(box, style) {
+		return
+	}
+
+	containerRight := box.Rect.X + box.Rect.Width - box.Padding.Right - box.Style.BorderRightWidth
+	contentRight := maxChildRight(box)
+	hasOverflow := contentRight > containerRight
+
+	// Track geometry
+	trackX := box.Rect.X + box.Style.BorderLeftWidth
+	trackW := box.Rect.Width - box.Style.BorderLeftWidth - box.Style.BorderRightWidth
+	trackY := box.Rect.Y + box.Rect.Height - box.Padding.Bottom - box.Style.BorderBottomWidth - ScrollbarHeight
+
+	if trackW <= 0 {
+		return
+	}
+
+	// Draw track
+	*commands = append(*commands, DrawRect{
+		Rect:  layout.Rect{X: trackX, Y: trackY, Width: trackW, Height: ScrollbarHeight},
+		Color: ColorScrollbarTrack,
+	})
+
+	// Thumb geometry
+	visibleWidth := trackW
+	contentWidth := contentRight - box.Rect.X
+	if contentWidth <= 0 {
+		contentWidth = visibleWidth
+	}
+
+	var thumbWidth float64
+	if hasOverflow {
+		thumbWidth = visibleWidth * (visibleWidth / contentWidth)
+		if thumbWidth < ScrollbarThumbMinWidth {
+			thumbWidth = ScrollbarThumbMinWidth
+		}
+	} else {
+		// No overflow: thumb fills entire track (for overflow-x: scroll)
+		thumbWidth = trackW - 2*scrollbarThumbPadding
+	}
+
+	thumbHeight := ScrollbarHeight - 2*scrollbarThumbPadding
+	thumbX := trackX + scrollbarThumbPadding
+	thumbY := trackY + scrollbarThumbPadding
+
+	// Position thumb based on scroll offset
+	if hasOverflow && box.Node != nil && state.ScrollOffsets != nil {
+		if scrollOffset, ok := state.ScrollOffsets[box.Node]; ok && scrollOffset > 0 {
+			maxScroll := contentWidth - visibleWidth
+			if maxScroll > 0 {
+				scrollRatio := scrollOffset / maxScroll
+				scrollableTrack := trackW - 2*scrollbarThumbPadding - thumbWidth
+				thumbX += scrollRatio * scrollableTrack
+			}
+		}
+	}
+
+	radius := thumbHeight / 2
+
+	*commands = append(*commands, DrawRect{
+		Rect:              layout.Rect{X: thumbX, Y: thumbY, Width: thumbWidth, Height: thumbHeight},
+		Color:             ColorScrollbarThumb,
+		TopLeftRadius:     radius,
+		TopRightRadius:    radius,
+		BottomRightRadius: radius,
+		BottomLeftRadius:  radius,
+	})
 }

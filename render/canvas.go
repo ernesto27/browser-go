@@ -304,19 +304,23 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 		case DrawText:
 			displayText := c.Text
 
+			if c.ClipLeftOffset > 0 {
+				displayText = truncateTextClipLeft(displayText, c.ClipLeftOffset, c.Size, c.LetterSpacing, c.WordSpacing)
+			}
+
 			effectiveOverflowX := c.OverflowX
 			if effectiveOverflowX == "" {
 				effectiveOverflowX = "visible"
 			}
 
 			if c.Width > 0 && effectiveOverflowX != "visible" {
-				textWidth := measureTextWidth(c.Text, c.Size, c.LetterSpacing, c.WordSpacing)
+				textWidth := measureTextWidth(displayText, c.Size, c.LetterSpacing, c.WordSpacing)
 				if textWidth > c.Width {
 					switch c.TextOverflow {
 					case "ellipsis":
-						displayText = truncateTextWithEllipsis(c.Text, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
+						displayText = truncateTextWithEllipsis(displayText, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
 					case "clip", "":
-						displayText = truncateTextClip(c.Text, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
+						displayText = truncateTextClip(displayText, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
 					}
 				}
 			}
@@ -1210,6 +1214,19 @@ func truncateTextWithEllipsis(text string, maxWidth float64, fontSize float32, l
 	}
 
 	return ellipsis
+}
+
+// truncateTextClipLeft removes leading characters until the removed portion is at least clipOffset wide.
+func truncateTextClipLeft(text string, clipOffset float64, fontSize float32, letterSpacing, wordSpacing float64) string {
+	runes := []rune(text)
+	for i := 1; i <= len(runes); i++ {
+		removed := string(runes[:i])
+		w := measureTextWidth(removed, fontSize, letterSpacing, wordSpacing)
+		if w >= clipOffset {
+			return string(runes[i:])
+		}
+	}
+	return ""
 }
 
 func truncateTextClip(text string, maxWidth float64, fontSize float32, letterSpacing, wordSpacing float64) string {

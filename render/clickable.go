@@ -20,6 +20,7 @@ type ClickableContainer struct {
 	onMouseDown func(x, y float32)
 	onMouseUp   func(x, y float32)
 	onDrag      func(x, y float32)
+	onDragEnd   func()
 
 	browser *Browser // Reference to browser for tooltip support
 }
@@ -150,7 +151,9 @@ func (c *ClickableContainer) Dragged(event *fyne.DragEvent) {
 
 // DragEnd is called when drag completes
 func (c *ClickableContainer) DragEnd() {
-	// Selection is finalized
+	if c.onDragEnd != nil {
+		c.onDragEnd()
+	}
 }
 
 // clickableRenderer handles drawing

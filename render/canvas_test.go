@@ -4,6 +4,7 @@ import (
 	"browser/css"
 	"browser/layout"
 	"image/color"
+	"strings"
 	"testing"
 
 	"fyne.io/fyne/v2/canvas"
@@ -415,4 +416,45 @@ func TestBuildDisplayLayersOverflowYClipChildren(t *testing.T) {
 	assert.Len(t, textCommands, 2)
 	assert.Equal(t, "Line 1 inside", textCommands[0].Text)
 	assert.Equal(t, "Line 2 inside", textCommands[1].Text)
+}
+
+func TestTruncateTextClipLeft(t *testing.T) {
+	tests := []struct {
+		name       string
+		text       string
+		clipOffset float64
+		expectNot  string // result should not start with this
+	}{
+		{
+			name:       "trims leading characters",
+			text:       "ABCDEFGHIJ",
+			clipOffset: 30,
+			expectNot:  "A",
+		},
+		{
+			name:       "tiny offset trims at least one char",
+			text:       "Hello",
+			clipOffset: 1,
+			expectNot:  "H",
+		},
+		{
+			name:       "huge offset returns empty",
+			text:       "Hi",
+			clipOffset: 99999,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := truncateTextClipLeft(tt.text, tt.clipOffset, 14, 0, 0)
+			if tt.clipOffset > 99000 {
+				assert.Equal(t, "", result)
+			} else {
+				assert.True(t, len(result) < len(tt.text), "result should be shorter than input")
+				if tt.expectNot != "" {
+					assert.False(t, strings.HasPrefix(result, tt.expectNot), "should have trimmed leading chars")
+				}
+			}
+		})
+	}
 }
