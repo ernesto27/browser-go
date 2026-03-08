@@ -459,7 +459,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		}
 
 		// Inline element - check if we need to wrap
-		if currentX+childWidth > innerX+innerWidth && currentX > innerX {
+		if box.Style.WhiteSpace != "nowrap" && currentX+childWidth > innerX+innerWidth && currentX > innerX {
 			// Wrap to new line - apply alignment first
 			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign)
 			lineBoxes = nil

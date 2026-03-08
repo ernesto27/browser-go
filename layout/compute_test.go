@@ -8,6 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func effectiveOverflowX(s css.Style) string {
+	if s.OverflowX != "" {
+		return s.OverflowX
+	}
+
+	return s.Overflow
+}
+
 // TestColWidth tests the getColWidth helper that reads width from a DOM node.
 func TestColWidth(t *testing.T) {
 	tests := []struct {
@@ -1108,6 +1116,29 @@ func TestWhiteSpaceNoWrap(t *testing.T) {
 		assert.Equal(t, 24.0, textBox.Rect.Height)
 		assert.Greater(t, textBox.Rect.Width, 84.0)
 	})
+
+	t.Run("mixed inline content stays on one line with nowrap", func(t *testing.T) {
+		tree := buildTree(`<div style="width: 100px; white-space: nowrap;">This is a very long single line with <code>overflow-x: hidden</code>, so the extra horizontal content should be clipped.</div>`)
+		ComputeLayout(tree, 600)
+
+		div := findBoxByTag(tree, "div")
+		assert.NotNil(t, div)
+
+		textBefore := findTextBoxInSubtree(div, "This is a very long single line with ")
+		assert.NotNil(t, textBefore)
+		assert.Len(t, textBefore.WrappedLines, 0)
+
+		code := findBoxByTag(div, "code")
+		assert.NotNil(t, code)
+		assert.Greater(t, code.Rect.X, textBefore.Rect.X)
+		assert.Equal(t, textBefore.Rect.Y, code.Rect.Y)
+
+		textAfter := findTextBoxInSubtree(div, ", so the extra horizontal content should be clipped.")
+		assert.NotNil(t, textAfter)
+		assert.Len(t, textAfter.WrappedLines, 0)
+		assert.Equal(t, textBefore.Rect.Y, textAfter.Rect.Y)
+		assert.Greater(t, textAfter.Rect.X, code.Rect.X)
+	})
 }
 
 func TestTextOverflowEllipsis(t *testing.T) {
@@ -1119,6 +1150,17 @@ func TestTextOverflowEllipsis(t *testing.T) {
 		assert.NotNil(t, div)
 		assert.Equal(t, "ellipsis", div.Style.TextOverflow)
 		assert.Equal(t, "hidden", div.Style.Overflow)
+	})
+
+	t.Run("overflow-x stored in style", func(t *testing.T) {
+		tree := buildTree(`<div style="width: 100px; white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis;">Hello World This Is Long</div>`)
+		ComputeLayout(tree, 600)
+
+		div := findBoxByTag(tree, "div")
+		assert.NotNil(t, div)
+		assert.Equal(t, "ellipsis", div.Style.TextOverflow)
+		assert.Equal(t, "hidden", div.Style.OverflowX)
+		assert.Equal(t, "hidden", effectiveOverflowX(div.Style))
 	})
 }
 

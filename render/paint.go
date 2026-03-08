@@ -55,7 +55,9 @@ type TextStyle struct {
 	LetterSpacing float64
 	WordSpacing   float64
 	TextOverflow  string
+	OverflowX     string
 	OverFlow      string
+	ClipRight     float64
 	LineHeight    float64
 }
 
@@ -77,6 +79,7 @@ func (ts TextStyle) newDrawText(text string, x, y, width float64) DrawText {
 		Strikethrough:   ts.TextDecoration == TextDecorationLineThrough,
 		TextTransform:   ts.TextTransform,
 		TextOverflow:    ts.TextOverflow,
+		OverflowX:       ts.OverflowX,
 	}
 }
 
@@ -231,6 +234,7 @@ type DrawText struct {
 	Strikethrough   bool
 	TextTransform   string
 	TextOverflow    string
+	OverflowX       string
 }
 
 type DrawImage struct {
@@ -368,8 +372,25 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Style.TextOverflow != "" {
 		currentStyle.TextOverflow = box.Style.TextOverflow
 	}
+	if box.Style.OverflowX != "" {
+		currentStyle.OverflowX = box.Style.OverflowX
+	}
 	if box.Style.Overflow != "" {
 		currentStyle.OverFlow = box.Style.Overflow
+	}
+
+	effectiveOverflowX := currentStyle.OverflowX
+	if effectiveOverflowX == "" {
+		effectiveOverflowX = currentStyle.OverFlow
+	}
+	if effectiveOverflowX != "" && effectiveOverflowX != "visible" {
+		switch box.Type {
+		case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
+			clipRight := box.Rect.X + box.Rect.Width - box.Padding.Right - box.Style.BorderRightWidth
+			if currentStyle.ClipRight == 0 || clipRight < currentStyle.ClipRight {
+				currentStyle.ClipRight = clipRight
+			}
+		}
 	}
 
 	isHidden := currentStyle.Visibility == "hidden"
@@ -555,11 +576,20 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				y += lineHeight
 			}
 		} else {
-			// For text-overflow, use the parent container's width as the clipping boundary
-			// because the text box's own width is the natural (unwrapped) text width.
+			// For horizontal overflow handling, use the parent container's width as the clipping
+			// boundary because the text box's own width is the natural (unwrapped) text width.
 			drawWidth := box.Rect.Width
-			if currentStyle.TextOverflow != "" && box.Parent != nil {
+			if effectiveOverflowX != "visible" && effectiveOverflowX != "" && box.Parent != nil {
 				drawWidth = box.Parent.Rect.Width - box.Parent.Padding.Left - box.Parent.Padding.Right
+			}
+			if currentStyle.ClipRight > 0 {
+				clipWidth := currentStyle.ClipRight - box.Rect.X
+				if clipWidth <= 0 {
+					return
+				}
+				if clipWidth < drawWidth {
+					drawWidth = clipWidth
+				}
 			}
 			*commands = append(*commands, currentStyle.newDrawText(text, box.Rect.X, box.Rect.Y, drawWidth))
 		}

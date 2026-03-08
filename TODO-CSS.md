@@ -97,8 +97,8 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 
 ### Box Model
 - [ ] `box-sizing` - border-box/content-box
-- [~] `overflow` - partial: `hidden` and `visible` parsed; only used for `text-overflow` clipping, no scroll/auto
-- [ ] `overflow-x` - horizontal overflow
+- [~] `overflow` - partial: `visible|hidden|scroll|auto` parsed; used as fallback for horizontal text clipping, no real scrollbars or full box clipping
+- [~] `overflow-x` - partial: horizontal text clipping works with `white-space: nowrap`; `auto`/`scroll` currently clip but do not render scrollbars
 - [ ] `overflow-y` - vertical overflow
 - [ ] `clear` - clear floats
 

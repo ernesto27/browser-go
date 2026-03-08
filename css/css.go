@@ -55,6 +55,7 @@ type Style struct {
 	TextAlign        string
 	WhiteSpace       string
 	Overflow         string
+	OverflowX        string
 	TextOverflow     string
 	VerticalAlign    string
 	Display          string
@@ -698,6 +699,11 @@ func applyDeclaration(style *Style, property, value string) {
 		switch value {
 		case "visible", "hidden", "scroll", "auto":
 			style.Overflow = value
+		}
+	case "overflow-x":
+		switch value {
+		case "visible", "hidden", "scroll", "auto":
+			style.OverflowX = value
 		}
 	case "vertical-align":
 		switch value {

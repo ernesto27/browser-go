@@ -304,13 +304,18 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 		case DrawText:
 			displayText := c.Text
 
-			if c.TextOverflow != "" && c.Width > 0 {
+			effectiveOverflowX := c.OverflowX
+			if effectiveOverflowX == "" {
+				effectiveOverflowX = "visible"
+			}
+
+			if c.Width > 0 && effectiveOverflowX != "visible" {
 				textWidth := measureTextWidth(c.Text, c.Size, c.LetterSpacing, c.WordSpacing)
 				if textWidth > c.Width {
 					switch c.TextOverflow {
 					case "ellipsis":
 						displayText = truncateTextWithEllipsis(c.Text, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
-					case "clip":
+					case "clip", "":
 						displayText = truncateTextClip(c.Text, c.Width, c.Size, c.LetterSpacing, c.WordSpacing)
 					}
 				}

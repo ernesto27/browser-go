@@ -271,6 +271,17 @@ func TestBuildLayoutTreeTextAlignOverride(t *testing.T) {
 	assert.Equal(t, "right", spanBox.Style.TextAlign)
 }
 
+func TestBuildLayoutTreeOverflowXInheritance(t *testing.T) {
+	tree := buildTreeWithCSS(`<div><span>Text</span></div>`, `div { overflow-x: hidden; }`)
+
+	divBox := findBoxByTag(tree, "div")
+	spanBox := findBoxByTag(tree, "span")
+	assert.NotNil(t, divBox)
+	assert.NotNil(t, spanBox)
+	assert.Equal(t, "hidden", divBox.Style.OverflowX)
+	assert.Equal(t, "hidden", spanBox.Style.OverflowX)
+}
+
 func TestMergeStyles(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -353,6 +364,12 @@ func TestMergeStyles(t *testing.T) {
 			base:   css.Style{Display: "block"},
 			inline: css.Style{Display: "none"},
 			verify: func(t *testing.T, r *css.Style) { assert.Equal(t, "none", r.Display) },
+		},
+		{
+			name:   "overflow-x merged",
+			base:   css.Style{OverflowX: "visible"},
+			inline: css.Style{OverflowX: "hidden"},
+			verify: func(t *testing.T, r *css.Style) { assert.Equal(t, "hidden", r.OverflowX) },
 		},
 		{
 			name:   "opacity merged when not 1.0",

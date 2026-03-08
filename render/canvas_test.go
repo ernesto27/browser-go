@@ -1,6 +1,8 @@
 package render
 
 import (
+	"browser/css"
+	"browser/layout"
 	"image/color"
 	"testing"
 
@@ -171,4 +173,193 @@ func TestRenderToCanvasDrawTextWordSpacing(t *testing.T) {
 		}
 	}
 	assert.Equal(t, 3, textCount, "expected one canvas.Text object per rune when word-spacing is set")
+}
+
+func TestRenderToCanvasTextOverflowRespectsOverflowX(t *testing.T) {
+	app := test.NewApp()
+	defer app.Quit()
+
+	t.Run("visible overflow leaves text unchanged", func(t *testing.T) {
+		cmds := []DisplayCommand{
+			DrawText{
+				Text:         "Hello Wonderful World",
+				X:            10,
+				Y:            10,
+				Width:        20,
+				Color:        color.Black,
+				Size:         14,
+				TextOverflow: "clip",
+				OverflowX:    "visible",
+			},
+		}
+
+		objects := RenderToCanvas(cmds, "", "", false, nil)
+		var texts []*canvas.Text
+		for _, obj := range objects {
+			if text, ok := obj.(*canvas.Text); ok {
+				texts = append(texts, text)
+			}
+		}
+
+		assert.Len(t, texts, 1)
+		assert.Equal(t, "Hello Wonderful World", texts[0].Text)
+	})
+
+	t.Run("hidden overflow clips text", func(t *testing.T) {
+		cmds := []DisplayCommand{
+			DrawText{
+				Text:         "Hello Wonderful World",
+				X:            10,
+				Y:            10,
+				Width:        20,
+				Color:        color.Black,
+				Size:         14,
+				TextOverflow: "clip",
+				OverflowX:    "hidden",
+			},
+		}
+
+		objects := RenderToCanvas(cmds, "", "", false, nil)
+		var texts []*canvas.Text
+		for _, obj := range objects {
+			if text, ok := obj.(*canvas.Text); ok {
+				texts = append(texts, text)
+			}
+		}
+
+		assert.Len(t, texts, 1)
+		assert.NotEqual(t, "Hello Wonderful World", texts[0].Text)
+		assert.NotEmpty(t, texts[0].Text)
+	})
+
+	t.Run("hidden overflow clips plain text without text-overflow", func(t *testing.T) {
+		cmds := []DisplayCommand{
+			DrawText{
+				Text:      "Hello Wonderful World",
+				X:         10,
+				Y:         10,
+				Width:     20,
+				Color:     color.Black,
+				Size:      14,
+				OverflowX: "hidden",
+			},
+		}
+
+		objects := RenderToCanvas(cmds, "", "", false, nil)
+		var texts []*canvas.Text
+		for _, obj := range objects {
+			if text, ok := obj.(*canvas.Text); ok {
+				texts = append(texts, text)
+			}
+		}
+
+		assert.Len(t, texts, 1)
+		assert.NotEqual(t, "Hello Wonderful World", texts[0].Text)
+		assert.NotEmpty(t, texts[0].Text)
+	})
+
+	t.Run("auto overflow currently clips without scrollbar", func(t *testing.T) {
+		cmds := []DisplayCommand{
+			DrawText{
+				Text:      "Hello Wonderful World",
+				X:         10,
+				Y:         10,
+				Width:     20,
+				Color:     color.Black,
+				Size:      14,
+				OverflowX: "auto",
+			},
+		}
+
+		objects := RenderToCanvas(cmds, "", "", false, nil)
+		var texts []*canvas.Text
+		for _, obj := range objects {
+			if text, ok := obj.(*canvas.Text); ok {
+				texts = append(texts, text)
+			}
+		}
+
+		assert.Len(t, texts, 1)
+		assert.NotEqual(t, "Hello Wonderful World", texts[0].Text)
+		assert.NotEmpty(t, texts[0].Text)
+	})
+
+	t.Run("scroll overflow currently clips without scrollbar", func(t *testing.T) {
+		cmds := []DisplayCommand{
+			DrawText{
+				Text:      "Hello Wonderful World",
+				X:         10,
+				Y:         10,
+				Width:     20,
+				Color:     color.Black,
+				Size:      14,
+				OverflowX: "scroll",
+			},
+		}
+
+		objects := RenderToCanvas(cmds, "", "", false, nil)
+		var texts []*canvas.Text
+		for _, obj := range objects {
+			if text, ok := obj.(*canvas.Text); ok {
+				texts = append(texts, text)
+			}
+		}
+
+		assert.Len(t, texts, 1)
+		assert.NotEqual(t, "Hello Wonderful World", texts[0].Text)
+		assert.NotEmpty(t, texts[0].Text)
+	})
+}
+
+func TestBuildDisplayLayersOverflowXClipPropagation(t *testing.T) {
+	root := &layout.LayoutBox{
+		Type: layout.BlockBox,
+		Rect: layout.Rect{X: 0, Y: 0, Width: 200, Height: 100},
+	}
+
+	container := &layout.LayoutBox{
+		Type: layout.BlockBox,
+		Rect: layout.Rect{X: 10, Y: 10, Width: 100, Height: 30},
+		Style: css.Style{
+			OverflowX: "hidden",
+		},
+		Parent: root,
+	}
+
+	text1 := &layout.LayoutBox{
+		Type:   layout.TextBox,
+		Rect:   layout.Rect{X: 10, Y: 10, Width: 140, Height: 24},
+		Text:   "This is a very long single line with ",
+		Parent: container,
+	}
+
+	inline := &layout.LayoutBox{
+		Type:   layout.InlineBox,
+		Rect:   layout.Rect{X: 150, Y: 10, Width: 120, Height: 24},
+		Parent: container,
+	}
+
+	text2 := &layout.LayoutBox{
+		Type:   layout.TextBox,
+		Rect:   layout.Rect{X: 150, Y: 10, Width: 120, Height: 24},
+		Text:   "overflow-x: hidden",
+		Parent: inline,
+	}
+
+	inline.Children = []*layout.LayoutBox{text2}
+	container.Children = []*layout.LayoutBox{text1, inline}
+	root.Children = []*layout.LayoutBox{container}
+
+	commands, _ := BuildDisplayLayers(root, InputState{}, LinkStyler{})
+
+	var textCommands []DrawText
+	for _, cmd := range commands {
+		if drawText, ok := cmd.(DrawText); ok {
+			textCommands = append(textCommands, drawText)
+		}
+	}
+
+	assert.Len(t, textCommands, 1)
+	assert.Equal(t, "This is a very long single line with ", textCommands[0].Text)
+	assert.Equal(t, 100.0, textCommands[0].Width)
 }

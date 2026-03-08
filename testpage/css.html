@@ -17,6 +17,30 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Overflow-X Test (Not Implemented)</h2>
+    <p>Testing <code>overflow-x</code> for horizontal overflow control.</p>
+
+    <div style="width: 220px; border: 1px solid black; padding: 6px; background-color: #f7f7f7; overflow-x: visible; white-space: nowrap;">
+        This is a very long single line with <code>overflow-x: visible</code>, so it should spill outside the box horizontally.
+    </div>
+    <p>Box above: <code>overflow-x: visible</code></p>
+
+    <br>
+
+    <div style="width: 220px; border: 1px solid black; padding: 6px; background-color: #eef6ff; overflow-x: hidden; white-space: nowrap;">
+        This is a very long single line with <code>overflow-x: hidden</code>, so the extra horizontal content should be clipped.
+    </div>
+    <p>Box above: <code>overflow-x: hidden</code></p>
+
+    <br>
+
+    <div style="width: 220px; border: 1px solid black; padding: 6px; background-color: #f5f5f5; overflow-x: auto; white-space: nowrap;">
+        This is a very long single line with <code>overflow-x: auto</code>, so a horizontal scrollbar would appear in a full browser.
+    </div>
+    <p>Box above: <code>overflow-x: auto</code></p>
+
+    <hr>
+
     <h2>White Space Test (Not Implemented)</h2>
     <p>Testing <code>white-space</code> values <code>normal</code> and <code>nowrap</code>.</p>
 
