@@ -8,14 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func effectiveOverflowX(s css.Style) string {
-	if s.OverflowX != "" {
-		return s.OverflowX
-	}
-
-	return s.Overflow
-}
-
 // TestColWidth tests the getColWidth helper that reads width from a DOM node.
 func TestColWidth(t *testing.T) {
 	tests := []struct {
@@ -1160,7 +1152,7 @@ func TestTextOverflowEllipsis(t *testing.T) {
 		assert.NotNil(t, div)
 		assert.Equal(t, "ellipsis", div.Style.TextOverflow)
 		assert.Equal(t, "hidden", div.Style.OverflowX)
-		assert.Equal(t, "hidden", effectiveOverflowX(div.Style))
+		assert.Equal(t, "hidden", div.Style.EffectiveOverflowX())
 	})
 }
 

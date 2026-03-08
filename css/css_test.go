@@ -21,14 +21,6 @@ func colorsEqual(c1, c2 color.Color) bool {
 	return r1 == r2 && g1 == g2 && b1 == b2 && a1 == a2
 }
 
-func effectiveOverflowX(s Style) string {
-	if s.OverflowX != "" {
-		return s.OverflowX
-	}
-
-	return s.Overflow
-}
-
 func TestParseColor(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -640,7 +632,50 @@ func TestParseInlineStyle(t *testing.T) {
 			name:  "overflow provides overflow-x fallback",
 			input: "overflow: hidden",
 			verify: func(t *testing.T, s Style) {
-				assert.Equal(t, "hidden", effectiveOverflowX(s))
+				assert.Equal(t, "hidden", s.EffectiveOverflowX())
+			},
+		},
+		{
+			name:  "overflow-y hidden",
+			input: "overflow-y: hidden",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "hidden", s.OverflowY)
+			},
+		},
+		{
+			name:  "overflow-y visible",
+			input: "overflow-y: visible",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "visible", s.OverflowY)
+			},
+		},
+		{
+			name:  "overflow-y auto",
+			input: "overflow-y: auto",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "auto", s.OverflowY)
+			},
+		},
+		{
+			name:  "overflow-y scroll",
+			input: "overflow-y: scroll",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "scroll", s.OverflowY)
+			},
+		},
+		{
+			name:  "overflow then overflow-y override",
+			input: "overflow: hidden; overflow-y: visible",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "hidden", s.Overflow)
+				assert.Equal(t, "visible", s.OverflowY)
+			},
+		},
+		{
+			name:  "overflow provides overflow-y fallback",
+			input: "overflow: hidden",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "hidden", s.EffectiveOverflowY())
 			},
 		},
 		{
@@ -982,7 +1017,49 @@ func TestOverflowXWithContext(t *testing.T) {
 		sheet := Parse(`p { overflow: hidden; }`)
 		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
 		assert.Equal(t, "hidden", style.Overflow)
-		assert.Equal(t, "hidden", effectiveOverflowX(style))
+		assert.Equal(t, "hidden", style.EffectiveOverflowX())
+	})
+}
+
+func TestOverflowYWithContext(t *testing.T) {
+	node := &dom.Node{Type: dom.Element, TagName: "p", Attributes: map[string]string{}}
+
+	t.Run("supports hidden", func(t *testing.T) {
+		sheet := Parse(`p { overflow-y: hidden; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "hidden", style.OverflowY)
+	})
+
+	t.Run("supports visible", func(t *testing.T) {
+		sheet := Parse(`p { overflow-y: visible; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "visible", style.OverflowY)
+	})
+
+	t.Run("supports auto", func(t *testing.T) {
+		sheet := Parse(`p { overflow-y: auto; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "auto", style.OverflowY)
+	})
+
+	t.Run("supports scroll", func(t *testing.T) {
+		sheet := Parse(`p { overflow-y: scroll; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "scroll", style.OverflowY)
+	})
+
+	t.Run("overflow-y overrides overflow for vertical behavior", func(t *testing.T) {
+		sheet := Parse(`p { overflow: hidden; overflow-y: visible; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "hidden", style.Overflow)
+		assert.Equal(t, "visible", style.OverflowY)
+	})
+
+	t.Run("overflow provides vertical fallback when overflow-y is unset", func(t *testing.T) {
+		sheet := Parse(`p { overflow: hidden; }`)
+		style := ApplyStylesheetWithContext(sheet, node, 16, DefaultViewportWidth, DefaultViewportHeight, MatchContext{})
+		assert.Equal(t, "hidden", style.Overflow)
+		assert.Equal(t, "hidden", style.EffectiveOverflowY())
 	})
 }
 

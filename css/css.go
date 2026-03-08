@@ -56,6 +56,7 @@ type Style struct {
 	WhiteSpace       string
 	Overflow         string
 	OverflowX        string
+	OverflowY        string
 	TextOverflow     string
 	VerticalAlign    string
 	Display          string
@@ -109,6 +110,24 @@ type Style struct {
 	BottomSet bool
 
 	ListStyleType string
+}
+
+// EffectiveOverflowX returns the effective horizontal overflow value,
+// falling back to the Overflow shorthand if OverflowX is unset.
+func (s Style) EffectiveOverflowX() string {
+	if s.OverflowX != "" {
+		return s.OverflowX
+	}
+	return s.Overflow
+}
+
+// EffectiveOverflowY returns the effective vertical overflow value,
+// falling back to the Overflow shorthand if OverflowY is unset.
+func (s Style) EffectiveOverflowY() string {
+	if s.OverflowY != "" {
+		return s.OverflowY
+	}
+	return s.Overflow
 }
 
 func DefaultStyle() Style {
@@ -704,6 +723,11 @@ func applyDeclaration(style *Style, property, value string) {
 		switch value {
 		case "visible", "hidden", "scroll", "auto":
 			style.OverflowX = value
+		}
+	case "overflow-y":
+		switch value {
+		case "visible", "hidden", "scroll", "auto":
+			style.OverflowY = value
 		}
 	case "vertical-align":
 		switch value {

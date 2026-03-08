@@ -17,6 +17,39 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Overflow-Y Test (Not Implemented)</h2>
+    <p>Testing <code>overflow-y</code> for vertical overflow control.</p>
+
+    <div style="width: 250px; height: 80px; border: 1px solid black; padding: 6px; background-color: #f7f7f7; overflow-y: visible;">
+        <p>Line 1: overflow-y visible</p>
+        <p>Line 2: content keeps going</p>
+        <p>Line 3: spills past the box</p>
+        <p>Line 4: still visible outside</p>
+    </div>
+    <p>Box above: <code>overflow-y: visible</code> (content spills out)</p>
+
+    <br>
+
+    <div style="width: 250px; height: 80px; border: 1px solid black; padding: 6px; background-color: #eef6ff; overflow-y: hidden;">
+        <p>Line 1: overflow-y hidden</p>
+        <p>Line 2: aaaacontent keeps going </p>
+        <p>Line 3: should be clipped</p>
+        <p>Line 4: should not be visible</p>
+    </div>
+    <p>Box above: <code>overflow-y: hidden</code> (extra content clipped)</p>
+
+    <br>
+
+    <div style="width: 250px; height: 80px; border: 1px solid black; padding: 6px; background-color: #f5f5f5; overflow-y: auto;">
+        <p>Line 1: overflow-y auto</p>
+        <p>Line 2: content keeps going</p>
+        <p>Line 3: scrollbar in a full browser</p>
+        <p>Line 4: more content below</p>
+    </div>
+    <p>Box above: <code>overflow-y: auto</code> (scrollbar if needed)</p>
+
+    <hr>
+
     <h2>Overflow-X Test (Not Implemented)</h2>
     <p>Testing <code>overflow-x</code> for horizontal overflow control.</p>
 

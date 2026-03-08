@@ -135,6 +135,11 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 		if parent != nil && box.Style.OverflowX == "" {
 			box.Style.OverflowX = parent.Style.OverflowX
 		}
+
+		if parent != nil && box.Style.OverflowY == "" {
+			box.Style.OverflowY = parent.Style.OverflowY
+		}
+
 		if parent != nil && box.Style.Overflow == "" {
 			box.Style.Overflow = parent.Style.Overflow
 		}
@@ -299,6 +304,9 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	}
 	if inline.OverflowX != "" {
 		base.OverflowX = inline.OverflowX
+	}
+	if inline.OverflowY != "" {
+		base.OverflowY = inline.OverflowY
 	}
 	if inline.Overflow != "" {
 		base.Overflow = inline.Overflow

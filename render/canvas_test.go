@@ -363,3 +363,56 @@ func TestBuildDisplayLayersOverflowXClipPropagation(t *testing.T) {
 	assert.Equal(t, "This is a very long single line with ", textCommands[0].Text)
 	assert.Equal(t, 100.0, textCommands[0].Width)
 }
+
+func TestBuildDisplayLayersOverflowYClipChildren(t *testing.T) {
+	root := &layout.LayoutBox{
+		Type: layout.BlockBox,
+		Rect: layout.Rect{X: 0, Y: 0, Width: 300, Height: 400},
+	}
+
+	container := &layout.LayoutBox{
+		Type: layout.BlockBox,
+		Rect: layout.Rect{X: 10, Y: 10, Width: 250, Height: 80},
+		Style: css.Style{
+			OverflowY: "hidden",
+		},
+		Parent: root,
+	}
+
+	child1 := &layout.LayoutBox{
+		Type:   layout.TextBox,
+		Rect:   layout.Rect{X: 10, Y: 10, Width: 200, Height: 24},
+		Text:   "Line 1 inside",
+		Parent: container,
+	}
+
+	child2 := &layout.LayoutBox{
+		Type:   layout.TextBox,
+		Rect:   layout.Rect{X: 10, Y: 40, Width: 200, Height: 24},
+		Text:   "Line 2 inside",
+		Parent: container,
+	}
+
+	child3 := &layout.LayoutBox{
+		Type:   layout.TextBox,
+		Rect:   layout.Rect{X: 10, Y: 95, Width: 200, Height: 24},
+		Text:   "Line 3 should be clipped",
+		Parent: container,
+	}
+
+	container.Children = []*layout.LayoutBox{child1, child2, child3}
+	root.Children = []*layout.LayoutBox{container}
+
+	commands, _ := BuildDisplayLayers(root, InputState{}, LinkStyler{})
+
+	var textCommands []DrawText
+	for _, cmd := range commands {
+		if drawText, ok := cmd.(DrawText); ok {
+			textCommands = append(textCommands, drawText)
+		}
+	}
+
+	assert.Len(t, textCommands, 2)
+	assert.Equal(t, "Line 1 inside", textCommands[0].Text)
+	assert.Equal(t, "Line 2 inside", textCommands[1].Text)
+}

@@ -56,8 +56,10 @@ type TextStyle struct {
 	WordSpacing   float64
 	TextOverflow  string
 	OverflowX     string
+	OverflowY     string
 	OverFlow      string
 	ClipRight     float64
+	ClipBottom    float64
 	LineHeight    float64
 }
 
@@ -80,6 +82,7 @@ func (ts TextStyle) newDrawText(text string, x, y, width float64) DrawText {
 		TextTransform:   ts.TextTransform,
 		TextOverflow:    ts.TextOverflow,
 		OverflowX:       ts.OverflowX,
+		OverflowY:       ts.OverflowY,
 	}
 }
 
@@ -235,6 +238,7 @@ type DrawText struct {
 	TextTransform   string
 	TextOverflow    string
 	OverflowX       string
+	OverflowY       string
 }
 
 type DrawImage struct {
@@ -375,23 +379,18 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	if box.Style.OverflowX != "" {
 		currentStyle.OverflowX = box.Style.OverflowX
 	}
+	if box.Style.OverflowY != "" {
+		currentStyle.OverflowY = box.Style.OverflowY
+	}
 	if box.Style.Overflow != "" {
 		currentStyle.OverFlow = box.Style.Overflow
 	}
 
-	effectiveOverflowX := currentStyle.OverflowX
-	if effectiveOverflowX == "" {
-		effectiveOverflowX = currentStyle.OverFlow
-	}
-	if effectiveOverflowX != "" && effectiveOverflowX != "visible" {
-		switch box.Type {
-		case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
-			clipRight := box.Rect.X + box.Rect.Width - box.Padding.Right - box.Style.BorderRightWidth
-			if currentStyle.ClipRight == 0 || clipRight < currentStyle.ClipRight {
-				currentStyle.ClipRight = clipRight
-			}
-		}
-	}
+	effectiveOverflowX := effectiveOverflow(currentStyle.OverflowX, currentStyle.OverFlow)
+	effectiveOverflowY := effectiveOverflow(currentStyle.OverflowY, currentStyle.OverFlow)
+
+	currentStyle.ClipRight = computeClip(effectiveOverflowX, box.Type, box.Rect.X, box.Rect.Width, box.Padding.Right, box.Style.BorderRightWidth, currentStyle.ClipRight)
+	currentStyle.ClipBottom = computeClip(effectiveOverflowY, box.Type, box.Rect.Y, box.Rect.Height, box.Padding.Bottom, box.Style.BorderBottomWidth, currentStyle.ClipBottom)
 
 	isHidden := currentStyle.Visibility == "hidden"
 
@@ -571,6 +570,9 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			lineHeight := currentStyle.LineHeight
 			y := box.Rect.Y
 			for _, line := range box.WrappedLines {
+				if currentStyle.ClipBottom > 0 && y >= currentStyle.ClipBottom {
+					break
+				}
 				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform, currentStyle.FontVariant)
 				*commands = append(*commands, currentStyle.newDrawText(transformedLine, box.Rect.X, y, box.Rect.Width))
 				y += lineHeight
@@ -591,6 +593,13 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 					drawWidth = clipWidth
 				}
 			}
+
+			if currentStyle.ClipBottom > 0 {
+				if currentStyle.ClipBottom-box.Rect.Y <= 0 {
+					return
+				}
+			}
+
 			*commands = append(*commands, currentStyle.newDrawText(text, box.Rect.X, box.Rect.Y, drawWidth))
 		}
 	}
@@ -811,6 +820,10 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			if child.Type == layout.LegendBox {
 				continue
 			}
+			// Skip children fully below the vertical clip boundary
+			if currentStyle.ClipBottom > 0 && child.Rect.Y >= currentStyle.ClipBottom {
+				continue
+			}
 			paintLayoutBox(child, commands, currentStyle, state, linkStyler, layer, isFixed)
 		}
 	}
@@ -986,6 +999,29 @@ func isValidEmail(value string) bool {
 		return false
 	}
 	return true
+}
+
+// effectiveOverflow returns the axis-specific overflow value, falling back to the shorthand.
+func effectiveOverflow(axisValue, shorthand string) string {
+	if axisValue != "" {
+		return axisValue
+	}
+	return shorthand
+}
+
+// computeClip calculates the clip boundary for a given axis if overflow is not visible.
+func computeClip(overflow string, boxType layout.BoxType, pos, size, padding, border, currentClip float64) float64 {
+	if overflow == "" || overflow == "visible" {
+		return currentClip
+	}
+	switch boxType {
+	case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
+		clip := pos + size - padding - border
+		if currentClip == 0 || clip < currentClip {
+			return clip
+		}
+	}
+	return currentClip
 }
 
 // fontStackHasMonospace checks if any font in the stack is a monospace font
