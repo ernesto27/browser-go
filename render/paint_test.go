@@ -636,8 +636,9 @@ func TestNeedsHorizontalScrollbar(t *testing.T) {
 		{
 			name: "scroll always true",
 			box: &layout.LayoutBox{
-				Type: layout.BlockBox,
-				Rect: layout.Rect{X: 0, Width: 200},
+				Type:  layout.BlockBox,
+				Rect:  layout.Rect{X: 0, Width: 200},
+				Style: css.Style{OverflowX: "scroll"},
 			},
 			style:    TextStyle{OverflowX: "scroll"},
 			expected: true,
@@ -648,6 +649,7 @@ func TestNeedsHorizontalScrollbar(t *testing.T) {
 				Type:    layout.BlockBox,
 				Rect:    layout.Rect{X: 0, Width: 200},
 				Padding: layout.EdgeSizes{Right: 0},
+				Style:   css.Style{OverflowX: "auto"},
 				Children: []*layout.LayoutBox{
 					{Rect: layout.Rect{X: 0, Width: 300}},
 				},
@@ -661,6 +663,7 @@ func TestNeedsHorizontalScrollbar(t *testing.T) {
 				Type:    layout.BlockBox,
 				Rect:    layout.Rect{X: 0, Width: 200},
 				Padding: layout.EdgeSizes{Right: 0},
+				Style:   css.Style{OverflowX: "auto"},
 				Children: []*layout.LayoutBox{
 					{Rect: layout.Rect{X: 0, Width: 100}},
 				},
@@ -671,8 +674,9 @@ func TestNeedsHorizontalScrollbar(t *testing.T) {
 		{
 			name: "hidden never",
 			box: &layout.LayoutBox{
-				Type: layout.BlockBox,
-				Rect: layout.Rect{X: 0, Width: 200},
+				Type:  layout.BlockBox,
+				Rect:  layout.Rect{X: 0, Width: 200},
+				Style: css.Style{OverflowX: "hidden"},
 			},
 			style:    TextStyle{OverflowX: "hidden"},
 			expected: false,
@@ -680,8 +684,9 @@ func TestNeedsHorizontalScrollbar(t *testing.T) {
 		{
 			name: "inline box never",
 			box: &layout.LayoutBox{
-				Type: layout.InlineBox,
-				Rect: layout.Rect{X: 0, Width: 200},
+				Type:  layout.InlineBox,
+				Rect:  layout.Rect{X: 0, Width: 200},
+				Style: css.Style{OverflowX: "scroll"},
 			},
 			style:    TextStyle{OverflowX: "scroll"},
 			expected: false,
@@ -702,4 +707,299 @@ func TestScrolledRect(t *testing.T) {
 	assert.Equal(t, 50.0, shifted.Y)
 	assert.Equal(t, 200.0, shifted.Width)
 	assert.Equal(t, 100.0, shifted.Height)
+}
+
+func TestScrolledRectY(t *testing.T) {
+	r := layout.Rect{X: 100, Y: 50, Width: 200, Height: 100}
+	shifted := scrolledRectY(r, 20)
+	assert.Equal(t, 100.0, shifted.X)
+	assert.Equal(t, 30.0, shifted.Y)
+	assert.Equal(t, 200.0, shifted.Width)
+	assert.Equal(t, 100.0, shifted.Height)
+}
+
+func TestVerticalScrollbar(t *testing.T) {
+	tests := []struct {
+		name            string
+		html            string
+		css             string
+		expectTrack     bool
+		expectThumbFull bool
+	}{
+		{
+			name:            "scroll always shows scrollbar",
+			html:            `<div class="box">short</div>`,
+			css:             `.box { height: 200px; overflow-y: scroll; }`,
+			expectTrack:     true,
+			expectThumbFull: true,
+		},
+		{
+			name:            "auto with overflow shows scrollbar",
+			html:            `<div class="box"><div style="height:500px;">tall</div></div>`,
+			css:             `.box { height: 200px; overflow-y: auto; }`,
+			expectTrack:     true,
+			expectThumbFull: false,
+		},
+		{
+			name:        "auto without overflow no scrollbar",
+			html:        `<div class="box">short</div>`,
+			css:         `.box { height: 200px; overflow-y: auto; }`,
+			expectTrack: false,
+		},
+		{
+			name:        "hidden no scrollbar",
+			html:        `<div class="box"><div style="height:500px;">tall</div></div>`,
+			css:         `.box { height: 200px; overflow-y: hidden; }`,
+			expectTrack: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := buildLayout(tt.html, tt.css, 800)
+			commands := BuildDisplayList(root, InputState{}, LinkStyler{})
+
+			tracks := findRectsByColor(commands, ColorScrollbarTrack)
+			thumbs := findRectsByColor(commands, ColorScrollbarThumb)
+
+			if tt.expectTrack {
+				assert.NotEmpty(t, tracks, "expected scrollbar track")
+				assert.NotEmpty(t, thumbs, "expected scrollbar thumb")
+
+				track := tracks[0]
+				thumb := thumbs[0]
+				assert.Equal(t, ScrollbarWidth, track.Rect.Width, "track width")
+				assert.True(t, thumb.Rect.Height > 0, "thumb should have positive height")
+
+				if tt.expectThumbFull {
+					expectedThumbH := track.Rect.Height - 2*scrollbarThumbPadding
+					assert.InDelta(t, expectedThumbH, thumb.Rect.Height, 1, "thumb should fill track when no overflow")
+				} else {
+					assert.True(t, thumb.Rect.Height < track.Rect.Height, "thumb should be smaller than track when overflowing")
+				}
+			} else {
+				assert.Empty(t, tracks, "expected no scrollbar track")
+				assert.Empty(t, thumbs, "expected no scrollbar thumb")
+			}
+		})
+	}
+}
+
+func TestVerticalScrollbarThumbMinHeight(t *testing.T) {
+	// Very tall content should clamp thumb to minimum height
+	html := `<div class="box"><div style="height:10000px;">x</div></div>`
+	cssText := `.box { height: 200px; overflow-y: scroll; }`
+	root := buildLayout(html, cssText, 800)
+	commands := BuildDisplayList(root, InputState{}, LinkStyler{})
+
+	thumbs := findRectsByColor(commands, ColorScrollbarThumb)
+	assert.NotEmpty(t, thumbs)
+	assert.True(t, thumbs[0].Rect.Height >= ScrollbarThumbMinHeight, "thumb height should be at least minimum")
+}
+
+func TestVerticalScrollbarThumbPosition(t *testing.T) {
+	// When scroll offset is set, thumb should move down
+	html := `<div class="box"><div style="height:1000px;">tall content</div></div>`
+	cssText := `.box { height: 200px; overflow-y: scroll; }`
+	root := buildLayout(html, cssText, 800)
+
+	// Find the overflow container's DOM node
+	var overflowNode *dom.Node
+	var findNode func(box *layout.LayoutBox)
+	findNode = func(box *layout.LayoutBox) {
+		if box.Style.OverflowY == "scroll" && box.Node != nil {
+			overflowNode = box.Node
+			return
+		}
+		for _, child := range box.Children {
+			findNode(child)
+		}
+	}
+	findNode(root)
+	assert.NotNil(t, overflowNode, "should find overflow node")
+
+	// No scroll: thumb at top
+	cmds0 := BuildDisplayList(root, InputState{}, LinkStyler{})
+	thumbs0 := findRectsByColor(cmds0, ColorScrollbarThumb)
+	assert.NotEmpty(t, thumbs0)
+	thumbY0 := thumbs0[0].Rect.Y
+
+	// With scroll offset: thumb moves down
+	state := InputState{
+		ScrollOffsetsY: map[*dom.Node]float64{overflowNode: 100},
+	}
+	cmds1 := BuildDisplayList(root, state, LinkStyler{})
+	thumbs1 := findRectsByColor(cmds1, ColorScrollbarThumb)
+	assert.NotEmpty(t, thumbs1)
+	assert.True(t, thumbs1[0].Rect.Y > thumbY0, "thumb should move down when scrolled")
+}
+
+func TestVerticalScrollRevealsHiddenChildren(t *testing.T) {
+	// Regression: children below ClipBottom must become visible when scrolled into view.
+	// A 200px-tall container with 5 children of 100px each (total 500px content).
+	html := `<div class="box">` +
+		`<div class="item">Item 1</div>` +
+		`<div class="item">Item 2</div>` +
+		`<div class="item">Item 3</div>` +
+		`<div class="item">Item 4</div>` +
+		`<div class="item">Item 5</div>` +
+		`</div>`
+	cssText := `.box { height: 200px; overflow-y: scroll; } .item { height: 100px; }`
+	root := buildLayout(html, cssText, 800)
+
+	findTextCmd := func(commands []DisplayCommand, text string) *DrawText {
+		for _, cmd := range commands {
+			if dt, ok := cmd.(DrawText); ok && strings.Contains(dt.Text, text) {
+				return &dt
+			}
+		}
+		return nil
+	}
+
+	// Find overflow container node
+	var overflowNode *dom.Node
+	var findNode func(box *layout.LayoutBox)
+	findNode = func(box *layout.LayoutBox) {
+		if box.Style.OverflowY == "scroll" && box.Node != nil {
+			overflowNode = box.Node
+			return
+		}
+		for _, child := range box.Children {
+			findNode(child)
+		}
+	}
+	findNode(root)
+	assert.NotNil(t, overflowNode)
+
+	// Without scroll: items 1 and 2 visible, items 3-5 clipped
+	cmds0 := BuildDisplayList(root, InputState{}, LinkStyler{})
+	assert.NotNil(t, findTextCmd(cmds0, "Item 1"), "Item 1 should be visible without scroll")
+	assert.NotNil(t, findTextCmd(cmds0, "Item 2"), "Item 2 should be visible without scroll")
+
+	// With scroll offset 200: items 3 and 4 should now be visible
+	state := InputState{
+		ScrollOffsetsY: map[*dom.Node]float64{overflowNode: 200},
+	}
+	cmds1 := BuildDisplayList(root, state, LinkStyler{})
+	assert.NotNil(t, findTextCmd(cmds1, "Item 3"), "Item 3 should be visible when scrolled down")
+	assert.NotNil(t, findTextCmd(cmds1, "Item 4"), "Item 4 should be visible when scrolled down")
+}
+
+func TestNeedsVerticalScrollbar(t *testing.T) {
+	tests := []struct {
+		name     string
+		box      *layout.LayoutBox
+		style    TextStyle
+		expected bool
+	}{
+		{
+			name: "scroll always true",
+			box: &layout.LayoutBox{
+				Type:  layout.BlockBox,
+				Rect:  layout.Rect{Y: 0, Height: 200},
+				Style: css.Style{OverflowY: "scroll"},
+			},
+			style:    TextStyle{OverflowY: "scroll"},
+			expected: true,
+		},
+		{
+			name: "auto with overflow",
+			box: &layout.LayoutBox{
+				Type:    layout.BlockBox,
+				Rect:    layout.Rect{Y: 0, Height: 200},
+				Padding: layout.EdgeSizes{Bottom: 0},
+				Style:   css.Style{OverflowY: "auto"},
+				Children: []*layout.LayoutBox{
+					{Rect: layout.Rect{Y: 0, Height: 300}},
+				},
+			},
+			style:    TextStyle{OverflowY: "auto"},
+			expected: true,
+		},
+		{
+			name: "auto without overflow",
+			box: &layout.LayoutBox{
+				Type:    layout.BlockBox,
+				Rect:    layout.Rect{Y: 0, Height: 200},
+				Padding: layout.EdgeSizes{Bottom: 0},
+				Style:   css.Style{OverflowY: "auto"},
+				Children: []*layout.LayoutBox{
+					{Rect: layout.Rect{Y: 0, Height: 100}},
+				},
+			},
+			style:    TextStyle{OverflowY: "auto"},
+			expected: false,
+		},
+		{
+			name: "hidden never",
+			box: &layout.LayoutBox{
+				Type:  layout.BlockBox,
+				Rect:  layout.Rect{Y: 0, Height: 200},
+				Style: css.Style{OverflowY: "hidden"},
+			},
+			style:    TextStyle{OverflowY: "hidden"},
+			expected: false,
+		},
+		{
+			name: "inline box never",
+			box: &layout.LayoutBox{
+				Type:  layout.InlineBox,
+				Rect:  layout.Rect{Y: 0, Height: 200},
+				Style: css.Style{OverflowY: "scroll"},
+			},
+			style:    TextStyle{OverflowY: "scroll"},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, needsVerticalScrollbar(tt.box, tt.style))
+		})
+	}
+}
+
+func TestMaxChildBottom(t *testing.T) {
+	box := &layout.LayoutBox{
+		Children: []*layout.LayoutBox{
+			{Rect: layout.Rect{Y: 10, Height: 100}},
+			{Rect: layout.Rect{Y: 50, Height: 200}},
+			{Rect: layout.Rect{Y: 0, Height: 50}},
+		},
+	}
+	assert.Equal(t, 250.0, maxChildBottom(box))
+}
+
+func TestMaxChildBottomEmpty(t *testing.T) {
+	box := &layout.LayoutBox{}
+	assert.Equal(t, 0.0, maxChildBottom(box))
+}
+
+func TestBothScrollbars(t *testing.T) {
+	// Both overflow-x and overflow-y scroll should render both scrollbars plus corner
+	html := `<div class="box"><div style="width:500px;height:500px;">content</div></div>`
+	cssText := `.box { width: 200px; height: 200px; overflow: scroll; }`
+	root := buildLayout(html, cssText, 800)
+	commands := BuildDisplayList(root, InputState{}, LinkStyler{})
+
+	tracks := findRectsByColor(commands, ColorScrollbarTrack)
+	thumbs := findRectsByColor(commands, ColorScrollbarThumb)
+
+	// Should have at least 3 tracks: horizontal, vertical, and corner
+	assert.True(t, len(tracks) >= 3, "expected at least 3 track rects (h-track, v-track, corner), got %d", len(tracks))
+	assert.True(t, len(thumbs) >= 2, "expected at least 2 thumbs (h-thumb, v-thumb), got %d", len(thumbs))
+
+	// Verify we have both horizontal (height=12) and vertical (width=12) tracks
+	hasHorizontalTrack := false
+	hasVerticalTrack := false
+	for _, track := range tracks {
+		if track.Rect.Height == ScrollbarHeight && track.Rect.Width > ScrollbarWidth {
+			hasHorizontalTrack = true
+		}
+		if track.Rect.Width == ScrollbarWidth && track.Rect.Height > ScrollbarHeight {
+			hasVerticalTrack = true
+		}
+	}
+	assert.True(t, hasHorizontalTrack, "expected horizontal scrollbar track")
+	assert.True(t, hasVerticalTrack, "expected vertical scrollbar track")
 }

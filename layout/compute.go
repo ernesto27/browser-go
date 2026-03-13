@@ -14,6 +14,7 @@ const (
 	DefaultImageWidth  = 200.0
 	DefaultImageHeight = 150.0
 	ScrollbarHeight    = 12.0
+	ScrollbarWidth     = 12.0
 )
 
 // getDefaultLineHeight returns default line heights for different elements
@@ -241,6 +242,15 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 	}
 	if box.Style.BorderRightWidth > 0 {
 		innerWidth -= box.Style.BorderRightWidth
+	}
+
+	// Reserve width for vertical scrollbar when overflow-y is scroll/auto
+	overflowY := box.Style.EffectiveOverflowY()
+	if overflowY == "scroll" || overflowY == "auto" {
+		switch box.Type {
+		case BlockBox, TableCellBox, TableBox, FieldsetBox:
+			innerWidth -= ScrollbarWidth
+		}
 	}
 
 	yOffset := startY + box.Margin.Top + box.Padding.Top + box.Style.BorderTopWidth
@@ -509,6 +519,14 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		switch box.Type {
 		case BlockBox, TableCellBox, TableBox, FieldsetBox:
 			box.Rect.Height += ScrollbarHeight
+		}
+	}
+
+	// Reserve width for vertical scrollbar in total box width
+	if overflowY == "scroll" || overflowY == "auto" {
+		switch box.Type {
+		case BlockBox, TableCellBox, TableBox, FieldsetBox:
+			box.Rect.Width += ScrollbarWidth
 		}
 	}
 

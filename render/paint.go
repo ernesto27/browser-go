@@ -60,9 +60,11 @@ type TextStyle struct {
 	OverFlow      string
 	ClipLeft       float64
 	ClipRight      float64
+	ClipTop        float64
 	ClipBottom     float64
 	LineHeight     float64
 	ScrollOffsetX  float64 // Horizontal scroll offset applied to children
+	ScrollOffsetY  float64 // Vertical scroll offset applied to children
 }
 
 func (ts TextStyle) newDrawText(text string, x, y, width float64) DrawText {
@@ -146,6 +148,7 @@ type InputState struct {
 	FileInputValues map[*dom.Node]string  // Selected filename per file input
 	InvalidNodes    map[*dom.Node]bool    // Nodes with invalid input
 	ScrollOffsets   map[*dom.Node]float64 // Horizontal scroll offset per overflow container
+	ScrollOffsetsY  map[*dom.Node]float64 // Vertical scroll offset per overflow container
 
 	SelectionStart *SelectionPoint
 	SelectionEnd   *SelectionPoint
@@ -316,6 +319,12 @@ func scrolledRect(r layout.Rect, offsetX float64) layout.Rect {
 	return r
 }
 
+// scrolledRectY returns a copy of the box rect with ScrollOffsetY applied.
+func scrolledRectY(r layout.Rect, offsetY float64) layout.Rect {
+	r.Y -= offsetY
+	return r
+}
+
 func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler, layer paintLayer, ancestorFixed bool) {
 	currentStyle := style
 	isFixed := ancestorFixed || box.Position == "fixed"
@@ -396,12 +405,17 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		currentStyle.OverFlow = box.Style.Overflow
 	}
 
-	effectiveOverflowX := effectiveOverflow(currentStyle.OverflowX, currentStyle.OverFlow)
-	effectiveOverflowY := effectiveOverflow(currentStyle.OverflowY, currentStyle.OverFlow)
+	// Use box.Style (the box's own CSS) for clip computation, not the inherited
+	// currentStyle, because CSS overflow is NOT an inherited property. Using the
+	// inherited TextStyle values would cause every child of a scroll container to
+	// incorrectly set its own clip boundaries.
+	boxOverflowX := box.Style.EffectiveOverflowX()
+	boxOverflowY := box.Style.EffectiveOverflowY()
 
-	currentStyle.ClipLeft = computeClipStart(effectiveOverflowX, box.Type, box.Rect.X, box.Style.BorderLeftWidth, currentStyle.ClipLeft)
-	currentStyle.ClipRight = computeClip(effectiveOverflowX, box.Type, box.Rect.X, box.Rect.Width, box.Padding.Right, box.Style.BorderRightWidth, currentStyle.ClipRight)
-	currentStyle.ClipBottom = computeClip(effectiveOverflowY, box.Type, box.Rect.Y, box.Rect.Height, box.Padding.Bottom, box.Style.BorderBottomWidth, currentStyle.ClipBottom)
+	currentStyle.ClipLeft = computeClipStart(boxOverflowX, box.Type, box.Rect.X, box.Style.BorderLeftWidth, currentStyle.ClipLeft)
+	currentStyle.ClipRight = computeClip(boxOverflowX, box.Type, box.Rect.X, box.Rect.Width, box.Padding.Right, box.Style.BorderRightWidth, currentStyle.ClipRight)
+	currentStyle.ClipTop = computeClipStart(boxOverflowY, box.Type, box.Rect.Y, box.Style.BorderTopWidth, currentStyle.ClipTop)
+	currentStyle.ClipBottom = computeClip(boxOverflowY, box.Type, box.Rect.Y, box.Rect.Height, box.Padding.Bottom, box.Style.BorderBottomWidth, currentStyle.ClipBottom)
 
 	// Reserve space for horizontal scrollbar so content doesn't render underneath it
 	if needsHorizontalScrollbar(box, currentStyle) {
@@ -411,10 +425,19 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		}
 	}
 
+	// Reserve space for vertical scrollbar so content doesn't render underneath it
+	if needsVerticalScrollbar(box, currentStyle) {
+		scrollbarLeft := box.Rect.X + box.Rect.Width - box.Padding.Right - box.Style.BorderRightWidth - ScrollbarWidth
+		if currentStyle.ClipRight == 0 || scrollbarLeft < currentStyle.ClipRight {
+			currentStyle.ClipRight = scrollbarLeft
+		}
+	}
+
 	isHidden := currentStyle.Visibility == "hidden"
 
 	// Compute scroll-adjusted rect for this box (shifted by parent's scroll offset)
 	boxRect := scrolledRect(box.Rect, currentStyle.ScrollOffsetX)
+	boxRect = scrolledRectY(boxRect, currentStyle.ScrollOffsetY)
 
 
 	// Draw background if set
@@ -585,6 +608,13 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			lineHeight := float64(currentStyle.Size) * 1.5
 			y := boxRect.Y
 			for _, line := range lines {
+				if currentStyle.ClipTop > 0 && y+lineHeight <= currentStyle.ClipTop {
+					y += lineHeight
+					continue
+				}
+				if currentStyle.ClipBottom > 0 && y >= currentStyle.ClipBottom {
+					break
+				}
 				*commands = append(*commands, currentStyle.newDrawText(line, boxRect.X, y, boxRect.Width))
 				y += lineHeight
 			}
@@ -593,6 +623,10 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			lineHeight := currentStyle.LineHeight
 			y := boxRect.Y
 			for _, line := range box.WrappedLines {
+				if currentStyle.ClipTop > 0 && y+lineHeight <= currentStyle.ClipTop {
+					y += lineHeight
+					continue
+				}
 				if currentStyle.ClipBottom > 0 && y >= currentStyle.ClipBottom {
 					break
 				}
@@ -604,7 +638,8 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			// For horizontal overflow handling, use the parent container's width as the clipping
 			// boundary because the text box's own width is the natural (unwrapped) text width.
 			drawWidth := boxRect.Width
-			if effectiveOverflowX != "visible" && effectiveOverflowX != "" && box.Parent != nil && currentStyle.ScrollOffsetX == 0 {
+			inheritedOverflowX := effectiveOverflow(currentStyle.OverflowX, currentStyle.OverFlow)
+			if inheritedOverflowX != "visible" && inheritedOverflowX != "" && box.Parent != nil && currentStyle.ScrollOffsetX == 0 {
 				drawWidth = box.Parent.Rect.Width - box.Parent.Padding.Left - box.Parent.Padding.Right
 			}
 			if currentStyle.ClipRight > 0 {
@@ -615,6 +650,10 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				if clipWidth < drawWidth {
 					drawWidth = clipWidth
 				}
+			}
+
+			if currentStyle.ClipTop > 0 && boxRect.Y+float64(currentStyle.Size) <= currentStyle.ClipTop {
+				return
 			}
 
 			if currentStyle.ClipBottom > 0 {
@@ -852,18 +891,34 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		}
 	}
 
+	// Apply vertical scroll offset for this container's children
+	scrollOffsetY := 0.0
+	if box.Node != nil && state.ScrollOffsetsY != nil {
+		if offset, ok := state.ScrollOffsetsY[box.Node]; ok {
+			scrollOffsetY = offset
+		}
+	}
+
 	// Paint children with input state
 	// Skip children for elements that render their own content
 	if box.Type != layout.ButtonBox && box.Type != layout.SelectBox {
 		childStyle := currentStyle
 		childStyle.ScrollOffsetX += scrollOffsetX
+		childStyle.ScrollOffsetY += scrollOffsetY
 		for _, child := range box.Children {
 			// Skip LegendBox - DrawFieldset already renders the legend text
 			if child.Type == layout.LegendBox {
 				continue
 			}
-			// Skip children fully below the vertical clip boundary
-			if currentStyle.ClipBottom > 0 && child.Rect.Y >= currentStyle.ClipBottom {
+			// Skip children fully below the vertical clip boundary.
+			// Use the accumulated scroll offset (childStyle.ScrollOffsetY) rather than
+			// just the local scrollOffsetY, because intermediate non-scrolling boxes
+			// still need their ancestor's scroll offset accounted for.
+			if currentStyle.ClipBottom > 0 && (child.Rect.Y-childStyle.ScrollOffsetY) >= currentStyle.ClipBottom {
+				continue
+			}
+			// Skip children fully scrolled above the visible area
+			if scrollOffsetY > 0 && child.Rect.Y+child.Rect.Height < box.Rect.Y+box.Style.BorderTopWidth+scrollOffsetY {
 				continue
 			}
 			paintLayoutBox(child, commands, childStyle, state, linkStyler, layer, isFixed)
@@ -872,6 +927,9 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 	// Draw horizontal scrollbar if overflow-x is scroll/auto
 	drawHorizontalScrollbar(box, commands, currentStyle, state)
+
+	// Draw vertical scrollbar if overflow-y is scroll/auto
+	drawVerticalScrollbar(box, commands, currentStyle, state)
 }
 
 // getListInfo returns (isListItem, isOrdered, itemIndex)
@@ -1098,19 +1156,22 @@ func fontStackHasMonospace(fonts []string) bool {
 
 // Scrollbar constants
 const (
-	ScrollbarHeight        = layout.ScrollbarHeight
-	ScrollbarThumbMinWidth = 20.0
-	scrollbarThumbPadding  = 2.0
+	ScrollbarHeight         = layout.ScrollbarHeight
+	ScrollbarWidth          = layout.ScrollbarWidth
+	ScrollbarThumbMinWidth  = 20.0
+	ScrollbarThumbMinHeight = 20.0
+	scrollbarThumbPadding   = 2.0
 )
 
 // needsHorizontalScrollbar returns true if the box will render a horizontal scrollbar.
+// Uses box.Style directly (not inherited TextStyle) since overflow is not a CSS inherited property.
 func needsHorizontalScrollbar(box *layout.LayoutBox, style TextStyle) bool {
 	switch box.Type {
 	case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
 	default:
 		return false
 	}
-	overflowX := effectiveOverflow(style.OverflowX, style.OverFlow)
+	overflowX := box.Style.EffectiveOverflowX()
 	switch overflowX {
 	case "scroll":
 		return true
@@ -1149,6 +1210,11 @@ func drawHorizontalScrollbar(box *layout.LayoutBox, commands *[]DisplayCommand, 
 	trackX := box.Rect.X + box.Style.BorderLeftWidth
 	trackW := box.Rect.Width - box.Style.BorderLeftWidth - box.Style.BorderRightWidth
 	trackY := box.Rect.Y + box.Rect.Height - box.Padding.Bottom - box.Style.BorderBottomWidth - ScrollbarHeight
+
+	// Reduce track width when vertical scrollbar is also present
+	if needsVerticalScrollbar(box, style) {
+		trackW -= ScrollbarWidth
+	}
 
 	if trackW <= 0 {
 		return
@@ -1195,6 +1261,125 @@ func drawHorizontalScrollbar(box *layout.LayoutBox, commands *[]DisplayCommand, 
 	}
 
 	radius := thumbHeight / 2
+
+	*commands = append(*commands, DrawRect{
+		Rect:              layout.Rect{X: thumbX, Y: thumbY, Width: thumbWidth, Height: thumbHeight},
+		Color:             ColorScrollbarThumb,
+		TopLeftRadius:     radius,
+		TopRightRadius:    radius,
+		BottomRightRadius: radius,
+		BottomLeftRadius:  radius,
+	})
+}
+
+// needsVerticalScrollbar returns true if the box will render a vertical scrollbar.
+// Uses box.Style directly (not inherited TextStyle) since overflow is not a CSS inherited property.
+func needsVerticalScrollbar(box *layout.LayoutBox, style TextStyle) bool {
+	switch box.Type {
+	case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
+	default:
+		return false
+	}
+	overflowY := box.Style.EffectiveOverflowY()
+	switch overflowY {
+	case "scroll":
+		return true
+	case "auto":
+		containerBottom := box.Rect.Y + box.Rect.Height - box.Padding.Bottom - box.Style.BorderBottomWidth
+		return maxChildBottom(box) > containerBottom
+	default:
+		return false
+	}
+}
+
+// maxChildBottom returns the bottommost edge (Y + Height) among all children of the box.
+func maxChildBottom(box *layout.LayoutBox) float64 {
+	maxBottom := 0.0
+	for _, child := range box.Children {
+		bottom := child.Rect.Y + child.Rect.Height
+		if bottom > maxBottom {
+			maxBottom = bottom
+		}
+	}
+	return maxBottom
+}
+
+// drawVerticalScrollbar appends DrawRect commands for a vertical scrollbar
+// track and thumb when overflow-y is "scroll" or "auto" (with overflow).
+func drawVerticalScrollbar(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState) {
+	if !needsVerticalScrollbar(box, style) {
+		return
+	}
+
+	containerBottom := box.Rect.Y + box.Rect.Height - box.Padding.Bottom - box.Style.BorderBottomWidth
+	contentBottom := maxChildBottom(box)
+	hasOverflow := contentBottom > containerBottom
+
+	// Track geometry — right side of the box
+	trackX := box.Rect.X + box.Rect.Width - box.Padding.Right - box.Style.BorderRightWidth - ScrollbarWidth
+	trackY := box.Rect.Y + box.Style.BorderTopWidth
+	trackH := box.Rect.Height - box.Style.BorderTopWidth - box.Style.BorderBottomWidth
+
+	// Reduce track height when horizontal scrollbar is also present
+	if needsHorizontalScrollbar(box, style) {
+		trackH -= ScrollbarHeight
+	}
+
+	if trackH <= 0 {
+		return
+	}
+
+	// Draw track
+	*commands = append(*commands, DrawRect{
+		Rect:  layout.Rect{X: trackX, Y: trackY, Width: ScrollbarWidth, Height: trackH},
+		Color: ColorScrollbarTrack,
+	})
+
+	// Draw corner area if both scrollbars present
+	if needsHorizontalScrollbar(box, style) {
+		cornerX := trackX
+		cornerY := trackY + trackH
+		*commands = append(*commands, DrawRect{
+			Rect:  layout.Rect{X: cornerX, Y: cornerY, Width: ScrollbarWidth, Height: ScrollbarHeight},
+			Color: ColorScrollbarTrack,
+		})
+	}
+
+	// Thumb geometry
+	visibleHeight := trackH
+	contentHeight := contentBottom - box.Rect.Y
+	if contentHeight <= 0 {
+		contentHeight = visibleHeight
+	}
+
+	var thumbHeight float64
+	if hasOverflow {
+		thumbHeight = visibleHeight * (visibleHeight / contentHeight)
+		if thumbHeight < ScrollbarThumbMinHeight {
+			thumbHeight = ScrollbarThumbMinHeight
+		}
+	} else {
+		// No overflow: thumb fills entire track (for overflow-y: scroll)
+		thumbHeight = trackH - 2*scrollbarThumbPadding
+	}
+
+	thumbWidth := ScrollbarWidth - 2*scrollbarThumbPadding
+	thumbX := trackX + scrollbarThumbPadding
+	thumbY := trackY + scrollbarThumbPadding
+
+	// Position thumb based on scroll offset
+	if hasOverflow && box.Node != nil && state.ScrollOffsetsY != nil {
+		if scrollOffset, ok := state.ScrollOffsetsY[box.Node]; ok && scrollOffset > 0 {
+			maxScroll := contentHeight - visibleHeight
+			if maxScroll > 0 {
+				scrollRatio := scrollOffset / maxScroll
+				scrollableTrack := trackH - 2*scrollbarThumbPadding - thumbHeight
+				thumbY += scrollRatio * scrollableTrack
+			}
+		}
+	}
+
+	radius := thumbWidth / 2
 
 	*commands = append(*commands, DrawRect{
 		Rect:              layout.Rect{X: thumbX, Y: thumbY, Width: thumbWidth, Height: thumbHeight},

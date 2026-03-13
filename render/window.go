@@ -70,6 +70,11 @@ type Browser struct {
 	scrollDragStartX float64               // Mouse X at drag start
 	scrollDragStartOff float64             // Scroll offset at drag start
 
+	scrollOffsetsY     map[*dom.Node]float64 // Vertical scroll offset per overflow container
+	scrollDragNodeY    *dom.Node             // Which node's vertical scrollbar is being dragged
+	scrollDragStartY   float64               // Mouse Y at drag start
+	scrollDragStartOffY float64              // Vertical scroll offset at drag start
+
 	onJSClick        func(node *dom.Node) bool // Returns true if preventDefault was called
 	onBeforeNavigate func() bool               // Returns true if navigation should proceed
 
@@ -123,6 +128,7 @@ func NewBrowser(width, height float32) *Browser {
 		fileInputValues: make(map[*dom.Node]string),
 		invalidNodes:    make(map[*dom.Node]bool),
 		scrollOffsets:   make(map[*dom.Node]float64),
+		scrollOffsetsY:  make(map[*dom.Node]float64),
 	}
 	// Create URL entry
 	b.urlEntry = widget.NewEntry()
@@ -716,6 +722,41 @@ func findScrollbarAt(box *layout.LayoutBox, x, y float64) *layout.LayoutBox {
 	return nil
 }
 
+// findVerticalScrollbarAt walks the layout tree and returns the LayoutBox whose vertical
+// scrollbar track contains the point (x, y), or nil if none.
+func findVerticalScrollbarAt(box *layout.LayoutBox, x, y float64) *layout.LayoutBox {
+	if box == nil {
+		return nil
+	}
+
+	// Check children first (deepest match wins)
+	for _, child := range box.Children {
+		if hit := findVerticalScrollbarAt(child, x, y); hit != nil {
+			return hit
+		}
+	}
+
+	// Check if this box has a vertical scrollbar and the point is in the track area
+	overflowY := box.Style.EffectiveOverflowY()
+	if overflowY != "scroll" && overflowY != "auto" {
+		return nil
+	}
+	switch box.Type {
+	case layout.BlockBox, layout.TableCellBox, layout.TableBox, layout.FieldsetBox:
+	default:
+		return nil
+	}
+
+	trackX := box.Rect.X + box.Rect.Width - box.Padding.Right - box.Style.BorderRightWidth - ScrollbarWidth
+	trackY := box.Rect.Y + box.Style.BorderTopWidth
+	trackH := box.Rect.Height - box.Style.BorderTopWidth - box.Style.BorderBottomWidth
+
+	if x >= trackX && x <= trackX+ScrollbarWidth && y >= trackY && y <= trackY+trackH {
+		return box
+	}
+	return nil
+}
+
 func (b *Browser) handleMouseDown(x, y float64) {
 	// Clear previous selection
 	hadSelection := b.selectedText != ""
@@ -730,7 +771,43 @@ func (b *Browser) handleMouseDown(x, y float64) {
 		return
 	}
 
-	// Check if click is on a scrollbar track
+	// Check if click is on a vertical scrollbar track
+	if scrollBox := findVerticalScrollbarAt(b.layoutTree, x, y); scrollBox != nil && scrollBox.Node != nil {
+		b.scrollDragNodeY = scrollBox.Node
+		b.scrollDragStartY = y
+		b.scrollDragStartOffY = b.scrollOffsetsY[scrollBox.Node]
+
+		// Compute max scroll for click-to-position
+		containerBottom := scrollBox.Rect.Y + scrollBox.Rect.Height - scrollBox.Padding.Bottom - scrollBox.Style.BorderBottomWidth
+		contentBottom := maxChildBottom(scrollBox)
+		contentHeight := contentBottom - scrollBox.Rect.Y
+		visibleHeight := scrollBox.Rect.Height - scrollBox.Style.BorderTopWidth - scrollBox.Style.BorderBottomWidth
+		maxScroll := contentHeight - visibleHeight
+		if maxScroll < 0 {
+			maxScroll = 0
+		}
+
+		// Map click Y to scroll ratio
+		trackY := scrollBox.Rect.Y + scrollBox.Style.BorderTopWidth
+		trackH := scrollBox.Rect.Height - scrollBox.Style.BorderTopWidth - scrollBox.Style.BorderBottomWidth
+		if trackH > 0 && maxScroll > 0 && contentBottom > containerBottom {
+			ratio := (y - trackY) / trackH
+			newOffset := ratio * maxScroll
+			if newOffset < 0 {
+				newOffset = 0
+			}
+			if newOffset > maxScroll {
+				newOffset = maxScroll
+			}
+			b.scrollOffsetsY[scrollBox.Node] = newOffset
+			b.scrollDragStartOffY = newOffset
+			b.scrollDragStartY = y
+			b.repaint()
+		}
+		return
+	}
+
+	// Check if click is on a horizontal scrollbar track
 	if scrollBox := findScrollbarAt(b.layoutTree, x, y); scrollBox != nil && scrollBox.Node != nil {
 		b.scrollDragNode = scrollBox.Node
 		b.scrollDragStartX = x
@@ -782,7 +859,39 @@ func (b *Browser) handleMouseDown(x, y float64) {
 }
 
 func (b *Browser) handleDrag(x, y float64) {
-	// Handle scrollbar drag
+	// Handle vertical scrollbar drag
+	if b.scrollDragNodeY != nil {
+		scrollBox := b.findLayoutBoxByNode(b.scrollDragNodeY)
+		if scrollBox == nil {
+			b.scrollDragNodeY = nil
+			return
+		}
+
+		contentBottom := maxChildBottom(scrollBox)
+		contentHeight := contentBottom - scrollBox.Rect.Y
+		visibleHeight := scrollBox.Rect.Height - scrollBox.Style.BorderTopWidth - scrollBox.Style.BorderBottomWidth
+		maxScroll := contentHeight - visibleHeight
+		if maxScroll <= 0 {
+			return
+		}
+
+		trackH := scrollBox.Rect.Height - scrollBox.Style.BorderTopWidth - scrollBox.Style.BorderBottomWidth
+		deltaY := y - b.scrollDragStartY
+		// Convert pixel delta to scroll delta (proportional to track vs content)
+		scrollDelta := deltaY * (contentHeight / trackH)
+		newOffset := b.scrollDragStartOffY + scrollDelta
+		if newOffset < 0 {
+			newOffset = 0
+		}
+		if newOffset > maxScroll {
+			newOffset = maxScroll
+		}
+		b.scrollOffsetsY[b.scrollDragNodeY] = newOffset
+		b.repaint()
+		return
+	}
+
+	// Handle horizontal scrollbar drag
 	if b.scrollDragNode != nil {
 		scrollBox := b.findLayoutBoxByNode(b.scrollDragNode)
 		if scrollBox == nil {
@@ -895,6 +1004,7 @@ func (b *Browser) createContentScroll(objects []fyne.CanvasObject) *container.Sc
 	}
 	clickable.onDragEnd = func() {
 		b.scrollDragNode = nil
+		b.scrollDragNodeY = nil
 	}
 
 	scroll := container.NewScroll(clickable)
@@ -1163,6 +1273,7 @@ func (b *Browser) repaint() {
 		FileInputValues: b.fileInputValues,
 		InvalidNodes:    b.invalidNodes,
 		ScrollOffsets:   b.scrollOffsets,
+		ScrollOffsetsY:  b.scrollOffsetsY,
 		SelectionStart:  b.selectionStart,
 		SelectionEnd:    b.selectionEnd,
 	}, LinkStyler{

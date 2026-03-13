@@ -97,9 +97,9 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 
 ### Box Model
 - [ ] `box-sizing` - border-box/content-box
-- [~] `overflow` - partial: `visible|hidden|scroll|auto` parsed; used as fallback for horizontal text clipping, no real scrollbars or full box clipping
-- [~] `overflow-x` - partial: horizontal text clipping works with `white-space: nowrap`; `auto`/`scroll` render decorative scrollbars with drag interaction and left/right text clipping
-- [~] `overflow-y` - partial: vertical clipping works for child boxes and text; `auto`/`scroll` currently clip but do not render scrollbars
+- [~] `overflow` - partial: `visible|hidden|scroll|auto` parsed; used as fallback for overflow-x/overflow-y; no real scrollbars on shorthand alone
+- [x] `overflow-x` - horizontal clipping, scrollbar rendering (track + thumb), drag interaction, scroll offset tracking for `auto`/`scroll`
+- [x] `overflow-y` - vertical clipping, scrollbar rendering (track + thumb), drag interaction, scroll offset tracking for `auto`/`scroll`
 - [ ] `clear` - clear floats
 
 ### Typography

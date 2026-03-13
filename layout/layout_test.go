@@ -271,7 +271,8 @@ func TestBuildLayoutTreeTextAlignOverride(t *testing.T) {
 	assert.Equal(t, "right", spanBox.Style.TextAlign)
 }
 
-func TestBuildLayoutTreeOverflowXInheritance(t *testing.T) {
+func TestBuildLayoutTreeOverflowXNotInherited(t *testing.T) {
+	// overflow-x is NOT a CSS inherited property — only the element itself should have it
 	tree := buildTreeWithCSS(`<div><span>Text</span></div>`, `div { overflow-x: hidden; }`)
 
 	divBox := findBoxByTag(tree, "div")
@@ -279,10 +280,11 @@ func TestBuildLayoutTreeOverflowXInheritance(t *testing.T) {
 	assert.NotNil(t, divBox)
 	assert.NotNil(t, spanBox)
 	assert.Equal(t, "hidden", divBox.Style.OverflowX)
-	assert.Equal(t, "hidden", spanBox.Style.OverflowX)
+	assert.Equal(t, "", spanBox.Style.OverflowX)
 }
 
-func TestBuildLayoutTreeOverflowYInheritance(t *testing.T) {
+func TestBuildLayoutTreeOverflowYNotInherited(t *testing.T) {
+	// overflow-y is NOT a CSS inherited property — only the element itself should have it
 	tree := buildTreeWithCSS(`<div><span>Text</span></div>`, `div { overflow-y: hidden; }`)
 
 	divBox := findBoxByTag(tree, "div")
@@ -290,7 +292,7 @@ func TestBuildLayoutTreeOverflowYInheritance(t *testing.T) {
 	assert.NotNil(t, divBox)
 	assert.NotNil(t, spanBox)
 	assert.Equal(t, "hidden", divBox.Style.OverflowY)
-	assert.Equal(t, "hidden", spanBox.Style.OverflowY)
+	assert.Equal(t, "", spanBox.Style.OverflowY)
 }
 
 func TestMergeStyles(t *testing.T) {

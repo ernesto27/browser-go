@@ -132,17 +132,8 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 		if parent != nil && box.Style.TextOverflow == "" {
 			box.Style.TextOverflow = parent.Style.TextOverflow
 		}
-		if parent != nil && box.Style.OverflowX == "" {
-			box.Style.OverflowX = parent.Style.OverflowX
-		}
-
-		if parent != nil && box.Style.OverflowY == "" {
-			box.Style.OverflowY = parent.Style.OverflowY
-		}
-
-		if parent != nil && box.Style.Overflow == "" {
-			box.Style.Overflow = parent.Style.Overflow
-		}
+		// Note: overflow, overflow-x, overflow-y are NOT CSS inherited properties.
+		// Clipping propagation is handled through TextStyle in paintLayoutBox.
 
 		if parent != nil && !box.Style.LetterSpacingSet {
 			box.Style.LetterSpacing = parent.Style.LetterSpacing
