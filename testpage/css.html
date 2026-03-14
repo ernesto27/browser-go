@@ -17,6 +17,49 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Clear Float Test</h2>
+    <p>Testing CSS <code>clear</code> property to drop elements below floats.</p>
+
+    <!-- Test 1: clear: left -->
+    <div style="width: 400px; background-color: lightgray; border: 2px solid black; padding: 10px;">
+        <div style="float: left; width: 100px; height: 60px; background-color: blue; color: white;">
+            float: left
+        </div>
+        <div style="clear: left; background-color: lightyellow; padding: 5px;">
+            clear: left (should be below the float)
+        </div>
+    </div>
+
+    <br>
+
+    <!-- Test 2: clear: both with left + right floats -->
+    <div style="width: 400px; background-color: lightgray; border: 2px solid black; padding: 10px;">
+        <div style="float: left; width: 100px; height: 80px; background-color: blue; color: white;">
+            float: left
+        </div>
+        <div style="float: right; width: 100px; height: 50px; background-color: green; color: white;">
+            float: right
+        </div>
+        <div style="clear: both; background-color: lightyellow; padding: 5px;">
+            clear: both (below both floats)
+        </div>
+    </div>
+
+    <br>
+
+    <!-- Test 3: clear on a floated element -->
+    <div style="width: 400px; background-color: lightgray; border: 2px solid black; padding: 10px;">
+        <div style="float: left; width: 100px; height: 50px; background-color: red; color: white;">
+            Left 1
+        </div>
+        <div style="float: left; clear: left; width: 100px; height: 50px; background-color: orange; color: white;">
+            Left 2 (clear: left)
+        </div>
+        <p>Content after cleared floats.</p>
+    </div>
+
+    <hr>
+
     <h2>Overflow-Y Test (Not Implemented)</h2>
     <p>Testing <code>overflow-y</code> for vertical overflow control.</p>
 

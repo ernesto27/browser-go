@@ -156,6 +156,7 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 		box.Right = box.Style.Right
 		box.Bottom = box.Style.Bottom
 		box.Float = box.Style.Float
+		box.Clear = box.Style.Clear
 	}
 
 	switch node.Type {
@@ -436,6 +437,10 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 
 	if inline.Float != "" {
 		base.Float = inline.Float
+	}
+
+	if inline.Clear != "" {
+		base.Clear = inline.Clear
 	}
 
 	if inline.BoxSizing != "" {

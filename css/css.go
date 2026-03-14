@@ -61,6 +61,7 @@ type Style struct {
 	VerticalAlign    string
 	Display          string
 	Float            string
+	Clear            string
 	Position         string
 	Top              float64
 	Left             float64
@@ -738,6 +739,8 @@ func applyDeclaration(style *Style, property, value string) {
 		style.Display = value
 	case "float":
 		style.Float = value
+	case "clear":
+		style.Clear = value
 	case "position":
 		style.Position = value
 	case "top":

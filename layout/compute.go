@@ -310,6 +310,69 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		}
 	}
 
+	// Position floated children before normal flow so we can track their bottom edges
+	// for clear property support
+	leftFloatX := innerX
+	rightFloatX := innerX + innerWidth
+	floatY := startY + box.Padding.Top + box.Style.BorderTopWidth
+	var leftFloatBottom, rightFloatBottom float64
+
+	for _, child := range floatedChildren {
+		// Apply clear on floated elements — when floatY advances,
+		// reset horizontal accumulators since we're on a new float line
+		oldFloatY := floatY
+		if child.Clear == "left" || child.Clear == "both" {
+			if leftFloatBottom > floatY {
+				floatY = leftFloatBottom
+			}
+		}
+		if child.Clear == "right" || child.Clear == "both" {
+			if rightFloatBottom > floatY {
+				floatY = rightFloatBottom
+			}
+		}
+		if floatY > oldFloatY {
+			leftFloatX = innerX
+			rightFloatX = innerX + innerWidth
+		}
+
+		childWidth := child.Style.Width
+		if childWidth <= 0 {
+			childWidth = 100 // Default width for floats without explicit width
+		}
+
+		// Compute layout to determine dimensions
+		computeBlockLayout(child, blockLayoutParams{
+			containerWidth: childWidth,
+			startX:         0,
+			startY:         0,
+			parentTag:      "",
+			viewportWidth:  viewportWidth,
+		})
+
+		switch child.Float {
+		case "left":
+			offsetBox(child, leftFloatX, floatY)
+			leftFloatX += child.Rect.Width
+		case "right":
+			offsetBox(child, rightFloatX-child.Rect.Width, floatY)
+			rightFloatX -= child.Rect.Width
+		}
+
+		// Track float bottom edges for clear
+		childBottom := child.Rect.Y + child.Rect.Height
+		switch child.Float {
+		case "left":
+			if childBottom > leftFloatBottom {
+				leftFloatBottom = childBottom
+			}
+		case "right":
+			if childBottom > rightFloatBottom {
+				rightFloatBottom = childBottom
+			}
+		}
+	}
+
 	for _, child := range box.Children {
 		// Skip LegendBox - already positioned above
 		if child.Type == LegendBox {
@@ -453,6 +516,18 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			}
 			currentX = innerX
 
+			// Apply clear: push yOffset below float bottom edges
+			if child.Clear == "left" || child.Clear == "both" {
+				if leftFloatBottom > yOffset {
+					yOffset = leftFloatBottom
+				}
+			}
+			if child.Clear == "right" || child.Clear == "both" {
+				if rightFloatBottom > yOffset {
+					yOffset = rightFloatBottom
+				}
+			}
+
 			childTag := ""
 			if child.Node != nil {
 				childTag = child.Node.TagName
@@ -589,37 +664,8 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		box.Children = append(box.Children, child)
 	}
 
-	// Position floated children (inside padding area)
-	leftFloatX := innerX
-	rightFloatX := innerX + innerWidth
-	floatY := startY + box.Padding.Top + box.Style.BorderTopWidth
-
-	for _, child := range floatedChildren {
-		childWidth := child.Style.Width
-		if childWidth <= 0 {
-			childWidth = 100 // Default width for floats without explicit width
-		}
-
-		// Compute layout to determine dimensions
-		computeBlockLayout(child, blockLayoutParams{
-			containerWidth: childWidth,
-			startX:         0,
-			startY:         0,
-			parentTag:      "",
-			viewportWidth:  viewportWidth,
-		})
-
-		switch child.Float {
-		case "left":
-			offsetBox(child, leftFloatX, floatY)
-			leftFloatX += child.Rect.Width
-		case "right":
-			offsetBox(child, rightFloatX-child.Rect.Width, floatY)
-			rightFloatX -= child.Rect.Width
-		}
-
-		box.Children = append(box.Children, child)
-	}
+	// Append floated children back to preserve paint order
+	box.Children = append(box.Children, floatedChildren...)
 
 }
 

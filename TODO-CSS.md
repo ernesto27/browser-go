@@ -100,7 +100,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [~] `overflow` - partial: `visible|hidden|scroll|auto` parsed; used as fallback for overflow-x/overflow-y; no real scrollbars on shorthand alone
 - [x] `overflow-x` - horizontal clipping, scrollbar rendering (track + thumb), drag interaction, scroll offset tracking for `auto`/`scroll`
 - [x] `overflow-y` - vertical clipping, scrollbar rendering (track + thumb), drag interaction, scroll offset tracking for `auto`/`scroll`
-- [ ] `clear` - clear floats
+- [x] `clear` - clear floats
 
 ### Typography
 - [x] `line-height` - line spacing

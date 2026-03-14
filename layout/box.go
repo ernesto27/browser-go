@@ -54,6 +54,7 @@ type LayoutBox struct {
 	Right        float64
 	Bottom       float64
 	Float        string
+	Clear        string
 	TableBorder  int
 }
 

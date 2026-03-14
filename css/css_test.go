@@ -765,6 +765,34 @@ func TestParseInlineStyle(t *testing.T) {
 				assert.True(t, colorsEqual(s.Color, color.RGBA{0, 0, 255, 255}))
 			},
 		},
+		{
+			name:  "clear left",
+			input: "clear: left",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "left", s.Clear)
+			},
+		},
+		{
+			name:  "clear right",
+			input: "clear: right",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "right", s.Clear)
+			},
+		},
+		{
+			name:  "clear both",
+			input: "clear: both",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "both", s.Clear)
+			},
+		},
+		{
+			name:  "clear none",
+			input: "clear: none",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "none", s.Clear)
+			},
+		},
 	}
 
 	for _, tt := range tests {

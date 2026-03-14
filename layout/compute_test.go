@@ -1455,3 +1455,119 @@ func TestTableShrinkToFit(t *testing.T) {
 		})
 	}
 }
+
+func TestClearFloat(t *testing.T) {
+	t.Run("clear left drops below left float", func(t *testing.T) {
+		tree := buildTreeWithCSS(
+			`<div><section>Float</section><article>Cleared</article></div>`,
+			`section { float: left; width: 100px; } article { clear: left; }`,
+		)
+		ComputeLayout(tree, 800)
+
+		floatBox := findBoxByTag(tree, "section")
+		clearedBox := findBoxByTag(tree, "article")
+		assert.NotNil(t, floatBox)
+		assert.NotNil(t, clearedBox)
+
+		floatBottom := floatBox.Rect.Y + floatBox.Rect.Height
+		assert.GreaterOrEqual(t, clearedBox.Rect.Y, floatBottom,
+			"cleared element should be at or below the float's bottom edge")
+	})
+
+	t.Run("clear right drops below right float", func(t *testing.T) {
+		tree := buildTreeWithCSS(
+			`<div><section>Float</section><article>Cleared</article></div>`,
+			`section { float: right; width: 100px; } article { clear: right; }`,
+		)
+		ComputeLayout(tree, 800)
+
+		floatBox := findBoxByTag(tree, "section")
+		clearedBox := findBoxByTag(tree, "article")
+		assert.NotNil(t, floatBox)
+		assert.NotNil(t, clearedBox)
+
+		floatBottom := floatBox.Rect.Y + floatBox.Rect.Height
+		assert.GreaterOrEqual(t, clearedBox.Rect.Y, floatBottom,
+			"cleared element should be at or below the float's bottom edge")
+	})
+
+	t.Run("clear both drops below tallest float", func(t *testing.T) {
+		tree := buildTreeWithCSS(
+			`<div><section>Left</section><nav>Right</nav><article>Cleared</article></div>`,
+			`section { float: left; width: 100px; height: 80px; }
+			 nav { float: right; width: 100px; height: 50px; }
+			 article { clear: both; }`,
+		)
+		ComputeLayout(tree, 800)
+
+		leftFloat := findBoxByTag(tree, "section")
+		rightFloat := findBoxByTag(tree, "nav")
+		clearedBox := findBoxByTag(tree, "article")
+		assert.NotNil(t, leftFloat)
+		assert.NotNil(t, rightFloat)
+		assert.NotNil(t, clearedBox)
+
+		tallestBottom := leftFloat.Rect.Y + leftFloat.Rect.Height
+		if rb := rightFloat.Rect.Y + rightFloat.Rect.Height; rb > tallestBottom {
+			tallestBottom = rb
+		}
+		assert.GreaterOrEqual(t, clearedBox.Rect.Y, tallestBottom,
+			"cleared element should be below the tallest float")
+	})
+
+	t.Run("clear none has no effect", func(t *testing.T) {
+		tree := buildTreeWithCSS(
+			`<div><section>Float</section><article>Not cleared</article></div>`,
+			`section { float: left; width: 100px; } article { clear: none; }`,
+		)
+		ComputeLayout(tree, 800)
+
+		floatBox := findBoxByTag(tree, "section")
+		normalBox := findBoxByTag(tree, "article")
+		assert.NotNil(t, floatBox)
+		assert.NotNil(t, normalBox)
+
+		// With clear: none, the block should NOT be pushed below the float
+		assert.Equal(t, floatBox.Rect.Y, normalBox.Rect.Y,
+			"clear: none should not push element below float")
+	})
+
+	t.Run("clear with no floats is a no-op", func(t *testing.T) {
+		withClear := buildTreeWithCSS(
+			`<div><article>Content</article></div>`,
+			`article { clear: both; }`,
+		)
+		ComputeLayout(withClear, 800)
+
+		withoutClear := buildTreeWithCSS(
+			`<div><article>Content</article></div>`,
+			``,
+		)
+		ComputeLayout(withoutClear, 800)
+
+		boxWith := findBoxByTag(withClear, "article")
+		boxWithout := findBoxByTag(withoutClear, "article")
+		assert.Equal(t, boxWithout.Rect.Y, boxWith.Rect.Y,
+			"clear with no floats should not change position")
+	})
+
+	t.Run("clear on floated element stacks vertically", func(t *testing.T) {
+		tree := buildTreeWithCSS(
+			`<div><section>First</section><nav>Second</nav></div>`,
+			`section { float: left; width: 100px; }
+			 nav { float: left; clear: left; width: 100px; }`,
+		)
+		ComputeLayout(tree, 800)
+
+		first := findBoxByTag(tree, "section")
+		second := findBoxByTag(tree, "nav")
+		assert.NotNil(t, first)
+		assert.NotNil(t, second)
+
+		firstBottom := first.Rect.Y + first.Rect.Height
+		assert.GreaterOrEqual(t, second.Rect.Y, firstBottom,
+			"float with clear: left should stack below previous left float")
+		assert.Equal(t, first.Rect.X, second.Rect.X,
+			"cleared float should reset to left edge, same X as first float")
+	})
+}
