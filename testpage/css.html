@@ -4,6 +4,25 @@
     <title>CSS Test Page</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* === CSS Comment Tests === */
+
+        /* Single-line comment before a rule */
+        .comment-test-1 { color: green; }
+
+        .comment-test-2 { /* comment inside declaration block */ font-size: 20px; background-color: #e0ffe0; padding: 8px; }
+
+        .comment-test-3 { color: blue; /* trailing comment */ }
+
+        /*
+         * Multi-line comment block
+         * This should be completely ignored
+         */
+        .comment-test-4 { color: purple; font-weight: bold; }
+
+        /* .comment-test-ghost { color: red; background-color: red; } */
+
+        .comment-test-5 /* comment between selector and brace */ { background-color: #ffe0e0; padding: 8px; }
+
         .red { color: red; }
         .blue { color: blue; }
         .bold { font-weight: bold; }
@@ -16,6 +35,23 @@
 <body>
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
+
+    <h2>CSS Comment Test (/* */)</h2>
+    <p>Testing that the CSS parser correctly skips <code>/* ... */</code> comment blocks.</p>
+
+    <p class="comment-test-1">Test 1: Should be GREEN (comment before rule)</p>
+
+    <p class="comment-test-2">Test 2: Should be 20px with green background (comment inside declaration block)</p>
+
+    <p class="comment-test-3">Test 3: Should be BLUE (trailing comment after value)</p>
+
+    <p class="comment-test-4">Test 4: Should be PURPLE and BOLD (multi-line comment before rule)</p>
+
+    <p class="comment-test-ghost">Test 5: Should have NO red styling (entire rule is inside a comment)</p>
+
+    <p class="comment-test-5">Test 6: Should have pink background (comment between selector and brace)</p>
+
+    <hr>
 
     <h2>Clear Float Test</h2>
     <p>Testing CSS <code>clear</code> property to drop elements below floats.</p>

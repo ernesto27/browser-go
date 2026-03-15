@@ -207,8 +207,24 @@ func (p *Parser) parseValue() string {
 }
 
 func (p *Parser) skipWhitespace() {
-	for p.pos < len(p.input) && unicode.IsSpace(rune(p.input[p.pos])) {
-		p.pos++
+	for p.pos < len(p.input) {
+		if unicode.IsSpace(rune(p.input[p.pos])) {
+			p.pos++
+			continue
+		}
+
+		if p.pos+1 < len(p.input) && p.input[p.pos] == '/' && p.input[p.pos+1] == '*' {
+			p.pos += 2 // skip past /*
+			for p.pos+1 < len(p.input) {
+				if p.input[p.pos] == '*' && p.input[p.pos+1] == '/' {
+					p.pos += 2 // skip past */
+					break
+				}
+				p.pos++
+			}
+			continue
+		}
+		break
 	}
 }
 

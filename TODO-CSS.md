@@ -48,7 +48,8 @@
 # BASIC CONCEPTS (CSS1 §1)
 
 ### §1.7 CSS Parsing
-- [ ] CSS comments `/* */` - parser does not skip comment blocks; breaks or corrupts parsing (`css/parser.go` — `skipWhitespace()` only skips unicode spaces)
+- [x] CSS comments `/* */` - `skipWhitespace()` now skips `/* ... */` blocks (CSS1 §1.7: "a comment is equivalent to whitespace")
+- [ ] Forward-compatible parsing (§7.1) - unknown at-rules should be skipped gracefully; unknown properties/values already ignored
 
 ### §1.3 Inheritance
 Inheritable properties fall back to the parent's value when no rule applies.
@@ -73,11 +74,20 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `font` - shorthand (font-style/variant/weight/size/line-height/family)
 - [x] `font-size` keyword values - `xx-small`, `x-small`, `small`, `medium`, `large`, `x-large`, `xx-large`, `larger`, `smaller`
 
+### §2 Pseudo-classes & Pseudo-elements (CSS1)
+- [~] `A:link` - parsed and matched (`css/css.go`)
+- [~] `A:visited` - parsed and matched (`css/css.go`)
+- [ ] `A:active` - parsed but not matched; code says "not yet supported" (`css/css.go:565`)
+- [ ] `:first-line` pseudo-element (§2.3) - apply styles to first formatted line of a block element
+- [ ] `:first-letter` pseudo-element (§2.4) - apply styles to first letter (drop caps, initial caps)
+
 ### §5.3 Background Properties
 - [ ] `background-attachment` - `scroll | fixed`
 
-### §4.1.1 Box Model
-- [ ] Margin collapsing - adjacent vertical margins should collapse to the maximum value
+### §4 Formatting Model
+- [ ] Margin collapsing (§4.1.1) - adjacent vertical margins should collapse to the maximum value
+- [ ] Horizontal formatting 7-property constraint (§4.1.2) - sum of margin-left + border-left + padding-left + width + padding-right + border-right + margin-right must equal parent width
+- [ ] `display: list-item` (§4.1.3/§5.6.1) - formatted as block with list-item marker; currently only `none` display value works
 
 ---
 
@@ -94,6 +104,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `border-top-right-radius` - individual corner (pixel-raster path in `render/rounded.go`)
 - [x] `border-bottom-left-radius` - individual corner (pixel-raster path in `render/rounded.go`)
 - [x] `border-bottom-right-radius` - individual corner (pixel-raster path in `render/rounded.go`)
+- [ ] `border-style` rendering variations (CSS1 §5.5.17) - `dotted`, `dashed`, `double`, `groove`, `ridge`, `inset`, `outset` all parsed but rendered as solid (`render/paint.go`)
 
 ### Box Model
 - [x] `box-sizing` - border-box/content-box
@@ -104,13 +115,14 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 
 ### Typography
 - [x] `line-height` - line spacing
-- [ ] `letter-spacing` - character spacing
-- [ ] `word-spacing` - word spacing
+- [ ] `letter-spacing` - character spacing (CSS1 §5.4.2)
+- [ ] `word-spacing` - word spacing (CSS1 §5.4.2)
 - [ ] `text-shadow` - text shadow
-- [~] `white-space` - partial: `normal` and `nowrap` supported; `pre`, `pre-wrap`, and `pre-line` not yet implemented
+- [~] `white-space` - partial: `normal` and `nowrap` supported; `pre` (CSS1 §5.6.2), `pre-wrap`, and `pre-line` not yet implemented
 - [x] `text-overflow` - ellipsis/clip
-- [ ] `text-indent` - first line indent
-- [ ] `vertical-align` - inline alignment
+- [ ] `text-indent` - first line indent (CSS1 §5.4.7 — inheritable, applies to block-level elements)
+- [ ] `vertical-align` - inline alignment (CSS1 §5.4.4 — baseline/sub/super/top/middle/bottom/text-top/text-bottom/percentage)
+- [ ] `text-decoration: overline` - CSS1 §5.4.3 specifies `overline` and `blink` in addition to `underline`/`line-through`
 
 ### Flexbox
 - [ ] `display: flex` - flex container
@@ -145,8 +157,9 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 ### List
 - [x] `list-style` - shorthand
 - [x] `list-style-type` - disc/circle/square/decimal/none
-- [ ] `list-style-position` - inside/outside
-- [ ] `list-style-image` - custom marker
+- [ ] `list-style-type` extended values (CSS1 §5.6.3) - `lower-roman`, `upper-roman`, `lower-alpha`, `upper-alpha`
+- [ ] `list-style-position` - inside/outside (CSS1 §5.6.5)
+- [ ] `list-style-image` - custom marker (CSS1 §5.6.4)
 
 ### Table
 - [x] `width` on table cells - px and % widths on td/th
@@ -161,20 +174,27 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [ ] `user-select` - text selection
 
 ### Units (parsing)
-- [x] `em` - relative to font size
+- [x] `em` - relative to font size (CSS1 §6.1)
+- [ ] `ex` - relative to x-height of font (CSS1 §6.1 — typically ~0.5em)
 - [ ] `rem` - relative to root font size
-- [ ] `%` - percentage (partial: works for table cell width)
+- [ ] `%` - percentage (CSS1 §6.2 — partial: works for table cell width)
 - [x] `vw` - viewport width
 - [x] `vh` - viewport height
+- [ ] `pt` - points, 1pt = 1/72in (CSS1 §6.1 — very common in print-era stylesheets)
+- [ ] `pc` - picas, 1pc = 12pt (CSS1 §6.1)
+- [ ] `in` - inches (CSS1 §6.1)
+- [ ] `cm` - centimeters (CSS1 §6.1)
+- [ ] `mm` - millimeters (CSS1 §6.1)
 - [ ] `calc()` - calculations
-- [ ] `rgb()` / `rgba()` - color functions (`css/css.go:204` — ParseColor handles named colors and hex; ~80 CSS named colors now included)
+- [ ] `rgb()` / `rgba()` - color functions (CSS1 §6.3 — `css/css.go` ParseColor handles named colors and hex only)
 - [ ] `hsl()` / `hsla()` - color functions
-- [ ] `transparent` keyword — not recognized by ParseColor; returns nil (no background drawn)
+- [ ] `transparent` keyword (CSS1 §5.3.2) — not recognized by ParseColor; returns nil (no background drawn)
 
 ### Selectors
 - [ ] Child selectors - `ul > li`
 - [ ] Pseudo-classes - `:hover`, `:focus`, `:active`, `:first-child`, `:last-child`
 - [ ] Pseudo-elements - `::before`, `::after`
+- [ ] Pseudo-elements (CSS1) - `:first-line` (§2.3), `:first-letter` (§2.4) — CSS1 used single-colon syntax
 - [ ] Attribute selectors - `[type="text"]`, `[href^="https"]`
 - [ ] Sibling selectors - `h1 + p`, `h1 ~ p`
 
@@ -183,8 +203,8 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `!important` - override rules
 
 ### At-Rules (needed for WHATWG 4.2.6 style element compliance)
+- [ ] `@import` - import external stylesheets (CSS1 §3 — must occur at start of stylesheet, before any declarations)
 - [ ] `@media` - media queries (screen, print, width conditions)
-- [ ] `@import` - import external stylesheets
 - [ ] `@charset` - character encoding declaration
 - [ ] `@font-face` - custom font definitions
 - [ ] `@keyframes` - animation keyframes
@@ -199,12 +219,15 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 
 ## Parsed But Not Applied
 - [ ] `cursor` - parsed but not applied in render
-- [ ] `letter-spacing` - parsed into `Style.LetterSpacing` but never read by layout or render
-- [ ] `display: block/inline` - only `none` actually works
+- [ ] `letter-spacing` - parsed into `Style.LetterSpacing` but never read by layout or render (CSS1 §5.4.2)
+- [ ] `word-spacing` - parsed into `Style.WordSpacing` but never read by layout or render (CSS1 §5.4.1)
+- [ ] `vertical-align` - parsed into `Style.VerticalAlign` but not used in inline layout (CSS1 §5.4.4)
+- [ ] `display: block/inline` - only `none` actually works (CSS1 §5.6.1)
 - [ ] `display: inline-block` - not recognized; treated as `InlineBox` without proper inline-block sizing (`layout/layout.go:178`)
 - [ ] `position: relative/fixed/sticky` - only `absolute` works
   - `position: fixed` bug: not extracted from normal flow like `absolute` is (`layout/compute.go:72-81`)
 - [ ] `z-index` - parsed but stacking order not enforced (all elements paint in DOM order)
+- [ ] `border-style` variations - `dotted`/`dashed`/`double`/`groove`/`ridge`/`inset`/`outset` parsed but all render as solid (CSS1 §5.5.17)
 
 ---
 

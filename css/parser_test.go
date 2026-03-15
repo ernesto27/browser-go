@@ -296,6 +296,81 @@ func TestParse(t *testing.T) {
 				},
 			},
 		},
+		// CSS comment tests (CSS1 §1.7)
+		{
+			name:  "comment before rule",
+			input: "/* heading style */ H1 { color: red; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors:    []Selector{{TagName: "H1"}},
+						Declarations: []Declaration{{Property: "color", Value: "red"}},
+					},
+				},
+			},
+		},
+		{
+			name:  "comment between rules",
+			input: "H1 { color: red; } /* separator */ P { font-size: 14px; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors:    []Selector{{TagName: "H1"}},
+						Declarations: []Declaration{{Property: "color", Value: "red"}},
+					},
+					{
+						Selectors:    []Selector{{TagName: "P"}},
+						Declarations: []Declaration{{Property: "font-size", Value: "14px"}},
+					},
+				},
+			},
+		},
+		{
+			name:  "multiline comment",
+			input: "/* \n * multi-line\n * comment\n */ div { color: blue; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors:    []Selector{{TagName: "div"}},
+						Declarations: []Declaration{{Property: "color", Value: "blue"}},
+					},
+				},
+			},
+		},
+		{
+			name:  "commented-out rule produces empty stylesheet",
+			input: "/* H1 { color: red; } */",
+			expected: Stylesheet{
+				Rules: nil,
+			},
+		},
+		{
+			name:  "adjacent comments",
+			input: "/* one */ /* two */ div { color: red; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors:    []Selector{{TagName: "div"}},
+						Declarations: []Declaration{{Property: "color", Value: "red"}},
+					},
+				},
+			},
+		},
+		{
+			name:  "comment inside declaration block",
+			input: "div { color: red; /* a comment */ font-size: 16px; }",
+			expected: Stylesheet{
+				Rules: []Rule{
+					{
+						Selectors: []Selector{{TagName: "div"}},
+						Declarations: []Declaration{
+							{Property: "color", Value: "red"},
+							{Property: "font-size", Value: "16px"},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
