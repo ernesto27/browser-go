@@ -99,8 +99,10 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 				cssResp, err := http.Get(absURL)
 				if err == nil {
 					data, _ := io.ReadAll(cssResp.Body)
-					cssResults[idx] = string(data)
 					cssResp.Body.Close()
+					// Resolve @import directives in fetched stylesheet
+					seen := map[string]bool{absURL: true}
+					cssResults[idx] = resolveCSSimports(string(data), absURL, 0, seen)
 				} else {
 					fmt.Println("Failed to fetch CSS:", err)
 				}
@@ -118,8 +120,8 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 		// Store external CSS for reflow (when styles are disabled/enabled)
 		browser.SetExternalCSS(externalCSS.String())
 
-		// Combine external + internal <style> content
-		fullCSS := externalCSS.String() + dom.FindActiveStyleContent(document)
+		// Combine external + internal <style> content (resolve @imports in inline styles)
+		fullCSS := combineCSS(externalCSS.String(), document, pageURL)
 
 		fmt.Println("Building layout...")
 		stylesheet := css.Parse(fullCSS)
@@ -162,7 +164,7 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 		jsRuntime.SetTitleChangeHandler(browser.SetTitle)
 
 		// Re-parse CSS after JavaScript (respects disabled styles)
-		fullCSS = externalCSS.String() + dom.FindActiveStyleContent(document)
+		fullCSS = combineCSS(externalCSS.String(), document, pageURL)
 		stylesheet = css.Parse(fullCSS)
 
 		// Rebuild layout tree AFTER JavaScript has modified the DOM
@@ -181,6 +183,50 @@ func loadPage(browser *render.Browser, req render.NavigationRequest) {
 
 		fmt.Println("Page loaded!")
 	}()
+}
+
+// combineCSS merges external CSS with inline <style> content, resolving @imports in inline styles.
+func combineCSS(externalCSS string, document *dom.Node, pageURL string) string {
+	inlineCSS := resolveCSSimports(dom.FindActiveStyleContent(document), pageURL, 0, map[string]bool{})
+	return externalCSS + inlineCSS
+}
+
+func resolveCSSimports(cssContent, baseURL string, depth int, seen map[string]bool) string {
+	if depth >= 5 {
+		return cssContent
+	}
+
+	sheet := css.Parse(cssContent)
+	if len(sheet.Imports) == 0 {
+		return cssContent
+	}
+
+	var imported strings.Builder
+	for _, importURL := range sheet.Imports {
+		absURL := resolveURL(baseURL, importURL)
+		if seen[absURL] {
+			fmt.Printf("Skipping circular @import: %s\n", absURL)
+			continue
+		}
+		seen[absURL] = true
+
+		fmt.Printf("Fetching @import: %s\n", absURL)
+		resp, err := http.Get(absURL)
+		if err != nil {
+			fmt.Printf("Failed to fetch @import %s: %v\n", absURL, err)
+			continue
+		}
+		data, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		// Recursively resolve nested imports
+		resolved := resolveCSSimports(string(data), absURL, depth+1, seen)
+		imported.WriteString(resolved)
+		imported.WriteString("\n")
+	}
+
+	// Imported rules prepended = lower cascade priority
+	return imported.String() + cssContent
 }
 
 func resolveURL(baseURL, href string) string {

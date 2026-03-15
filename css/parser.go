@@ -16,16 +16,28 @@ func Parse(input string) Stylesheet {
 }
 
 func (p *Parser) parseStylesheet() Stylesheet {
+	var imports []string
 	var rules []Rule
+	seenRule := false
 	for p.pos < len(p.input) {
 		p.skipWhitespace()
 		if p.pos >= len(p.input) {
 			break
 		}
+		// Handle at-rules (@import, @charset, etc.)
+		if p.input[p.pos] == '@' {
+			p.pos++ // skip '@'
+			importURL := p.parseAtImport()
+			if importURL != "" && !seenRule {
+				imports = append(imports, importURL)
+			}
+			continue
+		}
+		seenRule = true
 		rule := p.parseRule()
 		rules = append(rules, rule)
 	}
-	return Stylesheet{Rules: rules}
+	return Stylesheet{Imports: imports, Rules: rules}
 }
 
 func (p *Parser) parseRule() Rule {
@@ -225,6 +237,114 @@ func (p *Parser) skipWhitespace() {
 			continue
 		}
 		break
+	}
+}
+
+// parseAtImport handles an at-rule after the '@' has been consumed.
+// Returns the import URL if it's an @import, otherwise skips the at-rule and returns "".
+func (p *Parser) parseAtImport() string {
+	keyword := strings.ToLower(p.parseIdentifier())
+	if keyword != "import" {
+		p.skipAtRule()
+		return ""
+	}
+
+	p.skipWhitespace()
+	if p.pos >= len(p.input) {
+		return ""
+	}
+
+	var importURL string
+	c := p.input[p.pos]
+	if c == '"' || c == '\'' {
+		importURL = p.parseQuotedString(c)
+	} else if c == 'u' && p.pos+3 < len(p.input) && p.input[p.pos:p.pos+4] == "url(" {
+		importURL = p.parseURLFunction()
+	}
+
+	p.skipToSemicolon()
+	return importURL
+}
+
+// parseQuotedString reads a string between matching quotes. The opening quote char
+// must be at p.pos. Returns the content between quotes.
+func (p *Parser) parseQuotedString(quote byte) string {
+	p.pos++ // skip opening quote
+	start := p.pos
+	for p.pos < len(p.input) && p.input[p.pos] != quote {
+		p.pos++
+	}
+	result := p.input[start:p.pos]
+	if p.pos < len(p.input) {
+		p.pos++ // skip closing quote
+	}
+	return result
+}
+
+// parseURLFunction parses url("..."), url('...'), or url(bare).
+// Expects p.pos at the 'u' of 'url('.
+func (p *Parser) parseURLFunction() string {
+	p.pos += 4 // skip "url("
+	p.skipWhitespace()
+	if p.pos >= len(p.input) {
+		return ""
+	}
+
+	var result string
+	c := p.input[p.pos]
+	if c == '"' || c == '\'' {
+		result = p.parseQuotedString(c)
+	} else {
+		// Unquoted URL
+		start := p.pos
+		for p.pos < len(p.input) && p.input[p.pos] != ')' && !unicode.IsSpace(rune(p.input[p.pos])) {
+			p.pos++
+		}
+		result = p.input[start:p.pos]
+	}
+
+	p.skipWhitespace()
+	if p.pos < len(p.input) && p.input[p.pos] == ')' {
+		p.pos++ // skip ')'
+	}
+	return result
+}
+
+// skipAtRule skips an unknown at-rule. For statement at-rules (@charset, etc.)
+// it advances to the next ';'. For block at-rules (@media, etc.) it skips
+// the entire { ... } block.
+func (p *Parser) skipAtRule() {
+	for p.pos < len(p.input) {
+		c := p.input[p.pos]
+		if c == ';' {
+			p.pos++
+			return
+		}
+		if c == '{' {
+			// Block at-rule: skip to matching '}'
+			depth := 1
+			p.pos++
+			for p.pos < len(p.input) && depth > 0 {
+				if p.input[p.pos] == '{' {
+					depth++
+				} else if p.input[p.pos] == '}' {
+					depth--
+				}
+				p.pos++
+			}
+			return
+		}
+		p.pos++
+	}
+}
+
+// skipToSemicolon advances past the next ';' or to end of input.
+func (p *Parser) skipToSemicolon() {
+	for p.pos < len(p.input) && p.input[p.pos] != ';' {
+		p.pos++
+	}
+	if p.pos < len(p.input) {
+		p.pos++ // skip ';'
 	}
 }
 

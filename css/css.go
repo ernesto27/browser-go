@@ -495,7 +495,8 @@ type Rule struct {
 }
 
 type Stylesheet struct {
-	Rules []Rule
+	Imports []string // @import URLs, in declaration order
+	Rules   []Rule
 }
 
 // MatchSelector checks if a selector matches a DOM node

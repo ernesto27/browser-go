@@ -528,3 +528,87 @@ func TestParsePseudoClass(t *testing.T) {
 		})
 	}
 }
+
+func TestParseAtImport(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		wantImports []string
+		wantRules   int
+	}{
+		{
+			name:        "bare string double quotes",
+			input:       `@import "style.css";`,
+			wantImports: []string{"style.css"},
+			wantRules:   0,
+		},
+		{
+			name:        "bare string single quotes",
+			input:       `@import 'style.css';`,
+			wantImports: []string{"style.css"},
+			wantRules:   0,
+		},
+		{
+			name:        "url() with double quotes",
+			input:       `@import url("style.css");`,
+			wantImports: []string{"style.css"},
+			wantRules:   0,
+		},
+		{
+			name:        "url() with single quotes",
+			input:       `@import url('style.css');`,
+			wantImports: []string{"style.css"},
+			wantRules:   0,
+		},
+		{
+			name:        "url() without quotes",
+			input:       `@import url(style.css);`,
+			wantImports: []string{"style.css"},
+			wantRules:   0,
+		},
+		{
+			name:        "import with rules after",
+			input:       `@import "base.css"; div { color: red; }`,
+			wantImports: []string{"base.css"},
+			wantRules:   1,
+		},
+		{
+			name:        "import after rule is ignored",
+			input:       `div { color: red; } @import "style.css";`,
+			wantImports: nil,
+			wantRules:   1,
+		},
+		{
+			name:        "multiple imports",
+			input:       `@import "a.css"; @import "b.css"; div { color: red; }`,
+			wantImports: []string{"a.css", "b.css"},
+			wantRules:   1,
+		},
+		{
+			name:        "unknown at-rule skipped",
+			input:       `@charset "utf-8"; @import "style.css"; div { color: red; }`,
+			wantImports: []string{"style.css"},
+			wantRules:   1,
+		},
+		{
+			name:        "block at-rule skipped",
+			input:       `@media screen { body { color: red; } } div { color: blue; }`,
+			wantImports: nil,
+			wantRules:   1,
+		},
+		{
+			name:        "import with url path",
+			input:       `@import url("components/buttons.css");`,
+			wantImports: []string{"components/buttons.css"},
+			wantRules:   0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sheet := Parse(tt.input)
+			assert.Equal(t, tt.wantImports, sheet.Imports, "Imports")
+			assert.Len(t, sheet.Rules, tt.wantRules, "number of rules")
+		})
+	}
+}

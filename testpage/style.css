@@ -1,5 +1,12 @@
+@import "imported.css";
+
 body {
     background-color: #f0f0f0;
+}
+
+/* Override imported.css .import-override (tests cascade: importing sheet wins) */
+.import-override {
+    background-color: #27ae60;
 }
 
 h1 {

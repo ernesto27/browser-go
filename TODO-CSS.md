@@ -203,7 +203,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `!important` - override rules
 
 ### At-Rules (needed for WHATWG 4.2.6 style element compliance)
-- [ ] `@import` - import external stylesheets (CSS1 §3 — must occur at start of stylesheet, before any declarations)
+- [x] `@import` - import external stylesheets (CSS1 §3 — must occur at start of stylesheet, before any declarations)
 - [ ] `@media` - media queries (screen, print, width conditions)
 - [ ] `@charset` - character encoding declaration
 - [ ] `@font-face` - custom font definitions

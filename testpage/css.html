@@ -36,6 +36,28 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>@import Test (CSS1 §3)</h2>
+    <p>Testing <code>@import</code> to include rules from an external stylesheet (<code>imported.css</code>) via <code>style.css</code>.</p>
+    <p><code>@import</code> must appear at the start of a stylesheet, before any declarations. Imported rules have lower cascade priority than the importing sheet's own rules.</p>
+
+    <div class="import-test">
+        Test 1: Should have TEAL background (styled by imported.css via @import in style.css)
+    </div>
+
+    <br>
+
+    <div class="import-override">
+        Test 2: Should have GREEN background (imported.css says red, but style.css overrides to green — importing sheet wins)
+    </div>
+
+    <br>
+
+    <div class="import-only">
+        Test 3: Should have dashed TEAL border and italic text (import-only class, only in imported.css)
+    </div>
+
+    <hr>
+
     <h2>CSS Comment Test (/* */)</h2>
     <p>Testing that the CSS parser correctly skips <code>/* ... */</code> comment blocks.</p>
 
