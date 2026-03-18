@@ -434,11 +434,12 @@ func ParseColor(value string) color.Color {
 }
 
 type Selector struct {
-	TagName     string
-	ID          string
-	Classes     []string
-	PseudoClass string    // e.g. "link", "visited", "hover" — empty means none
-	Ancestor    *Selector // non-nil for descendant selectors (e.g. "div p" → p.Ancestor = &div)
+	TagName      string
+	ID           string
+	Classes      []string
+	PseudoClass  string    // e.g. "link", "visited", "hover" — empty means none
+	Ancestor     *Selector // non-nil for descendant selectors (e.g. "div p" → p.Ancestor = &div)
+	DirectParent bool
 }
 
 // Specificity represents CSS selector specificity as (A, B, C):
@@ -572,6 +573,15 @@ func MatchSelectorNode(sel Selector, node *dom.Node, ctx MatchContext) bool {
 	if sel.Ancestor == nil {
 		return true
 	}
+
+	if sel.DirectParent {
+		p := node.Parent
+		if p != nil && p.Type == dom.Element && MatchSelectorNode(*sel.Ancestor, p, ctx) {
+			return true
+		}
+		return false
+	}
+
 	// Walk up the DOM tree looking for a matching ancestor
 	for p := node.Parent; p != nil; p = p.Parent {
 		if p.Type != dom.Element {

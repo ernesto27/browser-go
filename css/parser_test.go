@@ -448,6 +448,27 @@ func TestParseDescendantSelector(t *testing.T) {
 				{TagName: "a", PseudoClass: "hover"},
 			},
 		},
+		{
+			name:  "child combinator: ul > li",
+			input: `ul > li { color: green; }`,
+			wantSels: []Selector{
+				{TagName: "li", DirectParent: true, Ancestor: &Selector{TagName: "ul"}},
+			},
+		},
+		{
+			name:  "child combinator with class: div.parent > p",
+			input: `div.parent > p { color: blue; }`,
+			wantSels: []Selector{
+				{TagName: "p", DirectParent: true, Ancestor: &Selector{TagName: "div", Classes: []string{"parent"}}},
+			},
+		},
+		{
+			name:  "mixed descendant and child: div > p a",
+			input: `div > p a { color: red; }`,
+			wantSels: []Selector{
+				{TagName: "a", Ancestor: &Selector{TagName: "p", DirectParent: true, Ancestor: &Selector{TagName: "div"}}},
+			},
+		},
 	}
 
 	for _, tt := range tests {

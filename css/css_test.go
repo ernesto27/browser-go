@@ -1396,3 +1396,39 @@ func TestBackgroundSize(t *testing.T) {
 		})
 	}
 }
+
+func TestChildSelectorMatching(t *testing.T) {
+	// Build DOM: <ul><li>direct</li></ul>
+	ul := &dom.Node{Type: dom.Element, TagName: "ul"}
+	li := &dom.Node{Type: dom.Element, TagName: "li", Parent: ul}
+	ul.Children = []*dom.Node{li}
+
+	// Build DOM: <ul><li><ul><li>nested</li></ul></li></ul>
+	innerUl := &dom.Node{Type: dom.Element, TagName: "ul", Parent: li}
+	nestedLi := &dom.Node{Type: dom.Element, TagName: "li", Parent: innerUl}
+	innerUl.Children = []*dom.Node{nestedLi}
+	li.Children = []*dom.Node{innerUl}
+
+	ctx := MatchContext{}
+
+	// Child selector: ul > li
+	childSel := Selector{
+		TagName:      "li",
+		DirectParent: true,
+		Ancestor:     &Selector{TagName: "ul"},
+	}
+
+	// Direct child should match
+	assert.True(t, MatchSelectorNode(childSel, li, ctx), "direct child li should match ul > li")
+
+	// Nested li is a direct child of innerUl, so ul > li should still match
+	assert.True(t, MatchSelectorNode(childSel, nestedLi, ctx), "nested li is direct child of inner ul")
+
+	// Descendant selector for comparison: ul li (should match both)
+	descSel := Selector{
+		TagName:  "li",
+		Ancestor: &Selector{TagName: "ul"},
+	}
+	assert.True(t, MatchSelectorNode(descSel, li, ctx), "descendant matches direct child")
+	assert.True(t, MatchSelectorNode(descSel, nestedLi, ctx), "descendant matches nested")
+}

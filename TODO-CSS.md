@@ -191,7 +191,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [ ] `transparent` keyword (CSS1 §5.3.2) — not recognized by ParseColor; returns nil (no background drawn)
 
 ### Selectors
-- [ ] Child selectors - `ul > li`
+- [x] Child selectors - `ul > li`
 - [ ] Pseudo-classes - `:hover`, `:focus`, `:active`, `:first-child`, `:last-child`
 - [ ] Pseudo-elements - `::before`, `::after`
 - [ ] Pseudo-elements (CSS1) - `:first-line` (§2.3), `:first-letter` (§2.4) — CSS1 used single-colon syntax

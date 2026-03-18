@@ -86,6 +86,24 @@ func (p *Parser) parseCompoundSelector() (Selector, bool) {
 			break
 		}
 		c := p.input[p.pos]
+		if c == '>' {
+			// child combinator
+			p.pos++ // skip '>'
+			p.skipWhitespace()
+			part := p.parseSimpleSelector()
+			if part.TagName == "" && part.ID == "" && len(part.Classes) == 0 && part.PseudoClass == "" {
+				break
+			}
+			part.DirectParent = true
+			parts = append(parts, part)
+			savedPos = p.pos
+			p.skipWhitespace()
+			if p.pos >= len(p.input) || p.input[p.pos] == '{' || p.input[p.pos] == ',' {
+				p.pos = savedPos
+				break
+			}
+			continue
+		}
 		if c == '#' || c == '.' || isIdentChar(rune(c)) {
 			// descendant combinator: continue parsing next simple selector
 			continue

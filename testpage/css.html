@@ -23,6 +23,11 @@
 
         .comment-test-5 /* comment between selector and brace */ { background-color: #ffe0e0; padding: 8px; }
 
+        /* === Child Selector Tests === */
+        ul.child-test > li { color: green; font-weight: bold; }
+        ol.child-test > li { color: blue; }
+        div.child-parent > p { background-color: #e0ffe0; padding: 5px; }
+
         .red { color: red; }
         .blue { color: blue; }
         .bold { font-weight: bold; }
@@ -35,6 +40,34 @@
 <body>
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
+
+    <h2>Child Selector Test (ul > li)</h2>
+    <p>Testing CSS child combinator <code>></code> — should only match direct children, not deeper descendants.</p>
+
+    <!-- Test 1: Direct children should be styled -->
+    <ul class="child-test">
+        <li>Direct child — should be GREEN and bold</li>
+        <li>Direct child — should be GREEN and bold</li>
+    </ul>
+
+    <!-- Test 2: Nested li should NOT be styled by child selector -->
+    <ul class="child-test">
+        <li>Direct child — should be GREEN and bold
+            <ul>
+                <li>Nested li — should NOT be green/bold (not a direct child)</li>
+            </ul>
+        </li>
+    </ul>
+
+    <!-- Test 3: Different parent element -->
+    <div class="child-parent">
+        <p>Direct child p — should have green background</p>
+        <div>
+            <p>Nested p — should NOT have green background (not a direct child)</p>
+        </div>
+    </div>
+
+    <hr>
 
     <h2>Border Radius Multi-Value Shorthand Test</h2>
     <p>Testing <code>border-radius</code> with 2, 3, and 4 values (diagonal corner pairing).</p>
