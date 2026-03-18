@@ -510,6 +510,36 @@ func TestParseInlineStyle(t *testing.T) {
 			},
 		},
 		{
+			name:  "padding shorthand 2 values",
+			input: "padding: 10px 20px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 10.0, s.PaddingTop)
+				assert.Equal(t, 10.0, s.PaddingBottom)
+				assert.Equal(t, 20.0, s.PaddingLeft)
+				assert.Equal(t, 20.0, s.PaddingRight)
+			},
+		},
+		{
+			name:  "padding shorthand 3 values",
+			input: "padding: 5px 10px 15px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.PaddingTop)
+				assert.Equal(t, 10.0, s.PaddingRight)
+				assert.Equal(t, 15.0, s.PaddingBottom)
+				assert.Equal(t, 10.0, s.PaddingLeft)
+			},
+		},
+		{
+			name:  "padding shorthand 4 values",
+			input: "padding: 5px 10px 15px 20px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.PaddingTop)
+				assert.Equal(t, 10.0, s.PaddingRight)
+				assert.Equal(t, 15.0, s.PaddingBottom)
+				assert.Equal(t, 20.0, s.PaddingLeft)
+			},
+		},
+		{
 			name:  "with trailing semicolon",
 			input: "color: red;",
 			verify: func(t *testing.T, s Style) {

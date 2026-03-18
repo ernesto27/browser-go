@@ -621,273 +621,9 @@ func ApplyStylesheet(sheet Stylesheet, tagName string, id string, classes []stri
 	return style
 }
 
-// applyDeclaration applies a single CSS property to a style
+// applyDeclaration applies a single CSS property to a style using default context values
 func applyDeclaration(style *Style, property, value string) {
-	switch property {
-	case "color":
-		if c := ParseColor(value); c != nil {
-			style.Color = c
-		}
-	case "background-color":
-		if c := ParseColor(value); c != nil {
-			style.BackgroundColor = c
-		}
-	case "background-image":
-		if strings.HasPrefix(value, "url(") && strings.HasSuffix(value, ")") {
-			url := value[4 : len(value)-1]
-			url = strings.Trim(url, `"'`)
-			url = strings.TrimSpace(url)
-			style.BackgroundImage = url
-		} else if value == "none" {
-			style.BackgroundImage = ""
-		}
-	case "background":
-		bgColor, bgImage := parseBackgroundShorthand(value)
-		if bgColor != nil {
-			style.BackgroundColor = bgColor
-		}
-
-		if bgImage != "" {
-			style.BackgroundImage = bgImage
-		}
-
-	case "background-size":
-		v := strings.TrimSpace(strings.ToLower(value))
-		switch v {
-		case "cover", "contain", "auto":
-			style.BackgroundSize = v
-		default:
-			style.BackgroundSize = v
-		}
-
-	case "font-size":
-		if size := parseFontSizeWithContext(value, DefaultFontSize, DefaultViewportWidth, DefaultViewportHeight); size > 0 {
-			style.FontSize = size
-		}
-	case "line-height":
-		style.LineHeight = parseLineHeight(value, style.FontSize)
-	case "font-weight":
-		if bold, ok := parseFontWeightValue(value); ok {
-			style.Bold = bold
-		}
-	case "font-style":
-		style.Italic = (value == "italic")
-	case "font-family":
-		style.FontFamily = ParseFontFamily(value)
-	case "font-variant":
-		style.FontVariant = value
-	case "margin":
-		m := ParseSize(value)
-		style.MarginTop = m
-		style.MarginBottom = m
-		style.MarginLeft = m
-		style.MarginRight = m
-	case "margin-top":
-		style.MarginTop = ParseSize(value)
-	case "margin-bottom":
-		style.MarginBottom = ParseSize(value)
-	case "margin-left":
-		style.MarginLeft = ParseSize(value)
-	case "margin-right":
-		style.MarginRight = ParseSize(value)
-	case "padding":
-		p := ParseSize(value)
-		style.PaddingTop = p
-		style.PaddingBottom = p
-		style.PaddingLeft = p
-		style.PaddingRight = p
-	case "padding-top":
-		style.PaddingTop = ParseSize(value)
-	case "padding-bottom":
-		style.PaddingBottom = ParseSize(value)
-	case "padding-left":
-		style.PaddingLeft = ParseSize(value)
-	case "padding-right":
-		style.PaddingRight = ParseSize(value)
-	case "text-align":
-		style.TextAlign = value
-	case "white-space":
-		switch value {
-		case "normal", "nowrap":
-			style.WhiteSpace = value
-		}
-	case "text-overflow":
-		switch value {
-		case "clip", "ellipsis":
-			style.TextOverflow = value
-		}
-	case "overflow":
-		switch value {
-		case "visible", "hidden", "scroll", "auto":
-			style.Overflow = value
-		}
-	case "overflow-x":
-		switch value {
-		case "visible", "hidden", "scroll", "auto":
-			style.OverflowX = value
-		}
-	case "overflow-y":
-		switch value {
-		case "visible", "hidden", "scroll", "auto":
-			style.OverflowY = value
-		}
-	case "vertical-align":
-		switch value {
-		case "top", "middle", "bottom", "baseline":
-			style.VerticalAlign = value
-		}
-	case "display":
-		style.Display = value
-	case "float":
-		style.Float = value
-	case "clear":
-		style.Clear = value
-	case "position":
-		style.Position = value
-	case "top":
-		style.Top = ParseSize(value)
-		style.TopSet = true
-	case "left":
-		style.Left = ParseSize(value)
-		style.LeftSet = true
-	case "right":
-		style.Right = ParseSize(value)
-		style.RightSet = true
-	case "bottom":
-		style.Bottom = ParseSize(value)
-		style.BottomSet = true
-	case "box-sizing":
-		style.BoxSizing = value
-
-	case "text-decoration":
-		style.TextDecoration = value
-	case "text-transform":
-		style.TextTransform = value
-	case "letter-spacing":
-		if ls, ok := parseSpacingWithContext(value, style.FontSize, DefaultViewportWidth, DefaultViewportHeight); ok {
-			style.LetterSpacing = ls
-			style.LetterSpacingSet = true
-		}
-	case "word-spacing":
-		if ws, ok := parseSpacingWithContext(value, style.FontSize, DefaultViewportWidth, DefaultViewportHeight); ok {
-			style.WordSpacing = ws
-			style.WordSpacingSet = true
-		}
-	case "opacity":
-		if op, err := strconv.ParseFloat(value, 64); err == nil {
-			if op < 0 {
-				op = 0
-			} else if op > 1 {
-				op = 1
-			}
-			style.Opacity = op
-		}
-	case "visibility":
-		style.Visibility = value
-	case "cursor":
-		style.Cursor = value
-	case "border":
-		w, s, c := parseBorderShorthand(value)
-		style.BorderTopWidth = w
-		style.BorderRightWidth = w
-		style.BorderBottomWidth = w
-		style.BorderLeftWidth = w
-		style.BorderTopStyle = s
-		style.BorderRightStyle = s
-		style.BorderBottomStyle = s
-		style.BorderLeftStyle = s
-		style.BorderTopColor = c
-		style.BorderRightColor = c
-		style.BorderBottomColor = c
-		style.BorderLeftColor = c
-	case "border-width":
-		w := ParseSize(value)
-		style.BorderTopWidth = w
-		style.BorderRightWidth = w
-		style.BorderBottomWidth = w
-		style.BorderLeftWidth = w
-	case "border-color":
-		if c := ParseColor(value); c != nil {
-			style.BorderTopColor = c
-			style.BorderRightColor = c
-			style.BorderBottomColor = c
-			style.BorderLeftColor = c
-		}
-	case "border-style":
-		style.BorderTopStyle = value
-		style.BorderRightStyle = value
-		style.BorderBottomStyle = value
-		style.BorderLeftStyle = value
-	case "border-top":
-		w, s, c := parseBorderShorthand(value)
-		style.BorderTopWidth = w
-		style.BorderTopStyle = s
-		style.BorderTopColor = c
-	case "border-right":
-		w, s, c := parseBorderShorthand(value)
-		style.BorderRightWidth = w
-		style.BorderRightStyle = s
-		style.BorderRightColor = c
-	case "border-bottom":
-		w, s, c := parseBorderShorthand(value)
-		style.BorderBottomWidth = w
-		style.BorderBottomStyle = s
-		style.BorderBottomColor = c
-	case "border-left":
-		w, s, c := parseBorderShorthand(value)
-		style.BorderLeftWidth = w
-		style.BorderLeftStyle = s
-		style.BorderLeftColor = c
-	case "border-top-left-radius":
-		style.BorderTopLeftRadius = ParseSize(value)
-	case "border-top-right-radius":
-		style.BorderTopRightRadius = ParseSize(value)
-	case "border-bottom-left-radius":
-		style.BorderBottomLeftRadius = ParseSize(value)
-	case "border-bottom-right-radius":
-		style.BorderBottomRightRadius = ParseSize(value)
-
-	case "list-style":
-		if listType, ok := parseListStyleShorthand(value); ok {
-			style.ListStyleType = listType
-		}
-	case "list-style-type":
-		style.ListStyleType = value
-
-	case "width":
-		if strings.HasSuffix(strings.TrimSpace(value), "%") {
-			num := strings.TrimSuffix(strings.TrimSpace(value), "%")
-			if pct, err := strconv.ParseFloat(num, 64); err == nil && pct > 0 {
-				style.WidthPercent = pct
-			}
-		} else if w := ParseSize(value); w > 0 {
-			style.Width = w
-		}
-	case "height":
-		if h := ParseSize(value); h > 0 {
-			style.Height = h
-		}
-
-	case "min-width":
-		if w := ParseSize(value); w > 0 {
-			style.MinWidth = w
-		}
-
-	case "max-width":
-		if w := ParseSize(value); w > 0 {
-			style.MaxWidth = w
-		}
-	case "min-height":
-		if h := ParseSize(value); h > 0 {
-			style.MinHeight = h
-		}
-	case "max-height":
-		if h := ParseSize(value); h > 0 {
-			style.MaxHeight = h
-		}
-	case "border-radius":
-		style.BorderRadius = ParseSize(value)
-	}
+	applyDeclarationWithContext(style, property, value, DefaultFontSize, DefaultViewportWidth, DefaultViewportHeight)
 }
 
 // ParseFontFamily parses a CSS font-family value into a slice of font names
@@ -1204,11 +940,51 @@ func parseSpacingWithContext(value string, fontSize, viewportWidth, viewportHeig
 
 func applyDeclarationWithContext(style *Style, property, value string, baseFontSize, viewportWidth, viewportHeight float64) {
 	switch property {
+	case "color":
+		if c := ParseColor(value); c != nil {
+			style.Color = c
+		}
+	case "background-color":
+		if c := ParseColor(value); c != nil {
+			style.BackgroundColor = c
+		}
+	case "background-image":
+		if strings.HasPrefix(value, "url(") && strings.HasSuffix(value, ")") {
+			url := value[4 : len(value)-1]
+			url = strings.Trim(url, `"'`)
+			url = strings.TrimSpace(url)
+			style.BackgroundImage = url
+		} else if value == "none" {
+			style.BackgroundImage = ""
+		}
+	case "background":
+		bgColor, bgImage := parseBackgroundShorthand(value)
+		if bgColor != nil {
+			style.BackgroundColor = bgColor
+		}
+		if bgImage != "" {
+			style.BackgroundImage = bgImage
+		}
+	case "background-size":
+		v := strings.TrimSpace(strings.ToLower(value))
+		style.BackgroundSize = v
 	case "font-size":
-		// font-size em is relative to PARENT's font-size
+		// font-size em is relative to PARENT's font-size (baseFontSize)
 		if size := parseFontSizeWithContext(value, baseFontSize, viewportWidth, viewportHeight); size > 0 {
 			style.FontSize = size
 		}
+	case "line-height":
+		style.LineHeight = parseLineHeight(value, style.FontSize)
+	case "font-weight":
+		if bold, ok := parseFontWeightValue(value); ok {
+			style.Bold = bold
+		}
+	case "font-style":
+		style.Italic = (value == "italic")
+	case "font-family":
+		style.FontFamily = ParseFontFamily(value)
+	case "font-variant":
+		style.FontVariant = value
 	case "margin":
 		parts := strings.Fields(value)
 		var top, right, bottom, left float64
@@ -1261,11 +1037,37 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 			style.MarginRightAuto = false
 		}
 	case "padding":
-		p := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
-		style.PaddingTop = p
-		style.PaddingBottom = p
-		style.PaddingLeft = p
-		style.PaddingRight = p
+		parts := strings.Fields(value)
+		var top, right, bottom, left float64
+		parse := func(v string) float64 {
+			return ParseSizeWithContext(v, style.FontSize, viewportWidth, viewportHeight)
+		}
+
+		switch len(parts) {
+		case 1:
+			top = parse(parts[0])
+			right, bottom, left = top, top, top
+		case 2:
+			top = parse(parts[0])
+			bottom = top
+			right = parse(parts[1])
+			left = right
+		case 3:
+			top = parse(parts[0])
+			right = parse(parts[1])
+			bottom = parse(parts[2])
+			left = right
+		case 4:
+			top = parse(parts[0])
+			right = parse(parts[1])
+			bottom = parse(parts[2])
+			left = parse(parts[3])
+		}
+
+		style.PaddingTop = top
+		style.PaddingRight = right
+		style.PaddingBottom = bottom
+		style.PaddingLeft = left
 	case "padding-top":
 		style.PaddingTop = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
 	case "padding-bottom":
@@ -1274,6 +1076,153 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 		style.PaddingLeft = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
 	case "padding-right":
 		style.PaddingRight = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+	case "text-align":
+		style.TextAlign = value
+	case "white-space":
+		switch value {
+		case "normal", "nowrap":
+			style.WhiteSpace = value
+		}
+	case "text-overflow":
+		switch value {
+		case "clip", "ellipsis":
+			style.TextOverflow = value
+		}
+	case "overflow":
+		switch value {
+		case "visible", "hidden", "scroll", "auto":
+			style.Overflow = value
+		}
+	case "overflow-x":
+		switch value {
+		case "visible", "hidden", "scroll", "auto":
+			style.OverflowX = value
+		}
+	case "overflow-y":
+		switch value {
+		case "visible", "hidden", "scroll", "auto":
+			style.OverflowY = value
+		}
+	case "vertical-align":
+		switch value {
+		case "top", "middle", "bottom", "baseline":
+			style.VerticalAlign = value
+		}
+	case "display":
+		style.Display = value
+	case "float":
+		style.Float = value
+	case "clear":
+		style.Clear = value
+	case "position":
+		style.Position = value
+	case "top":
+		style.Top = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+		style.TopSet = true
+	case "left":
+		style.Left = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+		style.LeftSet = true
+	case "right":
+		style.Right = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+		style.RightSet = true
+	case "bottom":
+		style.Bottom = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+		style.BottomSet = true
+	case "box-sizing":
+		style.BoxSizing = value
+	case "text-decoration":
+		style.TextDecoration = value
+	case "text-transform":
+		style.TextTransform = value
+	case "letter-spacing":
+		if ls, ok := parseSpacingWithContext(value, style.FontSize, viewportWidth, viewportHeight); ok {
+			style.LetterSpacing = ls
+			style.LetterSpacingSet = true
+		}
+	case "word-spacing":
+		if ws, ok := parseSpacingWithContext(value, style.FontSize, viewportWidth, viewportHeight); ok {
+			style.WordSpacing = ws
+			style.WordSpacingSet = true
+		}
+	case "opacity":
+		if op, err := strconv.ParseFloat(value, 64); err == nil {
+			if op < 0 {
+				op = 0
+			} else if op > 1 {
+				op = 1
+			}
+			style.Opacity = op
+		}
+	case "visibility":
+		style.Visibility = value
+	case "cursor":
+		style.Cursor = value
+	case "border":
+		w, s, c := parseBorderShorthand(value)
+		style.BorderTopWidth = w
+		style.BorderRightWidth = w
+		style.BorderBottomWidth = w
+		style.BorderLeftWidth = w
+		style.BorderTopStyle = s
+		style.BorderRightStyle = s
+		style.BorderBottomStyle = s
+		style.BorderLeftStyle = s
+		style.BorderTopColor = c
+		style.BorderRightColor = c
+		style.BorderBottomColor = c
+		style.BorderLeftColor = c
+	case "border-width":
+		w := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+		style.BorderTopWidth = w
+		style.BorderRightWidth = w
+		style.BorderBottomWidth = w
+		style.BorderLeftWidth = w
+	case "border-color":
+		if c := ParseColor(value); c != nil {
+			style.BorderTopColor = c
+			style.BorderRightColor = c
+			style.BorderBottomColor = c
+			style.BorderLeftColor = c
+		}
+	case "border-style":
+		style.BorderTopStyle = value
+		style.BorderRightStyle = value
+		style.BorderBottomStyle = value
+		style.BorderLeftStyle = value
+	case "border-top":
+		w, s, c := parseBorderShorthand(value)
+		style.BorderTopWidth = w
+		style.BorderTopStyle = s
+		style.BorderTopColor = c
+	case "border-right":
+		w, s, c := parseBorderShorthand(value)
+		style.BorderRightWidth = w
+		style.BorderRightStyle = s
+		style.BorderRightColor = c
+	case "border-bottom":
+		w, s, c := parseBorderShorthand(value)
+		style.BorderBottomWidth = w
+		style.BorderBottomStyle = s
+		style.BorderBottomColor = c
+	case "border-left":
+		w, s, c := parseBorderShorthand(value)
+		style.BorderLeftWidth = w
+		style.BorderLeftStyle = s
+		style.BorderLeftColor = c
+	case "border-top-left-radius":
+		style.BorderTopLeftRadius = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+	case "border-top-right-radius":
+		style.BorderTopRightRadius = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+	case "border-bottom-left-radius":
+		style.BorderBottomLeftRadius = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+	case "border-bottom-right-radius":
+		style.BorderBottomRightRadius = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+	case "list-style":
+		if listType, ok := parseListStyleShorthand(value); ok {
+			style.ListStyleType = listType
+		}
+	case "list-style-type":
+		style.ListStyleType = value
 	case "width":
 		if strings.HasSuffix(strings.TrimSpace(value), "%") {
 			num := strings.TrimSuffix(strings.TrimSpace(value), "%")
@@ -1287,21 +1236,24 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 		if h := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight); h > 0 {
 			style.Height = h
 		}
-	case "line-height":
-		style.LineHeight = parseLineHeight(value, style.FontSize)
-	case "letter-spacing":
-		if ls, ok := parseSpacingWithContext(value, style.FontSize, viewportWidth, viewportHeight); ok {
-			style.LetterSpacing = ls
-			style.LetterSpacingSet = true
+	case "min-width":
+		if w := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight); w > 0 {
+			style.MinWidth = w
 		}
-	case "word-spacing":
-		if ws, ok := parseSpacingWithContext(value, style.FontSize, viewportWidth, viewportHeight); ok {
-			style.WordSpacing = ws
-			style.WordSpacingSet = true
+	case "max-width":
+		if w := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight); w > 0 {
+			style.MaxWidth = w
 		}
-	default:
-		// Fall back to original for non-size properties
-		applyDeclaration(style, property, value)
+	case "min-height":
+		if h := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight); h > 0 {
+			style.MinHeight = h
+		}
+	case "max-height":
+		if h := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight); h > 0 {
+			style.MaxHeight = h
+		}
+	case "border-radius":
+		style.BorderRadius = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
 	}
 }
 

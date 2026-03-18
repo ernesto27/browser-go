@@ -36,6 +36,37 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Padding Multi-Value Shorthand Test</h2>
+    <p>Testing <code>padding</code> shorthand with 1, 2, 3, and 4 values.</p>
+
+    <!-- Test 1: Single value (all sides) -->
+    <div style="padding: 20px; background-color: #e0f7fa; border: 1px solid #00838f;">
+        padding: 20px (all sides equal)
+    </div>
+
+    <br>
+
+    <!-- Test 2: Two values (vertical | horizontal) -->
+    <div style="padding: 10px 40px; background-color: #fff3e0; border: 1px solid #e65100;">
+        padding: 10px 40px (top/bottom=10px, left/right=40px)
+    </div>
+
+    <br>
+
+    <!-- Test 3: Three values (top | horizontal | bottom) -->
+    <div style="padding: 5px 30px 25px; background-color: #e8f5e9; border: 1px solid #2e7d32;">
+        padding: 5px 30px 25px (top=5px, left/right=30px, bottom=25px)
+    </div>
+
+    <br>
+
+    <!-- Test 4: Four values (top | right | bottom | left) -->
+    <div style="padding: 5px 15px 25px 50px; background-color: #f3e5f5; border: 1px solid #6a1b9a;">
+        padding: 5px 15px 25px 50px (top=5px, right=15px, bottom=25px, left=50px)
+    </div>
+
+    <hr>
+
     <h2>@import Test (CSS1 §3)</h2>
     <p>Testing <code>@import</code> to include rules from an external stylesheet (<code>imported.css</code>) via <code>style.css</code>.</p>
     <p><code>@import</code> must appear at the start of a stylesheet, before any declarations. Imported rules have lower cascade priority than the importing sheet's own rules.</p>
