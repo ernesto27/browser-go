@@ -213,7 +213,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 ### Shorthand Expansion
 - [x] `margin` multi-value - `margin: 10px 20px`, `margin: 10px 20px 30px 40px`
 - [x] `padding` multi-value - `padding: 10px 20px`
-- [ ] `border-radius` multi-value - per-corner values
+- [x] `border-radius` multi-value - per-corner values
 
 ---
 

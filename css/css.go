@@ -1253,7 +1253,40 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 			style.MaxHeight = h
 		}
 	case "border-radius":
-		style.BorderRadius = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
+		parts := strings.Fields(value)
+		parse := func(v string) float64 {
+			return ParseSizeWithContext(v, style.FontSize, viewportWidth, viewportHeight)
+		}
+
+		switch len(parts) {
+		case 1:
+			r := parse(parts[0])
+			style.BorderRadius = r
+			style.BorderTopLeftRadius = r
+			style.BorderTopRightRadius = r
+			style.BorderBottomRightRadius = r
+			style.BorderBottomLeftRadius = r
+		case 2:
+			tlbr := parse(parts[0])
+			trbl := parse(parts[1])
+			style.BorderTopLeftRadius = tlbr
+			style.BorderBottomRightRadius = tlbr
+			style.BorderTopRightRadius = trbl
+			style.BorderBottomLeftRadius = trbl
+		case 3:
+			tl := parse(parts[0])
+			trbl := parse(parts[1])
+			br := parse(parts[2])
+			style.BorderTopLeftRadius = tl
+			style.BorderTopRightRadius = trbl
+			style.BorderBottomLeftRadius = trbl
+			style.BorderBottomRightRadius = br
+		case 4:
+			style.BorderTopLeftRadius = parse(parts[0])
+			style.BorderTopRightRadius = parse(parts[1])
+			style.BorderBottomRightRadius = parse(parts[2])
+			style.BorderBottomLeftRadius = parse(parts[3])
+		}
 	}
 }
 

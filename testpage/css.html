@@ -36,6 +36,30 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Border Radius Multi-Value Shorthand Test</h2>
+    <p>Testing <code>border-radius</code> with 2, 3, and 4 values (diagonal corner pairing).</p>
+
+    <!-- Test: 2 values (top-left/bottom-right, top-right/bottom-left) -->
+    <div style="width: 200px; height: 100px; background-color: #2196F3; color: white; border-radius: 20px 0px; padding: 10px;">
+        border-radius: 20px 0px (TL/BR=20px, TR/BL=0px)
+    </div>
+
+    <br>
+
+    <!-- Test: 3 values (top-left, top-right/bottom-left, bottom-right) -->
+    <div style="width: 200px; height: 100px; background-color: #4CAF50; color: white; border-radius: 30px 10px 0px; padding: 10px;">
+        border-radius: 30px 10px 0px (TL=30px, TR/BL=10px, BR=0px)
+    </div>
+
+    <br>
+
+    <!-- Test: 4 values (top-left, top-right, bottom-right, bottom-left) -->
+    <div style="width: 200px; height: 100px; background-color: #FF5722; color: white; border-radius: 30px 15px 0px 50px; padding: 10px;">
+        border-radius: 30px 15px 0px 50px (TL=30px, TR=15px, BR=0px, BL=50px)
+    </div>
+
+    <hr>
+
     <h2>Padding Multi-Value Shorthand Test</h2>
     <p>Testing <code>padding</code> shorthand with 1, 2, 3, and 4 values.</p>
 
