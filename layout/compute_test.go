@@ -464,7 +464,7 @@ func TestApplyLineAlignment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			applyLineAlignment(tt.boxes, tt.innerX, tt.innerWidth, tt.textAlign)
+			applyLineAlignment(tt.boxes, tt.innerX, tt.innerWidth, tt.textAlign, false)
 			for i, box := range tt.boxes {
 				assert.Equal(t, tt.expectedX[i], box.Rect.X)
 			}
@@ -473,6 +473,93 @@ func TestApplyLineAlignment(t *testing.T) {
 				assert.Equal(t, 30.0, tt.boxes[0].Children[0].Rect.X)
 			}
 		})
+	}
+}
+
+func TestApplyLineAlignmentJustify(t *testing.T) {
+	t.Run("distributes space between multiple boxes", func(t *testing.T) {
+		boxes := []*LayoutBox{
+			{Rect: Rect{X: 0, Width: 30}},
+			{Rect: Rect{X: 30, Width: 30}},
+			{Rect: Rect{X: 60, Width: 30}},
+		}
+		// 100 - 90 = 10 extra space, 2 gaps → 5px each
+		applyLineAlignment(boxes, 0, 100, "justify", false)
+		assert.Equal(t, 0.0, boxes[0].Rect.X)
+		assert.Equal(t, 35.0, boxes[1].Rect.X)
+		assert.Equal(t, 70.0, boxes[2].Rect.X)
+	})
+
+	t.Run("last line stays left-aligned", func(t *testing.T) {
+		boxes := []*LayoutBox{
+			{Rect: Rect{X: 0, Width: 30}},
+			{Rect: Rect{X: 30, Width: 30}},
+		}
+		applyLineAlignment(boxes, 0, 100, "justify", true)
+		assert.Equal(t, 0.0, boxes[0].Rect.X)
+		assert.Equal(t, 30.0, boxes[1].Rect.X)
+	})
+
+	t.Run("single box not justified", func(t *testing.T) {
+		boxes := []*LayoutBox{
+			{Rect: Rect{X: 0, Width: 30}},
+		}
+		applyLineAlignment(boxes, 0, 100, "justify", false)
+		assert.Equal(t, 0.0, boxes[0].Rect.X)
+	})
+}
+
+func TestJustifyWordSpacings(t *testing.T) {
+	// Use a narrow container to force wrapping into multiple lines
+	tree := buildTreeWithCSS(
+		`<p>word word word word word word word word word word word word word end</p>`,
+		`p { text-align: justify; }`,
+	)
+
+	pBox := findBoxByTag(tree, "p")
+	assert.NotNil(t, pBox)
+
+	// Find the text box child
+	var textBox *LayoutBox
+	for _, child := range pBox.Children {
+		if child.Type == TextBox {
+			textBox = child
+			break
+		}
+	}
+	assert.NotNil(t, textBox)
+
+	if len(textBox.WrappedLines) > 1 {
+		assert.Equal(t, len(textBox.WrappedLines), len(textBox.JustifyWordSpacings))
+
+		// Non-last lines should have positive justify spacing
+		for i := 0; i < len(textBox.JustifyWordSpacings)-1; i++ {
+			assert.Greater(t, textBox.JustifyWordSpacings[i], 0.0,
+				"line %d should have positive justify spacing", i)
+		}
+
+		// Last line should have zero justify spacing
+		lastIdx := len(textBox.JustifyWordSpacings) - 1
+		assert.Equal(t, 0.0, textBox.JustifyWordSpacings[lastIdx],
+			"last line should have zero justify spacing")
+	}
+}
+
+func TestJustifySingleLineNoSpacing(t *testing.T) {
+	// Short text that fits on one line — should not be justified
+	tree := buildTreeWithCSS(
+		`<p>Short</p>`,
+		`p { text-align: justify; }`,
+	)
+
+	pBox := findBoxByTag(tree, "p")
+	assert.NotNil(t, pBox)
+
+	for _, child := range pBox.Children {
+		if child.Type == TextBox {
+			assert.Nil(t, child.JustifyWordSpacings,
+				"single-line text should have no justify spacings")
+		}
 	}
 }
 

@@ -369,6 +369,37 @@ func TestBuildDisplayListCarriesWordSpacing(t *testing.T) {
 	}
 }
 
+func TestBuildDisplayListJustifyWordSpacing(t *testing.T) {
+	// Use a narrow container to force wrapping, so justify spacing kicks in
+	html := `<p style="text-align: justify;">word word word word word word word word word word word word end</p>`
+	doc := dom.Parse(strings.NewReader(html))
+	sheet := css.Parse("")
+	viewport := layout.Viewport{Width: 200, Height: 600}
+	layoutRoot := layout.BuildLayoutTree(doc, sheet, viewport, css.MatchContext{})
+	layout.ComputeLayout(layoutRoot, 200)
+
+	commands := BuildDisplayList(layoutRoot, InputState{}, LinkStyler{})
+
+	// Collect all DrawText commands
+	var textCmds []DrawText
+	for _, cmd := range commands {
+		if dt, ok := cmd.(DrawText); ok {
+			textCmds = append(textCmds, dt)
+		}
+	}
+
+	if len(textCmds) > 1 {
+		// Non-last lines should have positive WordSpacing from justification
+		for i := 0; i < len(textCmds)-1; i++ {
+			assert.Greater(t, textCmds[i].WordSpacing, 0.0,
+				"non-last DrawText line %d should have positive WordSpacing from justify", i)
+		}
+		// Last line should have zero WordSpacing (not justified)
+		assert.Equal(t, 0.0, textCmds[len(textCmds)-1].WordSpacing,
+			"last DrawText line should have zero WordSpacing")
+	}
+}
+
 // helper: find all DrawRect commands matching a color
 func findRectsByColor(commands []DisplayCommand, c color.Color) []DrawRect {
 	var rects []DrawRect

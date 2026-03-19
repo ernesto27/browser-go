@@ -425,6 +425,25 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 				}
 				childWidth = maxLineWidth
 				childHeight = float64(numLines) * lineHeight
+
+				// Calculate per-line extra word spacing for text-align: justify
+				if box.Style.TextAlign == "justify" && len(child.WrappedLines) > 1 {
+					child.JustifyWordSpacings = make([]float64, len(child.WrappedLines))
+					for i, line := range child.WrappedLines {
+						if i == len(child.WrappedLines)-1 {
+							break // last line stays left-aligned
+						}
+						gaps := countWordGaps(line)
+						if gaps == 0 {
+							continue
+						}
+						lineWidth := MeasureTextWithSpacingAndWordSpacing(line, fontSize, box.Style.LetterSpacing, box.Style.WordSpacing)
+						extraSpace := innerWidth - lineWidth
+						if extraSpace > 0 {
+							child.JustifyWordSpacings[i] = extraSpace / float64(gaps)
+						}
+					}
+				}
 			}
 
 		case InlineBox:
@@ -460,7 +479,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 		case HRBox:
 			// Block element - flush line first
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign)
+			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
 			if lineHeight > 0 {
 				yOffset = lineStartY + lineHeight
@@ -478,7 +497,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 		case BRBox:
 			// Line break - flush current line
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign)
+			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
 			if lineHeight > 0 {
 				yOffset = lineStartY + lineHeight
@@ -495,7 +514,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			continue
 
 		case TableBox:
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign)
+			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
 			computeTableLayout(child, innerWidth, innerX, yOffset)
 			yOffset += child.Rect.Height
@@ -507,7 +526,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 		default:
 			// Block element - flush line first
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign)
+			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
 			if lineHeight > 0 {
 				yOffset = lineStartY + lineHeight
@@ -547,7 +566,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		// Inline element - check if we need to wrap
 		if box.Style.WhiteSpace != "nowrap" && currentX+childWidth > innerX+innerWidth && currentX > innerX {
 			// Wrap to new line - apply alignment first
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign)
+			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
 			yOffset = lineStartY + lineHeight
 			currentX = innerX
@@ -577,7 +596,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 	}
 
 	// Final line
-	applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign)
+	applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, true)
 	if lineHeight > 0 {
 		yOffset = lineStartY + lineHeight
 	}
@@ -679,7 +698,7 @@ func offsetBox(box *LayoutBox, dx, dy float64) {
 }
 
 // applyLineAlignment repositions inline elements based on text-align
-func applyLineAlignment(lineBoxes []*LayoutBox, innerX, innerWidth float64, textAlign string) {
+func applyLineAlignment(lineBoxes []*LayoutBox, innerX, innerWidth float64, textAlign string, isLastLine bool) {
 	if len(lineBoxes) == 0 || textAlign == "" || textAlign == "left" {
 		return
 	}
@@ -697,6 +716,20 @@ func applyLineAlignment(lineBoxes []*LayoutBox, innerX, innerWidth float64, text
 		offset = (innerWidth - lineWidth) / 2
 	case "right":
 		offset = innerWidth - lineWidth
+	case "justify":
+		if isLastLine || len(lineBoxes) <= 1 {
+			return // last line stays left-aligned; single box can't distribute gaps
+		}
+		extraSpace := innerWidth - lineWidth
+		if extraSpace <= 0 {
+			return
+		}
+		gaps := float64(len(lineBoxes) - 1)
+		gapSize := extraSpace / gaps
+		for i, b := range lineBoxes {
+			offsetBox(b, gapSize*float64(i), 0)
+		}
+		return
 	}
 
 	// Apply offset to all boxes

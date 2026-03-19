@@ -622,7 +622,7 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 			// Render wrapped lines
 			lineHeight := currentStyle.LineHeight
 			y := boxRect.Y
-			for _, line := range box.WrappedLines {
+			for i, line := range box.WrappedLines {
 				if currentStyle.ClipTop > 0 && y+lineHeight <= currentStyle.ClipTop {
 					y += lineHeight
 					continue
@@ -631,7 +631,11 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 					break
 				}
 				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform, currentStyle.FontVariant)
-				*commands = append(*commands, currentStyle.newDrawText(transformedLine, boxRect.X, y, boxRect.Width))
+				dt := currentStyle.newDrawText(transformedLine, boxRect.X, y, boxRect.Width)
+				if i < len(box.JustifyWordSpacings) {
+					dt.WordSpacing += box.JustifyWordSpacings[i]
+				}
+				*commands = append(*commands, dt)
 				y += lineHeight
 			}
 		} else {

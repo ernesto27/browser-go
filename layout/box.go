@@ -44,8 +44,9 @@ type LayoutBox struct {
 	Padding      EdgeSizes
 	Children     []*LayoutBox
 	Node         *dom.Node
-	Text         string
-	WrappedLines []string
+	Text                string
+	WrappedLines        []string
+	JustifyWordSpacings []float64 // per-wrapped-line extra word spacing for text-align: justify
 	Parent       *LayoutBox
 	Style        css.Style
 	Position     string
