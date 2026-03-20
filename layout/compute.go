@@ -265,11 +265,15 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			box.Style.BorderBottomWidth
 	}
 
+	// Resolve text-indent for inline flow (first line of block gets indented)
+	blockTextIndent := resolveTextIndent(box.Style.TextIndent, box.Style.FontSize, innerWidth, viewportWidth)
+
 	// Line state for inline flow
 	currentX := innerX
 	lineStartY := yOffset
 	lineHeight := 0.0
 	var lineBoxes []*LayoutBox
+	firstLineOfBlock := true
 
 	// Handle legend for fieldset
 	var legendBox *LayoutBox
@@ -406,8 +410,13 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 				childWidth = MeasureTextWithSpacingAndWordSpacing(child.Text, fontSize, box.Style.LetterSpacing, box.Style.WordSpacing)
 				childHeight = getLineHeightFromStyle(box.Style, parentTag)
 			} else {
-				// Wrap text to fit container width
-				child.WrappedLines = WrapTextWithSpacing(child.Text, fontSize, innerWidth, box.Style.LetterSpacing, box.Style.WordSpacing)
+				// Resolve text-indent for the first line
+				textIndent := resolveTextIndent(box.Style.TextIndent, fontSize, innerWidth, viewportWidth)
+				firstLineWidth := innerWidth - textIndent
+
+				// Wrap text to fit container width (first line has reduced width for indent)
+				child.WrappedLines = WrapTextWithIndent(child.Text, fontSize, innerWidth, firstLineWidth, box.Style.LetterSpacing, box.Style.WordSpacing)
+				child.TextIndentPx = textIndent
 
 				lineHeight := getLineHeightFromStyle(box.Style, parentTag)
 				numLines := len(child.WrappedLines)
@@ -438,7 +447,12 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 							continue
 						}
 						lineWidth := MeasureTextWithSpacingAndWordSpacing(line, fontSize, box.Style.LetterSpacing, box.Style.WordSpacing)
-						extraSpace := innerWidth - lineWidth
+						// First line has reduced available width due to text-indent
+						availWidth := innerWidth
+						if i == 0 {
+							availWidth = firstLineWidth
+						}
+						extraSpace := availWidth - lineWidth
 						if extraSpace > 0 {
 							child.JustifyWordSpacings[i] = extraSpace / float64(gaps)
 						}
@@ -479,8 +493,13 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 		case HRBox:
 			// Block element - flush line first
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
+			alignWidth := innerWidth
+			if firstLineOfBlock && blockTextIndent != 0 {
+				alignWidth = innerWidth - blockTextIndent
+			}
+			applyLineAlignment(lineBoxes, innerX, alignWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
+			firstLineOfBlock = false
 			if lineHeight > 0 {
 				yOffset = lineStartY + lineHeight
 			}
@@ -497,8 +516,13 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 		case BRBox:
 			// Line break - flush current line
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
+			alignWidth := innerWidth
+			if firstLineOfBlock && blockTextIndent != 0 {
+				alignWidth = innerWidth - blockTextIndent
+			}
+			applyLineAlignment(lineBoxes, innerX, alignWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
+			firstLineOfBlock = false
 			if lineHeight > 0 {
 				yOffset = lineStartY + lineHeight
 			} else {
@@ -514,8 +538,13 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			continue
 
 		case TableBox:
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
+			alignWidth := innerWidth
+			if firstLineOfBlock && blockTextIndent != 0 {
+				alignWidth = innerWidth - blockTextIndent
+			}
+			applyLineAlignment(lineBoxes, innerX, alignWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
+			firstLineOfBlock = false
 			computeTableLayout(child, innerWidth, innerX, yOffset)
 			yOffset += child.Rect.Height
 			// Reset line state
@@ -526,7 +555,12 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 		default:
 			// Block element - flush line first
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
+			alignWidth := innerWidth
+			if firstLineOfBlock && blockTextIndent != 0 {
+				alignWidth = innerWidth - blockTextIndent
+			}
+			applyLineAlignment(lineBoxes, innerX, alignWidth, box.Style.TextAlign, false)
+			firstLineOfBlock = false
 			lineBoxes = nil
 			if lineHeight > 0 {
 				yOffset = lineStartY + lineHeight
@@ -566,12 +600,24 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		// Inline element - check if we need to wrap
 		if box.Style.WhiteSpace != "nowrap" && currentX+childWidth > innerX+innerWidth && currentX > innerX {
 			// Wrap to new line - apply alignment first
-			applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, false)
+			effectiveWidth := innerWidth
+			if firstLineOfBlock && blockTextIndent != 0 {
+				effectiveWidth = innerWidth - blockTextIndent
+			}
+			applyLineAlignment(lineBoxes, innerX, effectiveWidth, box.Style.TextAlign, false)
 			lineBoxes = nil
 			yOffset = lineStartY + lineHeight
-			currentX = innerX
+			currentX = innerX // subsequent lines have no indent
 			lineStartY = yOffset
 			lineHeight = 0
+			firstLineOfBlock = false
+		}
+
+		// Apply text-indent offset on the first line
+		// TextBox children handle indent via WrapTextWithIndent + render offset,
+		// so only offset currentX for non-TextBox inline elements.
+		if firstLineOfBlock && blockTextIndent != 0 && child.Type != TextBox && currentX == innerX {
+			currentX += blockTextIndent
 		}
 
 		// Position inline element
@@ -596,7 +642,11 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 	}
 
 	// Final line
-	applyLineAlignment(lineBoxes, innerX, innerWidth, box.Style.TextAlign, true)
+	finalAlignWidth := innerWidth
+	if firstLineOfBlock && blockTextIndent != 0 {
+		finalAlignWidth = innerWidth - blockTextIndent
+	}
+	applyLineAlignment(lineBoxes, innerX, finalAlignWidth, box.Style.TextAlign, true)
 	if lineHeight > 0 {
 		yOffset = lineStartY + lineHeight
 	}
@@ -736,6 +786,24 @@ func applyLineAlignment(lineBoxes []*LayoutBox, innerX, innerWidth float64, text
 	for _, b := range lineBoxes {
 		offsetBox(b, offset, 0)
 	}
+}
+
+// resolveTextIndent converts a raw CSS text-indent value to pixels.
+// Percentages are relative to containerWidth; lengths use css.ParseSizeWithContext.
+func resolveTextIndent(raw string, fontSize, containerWidth, viewportWidth float64) float64 {
+	if raw == "" {
+		return 0
+	}
+	raw = strings.TrimSpace(raw)
+	if strings.HasSuffix(raw, "%") {
+		pctStr := strings.TrimSuffix(raw, "%")
+		pct, err := strconv.ParseFloat(pctStr, 64)
+		if err != nil {
+			return 0
+		}
+		return containerWidth * pct / 100.0
+	}
+	return css.ParseSizeWithContext(raw, fontSize, viewportWidth, 0)
 }
 
 // computeInlineSize calculates the total size of an inline box from its children

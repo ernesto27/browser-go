@@ -53,6 +53,7 @@ type Style struct {
 	PaddingLeft      float64
 	PaddingRight     float64
 	TextAlign        string
+	TextIndent       string // raw CSS value, resolved at layout time (supports %, em, px)
 	WhiteSpace       string
 	Overflow         string
 	OverflowX        string
@@ -1088,6 +1089,8 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 		style.PaddingRight = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
 	case "text-align":
 		style.TextAlign = value
+	case "text-indent":
+		style.TextIndent = value
 	case "white-space":
 		switch value {
 		case "normal", "nowrap":

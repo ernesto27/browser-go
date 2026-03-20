@@ -87,7 +87,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `text-transform` - `uppercase | lowercase | capitalize` (§5.4.5)
 - [x] `text-align` - `left | center | right` (§5.4.6)
 - [x] `text-align: justify` (§5.4.6)
-- [ ] `text-indent` - first line indent (§5.4.7 — inheritable, applies to block-level elements)
+- [~] `text-indent` - first line indent (§5.4.7 — parsed, wrapping-aware, render offset; inheritance not yet implemented)
 - [x] `line-height` - line spacing, unitless/px/normal keyword (§5.4.8)
 
 ### §5.5 Box Properties

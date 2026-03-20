@@ -631,7 +631,11 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 					break
 				}
 				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform, currentStyle.FontVariant)
-				dt := currentStyle.newDrawText(transformedLine, boxRect.X, y, boxRect.Width)
+				x := boxRect.X
+				if i == 0 {
+					x += box.TextIndentPx // offset first line for text-indent
+				}
+				dt := currentStyle.newDrawText(transformedLine, x, y, boxRect.Width)
 				if i < len(box.JustifyWordSpacings) {
 					dt.WordSpacing += box.JustifyWordSpacings[i]
 				}

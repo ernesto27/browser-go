@@ -70,6 +70,12 @@ func WrapText(text string, fontSize float64, maxWidth float64) []string {
 
 // WrapTextWithSpacing breaks text into lines that fit maxWidth using letter-spacing and word-spacing.
 func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing, wordSpacing float64) []string {
+	return WrapTextWithIndent(text, fontSize, maxWidth, maxWidth, letterSpacing, wordSpacing)
+}
+
+// WrapTextWithIndent wraps text like WrapTextWithSpacing, but uses firstLineMaxWidth
+// for the first line (to support text-indent) and maxWidth for subsequent lines.
+func WrapTextWithIndent(text string, fontSize, maxWidth, firstLineMaxWidth, letterSpacing, wordSpacing float64) []string {
 	if maxWidth <= 0 {
 		return []string{text}
 	}
@@ -90,6 +96,12 @@ func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing, wordSpa
 	var currentLine strings.Builder
 
 	for _, word := range words {
+		// First line uses reduced width for text-indent
+		effectiveMax := maxWidth
+		if len(lines) == 0 {
+			effectiveMax = firstLineMaxWidth
+		}
+
 		// Try adding word to current line
 		testLine := currentLine.String()
 		if testLine != "" {
@@ -99,7 +111,7 @@ func WrapTextWithSpacing(text string, fontSize, maxWidth, letterSpacing, wordSpa
 
 		lineWidth := MeasureTextWithSpacingAndWordSpacing(testLine, fontSize, letterSpacing, wordSpacing)
 
-		if lineWidth <= maxWidth || currentLine.Len() == 0 {
+		if lineWidth <= effectiveMax || currentLine.Len() == 0 {
 			// Word fits, or it's the first word (must include even if too long)
 			if currentLine.Len() > 0 {
 				currentLine.WriteString(" ")

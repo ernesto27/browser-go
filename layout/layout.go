@@ -288,6 +288,9 @@ func mergeStyles(base *css.Style, inline *css.Style) {
 	if inline.TextAlign != "" {
 		base.TextAlign = inline.TextAlign
 	}
+	if inline.TextIndent != "" {
+		base.TextIndent = inline.TextIndent
+	}
 	if inline.WhiteSpace != "" {
 		base.WhiteSpace = inline.WhiteSpace
 	}

@@ -47,6 +47,7 @@ type LayoutBox struct {
 	Text                string
 	WrappedLines        []string
 	JustifyWordSpacings []float64 // per-wrapped-line extra word spacing for text-align: justify
+	TextIndentPx        float64   // resolved text-indent in pixels for first line offset
 	Parent       *LayoutBox
 	Style        css.Style
 	Position     string

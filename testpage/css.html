@@ -41,6 +41,20 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Text Indent Test (CSS1 §5.4.7)</h2>
+    <div style="width: 400px; border: 1px solid #999; padding: 10px; background-color: #f0f4ff;">
+        <p style="text-indent: 40px;">
+            This paragraph has a 40px first-line indent. Only the very first line should be indented — any subsequent wrapped lines should start at the normal left edge of the block.
+        </p>
+        <p style="text-indent: 2em;">
+            This paragraph uses a 2em indent. The indentation is relative to the font size, so it scales with the text. The remaining lines wrap normally without any extra indentation.
+        </p>
+        <p>
+            This paragraph has no text-indent and should start flush with the left edge, serving as a visual comparison to the indented paragraphs above.
+        </p>
+    </div>
+    <p><code>text-indent</code> — first line of each block should be indented by the specified amount</p>
+
     <h2>Text Align Justify Test (CSS1 §5.4.6)</h2>
     <div style="width: 400px; border: 1px solid #999; padding: 10px; background-color: #fffde7;">
         <p style="text-align: justify;">
