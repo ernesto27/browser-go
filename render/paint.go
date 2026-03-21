@@ -328,6 +328,71 @@ func scrolledRectY(r layout.Rect, offsetY float64) layout.Rect {
 	return r
 }
 
+// findFirstLineStyle walks up the box tree to find a ::first-line style on a containing block.
+func findFirstLineStyle(box *layout.LayoutBox) *css.Style {
+	for b := box; b != nil; b = b.Parent {
+		if b.Style.FirstLineStyle != nil {
+			return b.Style.FirstLineStyle
+		}
+	}
+	return nil
+}
+
+// isFirstTextChild returns true if this text box is the first text/inline child of its parent.
+func isFirstTextChild(box *layout.LayoutBox) bool {
+	if box.Parent == nil {
+		return false
+	}
+	for _, child := range box.Parent.Children {
+		if child.Type == layout.TextBox || child.Type == layout.InlineBox {
+			return child == box
+		}
+		if child.Type == layout.BlockBox {
+			return false
+		}
+	}
+	return false
+}
+
+// applyFirstLineStyle merges ::first-line overrides onto a copy of the base TextStyle.
+func applyFirstLineStyle(base TextStyle, fls *css.Style) TextStyle {
+	s := base
+	if fls.Color != nil {
+		s.Color = fls.Color
+	}
+	if fls.FontSize > 0 {
+		s.Size = float32(fls.FontSize)
+	}
+	if fls.Bold {
+		s.Bold = true
+	}
+	if fls.Italic {
+		s.Italic = true
+	}
+	if len(fls.FontFamily) > 0 {
+		s.FontFamily = fls.FontFamily
+	}
+	if fls.FontVariant != "" {
+		s.FontVariant = fls.FontVariant
+	}
+	if fls.TextDecoration != "" {
+		s.TextDecoration = fls.TextDecoration
+	}
+	if fls.TextTransform != "" {
+		s.TextTransform = fls.TextTransform
+	}
+	if fls.LetterSpacingSet {
+		s.LetterSpacing = fls.LetterSpacing
+	}
+	if fls.WordSpacingSet {
+		s.WordSpacing = fls.WordSpacing
+	}
+	if fls.LineHeight > 0 {
+		s.LineHeight = fls.LineHeight
+	}
+	return s
+}
+
 func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style TextStyle, state InputState, linkStyler LinkStyler, layer paintLayer, ancestorFixed bool) {
 	currentStyle := style
 	isFixed := ancestorFixed || box.Position == "fixed"
@@ -633,12 +698,24 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				if currentStyle.ClipBottom > 0 && y >= currentStyle.ClipBottom {
 					break
 				}
-				transformedLine := css.ApplyTextTransform(line, currentStyle.TextTransform, currentStyle.FontVariant)
+				lineStyle := currentStyle
+				if i == 0 {
+					if fls := findFirstLineStyle(box); fls != nil {
+						lineStyle = applyFirstLineStyle(currentStyle, fls)
+						if fls.BackgroundColor != nil {
+							*commands = append(*commands, DrawRect{
+								Rect:  layout.Rect{X: boxRect.X, Y: y, Width: boxRect.Width, Height: lineHeight},
+								Color: fls.BackgroundColor,
+							})
+						}
+					}
+				}
+				transformedLine := css.ApplyTextTransform(line, lineStyle.TextTransform, lineStyle.FontVariant)
 				x := boxRect.X
 				if i == 0 {
 					x += box.TextIndentPx // offset first line for text-indent
 				}
-				dt := currentStyle.newDrawText(transformedLine, x, y, boxRect.Width)
+				dt := lineStyle.newDrawText(transformedLine, x, y, boxRect.Width)
 				if i < len(box.JustifyWordSpacings) {
 					dt.WordSpacing += box.JustifyWordSpacings[i]
 				}
@@ -673,7 +750,17 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 				}
 			}
 
-			dt := currentStyle.newDrawText(text, boxRect.X, boxRect.Y, drawWidth)
+			drawStyle := currentStyle
+			if fls := findFirstLineStyle(box); fls != nil && isFirstTextChild(box) {
+				drawStyle = applyFirstLineStyle(currentStyle, fls)
+				if fls.BackgroundColor != nil {
+					*commands = append(*commands, DrawRect{
+						Rect:  layout.Rect{X: boxRect.X, Y: boxRect.Y, Width: drawWidth, Height: currentStyle.LineHeight},
+						Color: fls.BackgroundColor,
+					})
+				}
+			}
+			dt := drawStyle.newDrawText(text, boxRect.X, boxRect.Y, drawWidth)
 			if currentStyle.ClipLeft > 0 && boxRect.X < currentStyle.ClipLeft {
 				dt.ClipLeftOffset = currentStyle.ClipLeft - boxRect.X
 				dt.X = currentStyle.ClipLeft

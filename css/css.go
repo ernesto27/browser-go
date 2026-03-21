@@ -112,6 +112,8 @@ type Style struct {
 	BottomSet bool
 
 	ListStyleType string
+
+	FirstLineStyle *Style // styles from ::first-line pseudo-element rules
 }
 
 // EffectiveOverflowX returns the effective horizontal overflow value,
@@ -140,6 +142,15 @@ func DefaultStyle() Style {
 		Opacity:    1.0,
 		WhiteSpace: "normal",
 	}
+}
+
+// firstLineAllowedProperties lists CSS properties allowed on ::first-line (CSS1 §2.3)
+var firstLineAllowedProperties = map[string]bool{
+	"font-family": true, "font-size": true, "font-weight": true,
+	"font-style": true, "font-variant": true, "font": true,
+	"color": true, "background-color": true, "background": true,
+	"word-spacing": true, "letter-spacing": true,
+	"text-decoration": true, "text-transform": true, "line-height": true,
 }
 
 // stripImportant checks if a CSS value ends with !important,
@@ -528,6 +539,18 @@ func MatchSelector(sel Selector, tagName string, id string, classes []string) bo
 	}
 
 	return true
+}
+
+// isFirstLinePseudo returns true if the selector targets ::first-line.
+func isFirstLinePseudo(sel Selector) bool {
+	return sel.PseudoClass == "first-line"
+}
+
+// selectorWithoutPseudo returns a copy of the selector with PseudoClass cleared.
+func selectorWithoutPseudo(sel Selector) Selector {
+	copy := sel
+	copy.PseudoClass = ""
+	return copy
 }
 
 // MatchSelectorNode checks if a selector (including any descendant chain) matches a DOM node.
@@ -1358,7 +1381,7 @@ func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize
 		}
 	}
 
-	// If no font-size was set, inherit from parent
+	// If no font-size was set, inherit from patrain_ratiorent
 	if style.FontSize == 0 {
 		style.FontSize = parentFontSize
 	}
@@ -1386,6 +1409,31 @@ func ApplyStylesheetWithContext(sheet Stylesheet, node *dom.Node, parentFontSize
 				} else {
 					specificities[decl.Property] = sp
 				}
+			}
+		}
+	}
+
+	// Third pass: collect ::first-line pseudo-element declarations
+	for _, rule := range sheet.Rules {
+		for _, sel := range rule.Selectors {
+			if !isFirstLinePseudo(sel) {
+				continue
+			}
+			baseSel := selectorWithoutPseudo(sel)
+			// Bare ::first-line (no tag/id/class) matches any element
+			isBare := baseSel.TagName == "" && baseSel.ID == "" && len(baseSel.Classes) == 0 && baseSel.Ancestor == nil
+			if !isBare && !MatchSelectorNode(baseSel, node, ctx) {
+				continue
+			}
+			for _, decl := range rule.Declarations {
+				if !firstLineAllowedProperties[decl.Property] {
+					continue
+				}
+				if style.FirstLineStyle == nil {
+					s := DefaultStyle()
+					style.FirstLineStyle = &s
+				}
+				applyDeclarationWithContext(style.FirstLineStyle, decl.Property, decl.Value, style.FontSize, viewportWidth, viewportHeight)
 			}
 		}
 	}

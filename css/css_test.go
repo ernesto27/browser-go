@@ -1432,3 +1432,119 @@ func TestChildSelectorMatching(t *testing.T) {
 	assert.True(t, MatchSelectorNode(descSel, li, ctx), "descendant matches direct child")
 	assert.True(t, MatchSelectorNode(descSel, nestedLi, ctx), "descendant matches nested")
 }
+
+func TestFirstLineStyleCollection(t *testing.T) {
+	ctx := MatchContext{}
+
+	tests := []struct {
+		name           string
+		cssText        string
+		tagName        string
+		classes        string
+		expectStyle    bool
+		checkColor     color.Color
+		checkBold      bool
+		checkBgColor   color.Color
+	}{
+		{
+			name:        "p::first-line with color sets FirstLineStyle",
+			cssText:     `p::first-line { color: red; }`,
+			tagName:     "p",
+			expectStyle: true,
+			checkColor:  color.RGBA{255, 0, 0, 255},
+		},
+		{
+			name:        "single colon p:first-line also works",
+			cssText:     `p:first-line { color: blue; }`,
+			tagName:     "p",
+			expectStyle: true,
+			checkColor:  color.RGBA{0, 0, 255, 255},
+		},
+		{
+			name:        "first-line does not match wrong tag",
+			cssText:     `p::first-line { color: red; }`,
+			tagName:     "div",
+			expectStyle: false,
+		},
+		{
+			name:        "first-line with class selector",
+			cssText:     `.highlight::first-line { font-weight: bold; }`,
+			tagName:     "p",
+			classes:     "highlight",
+			expectStyle: true,
+			checkBold:   true,
+		},
+		{
+			name:        "first-line class does not match without class",
+			cssText:     `.highlight::first-line { font-weight: bold; }`,
+			tagName:     "p",
+			expectStyle: false,
+		},
+		{
+			name:        "first-line filters non-allowed properties",
+			cssText:     `p::first-line { color: red; margin: 10px; padding: 5px; }`,
+			tagName:     "p",
+			expectStyle: true,
+			checkColor:  color.RGBA{255, 0, 0, 255},
+		},
+		{
+			name:        "first-line with background-color",
+			cssText:     `p::first-line { background-color: yellow; }`,
+			tagName:     "p",
+			expectStyle: true,
+			checkBgColor: color.RGBA{255, 255, 0, 255},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			attrs := map[string]string{}
+			if tt.classes != "" {
+				attrs["class"] = tt.classes
+			}
+			node := &dom.Node{
+				Type:       dom.Element,
+				TagName:    tt.tagName,
+				Attributes: attrs,
+			}
+			sheet := Parse(tt.cssText)
+			style := ApplyStylesheetWithContext(sheet, node, 16.0, 800, 600, ctx)
+
+			if !tt.expectStyle {
+				assert.Nil(t, style.FirstLineStyle, "expected no FirstLineStyle")
+				return
+			}
+
+			assert.NotNil(t, style.FirstLineStyle, "expected FirstLineStyle to be set")
+			if tt.checkColor != nil {
+				assert.True(t, colorsEqual(tt.checkColor, style.FirstLineStyle.Color),
+					"expected first-line color to match")
+			}
+			if tt.checkBold {
+				assert.True(t, style.FirstLineStyle.Bold, "expected first-line bold")
+			}
+			if tt.checkBgColor != nil {
+				assert.True(t, colorsEqual(tt.checkBgColor, style.FirstLineStyle.BackgroundColor),
+					"expected first-line background-color to match")
+			}
+		})
+	}
+}
+
+func TestFirstLineStyleFiltersMarginPadding(t *testing.T) {
+	ctx := MatchContext{}
+	node := &dom.Node{
+		Type:       dom.Element,
+		TagName:    "p",
+		Attributes: map[string]string{},
+	}
+	sheet := Parse(`p::first-line { margin: 10px; padding: 5px; color: green; }`)
+	style := ApplyStylesheetWithContext(sheet, node, 16.0, 800, 600, ctx)
+
+	assert.NotNil(t, style.FirstLineStyle)
+	// margin and padding should NOT be applied (not in allowed list)
+	assert.Equal(t, 0.0, style.FirstLineStyle.MarginTop)
+	assert.Equal(t, 0.0, style.FirstLineStyle.PaddingTop)
+	// color should be applied
+	assert.True(t, colorsEqual(color.RGBA{0, 128, 0, 255}, style.FirstLineStyle.Color))
+}

@@ -1034,3 +1034,105 @@ func TestBothScrollbars(t *testing.T) {
 	assert.True(t, hasHorizontalTrack, "expected horizontal scrollbar track")
 	assert.True(t, hasVerticalTrack, "expected vertical scrollbar track")
 }
+
+func TestFirstLineStyleAppliedToWrappedLines(t *testing.T) {
+	// Use a narrow container so text wraps into multiple lines
+	html := `<div style="width: 100px;"><p class="fl">word1 word2 word3 word4 word5 word6 word7 word8</p></div>`
+	cssText := `.fl::first-line { color: red; }`
+	red := color.RGBA{255, 0, 0, 255}
+
+	doc := dom.Parse(strings.NewReader(html))
+	sheet := css.Parse(cssText)
+	viewport := layout.Viewport{Width: 800, Height: 600}
+	layoutRoot := layout.BuildLayoutTree(doc, sheet, viewport, css.MatchContext{})
+	layout.ComputeLayout(layoutRoot, 800)
+
+	commands := BuildDisplayList(layoutRoot, InputState{}, LinkStyler{})
+
+	// Collect all DrawText commands
+	var drawTexts []DrawText
+	for _, cmd := range commands {
+		if dt, ok := cmd.(DrawText); ok && dt.Text != "" {
+			drawTexts = append(drawTexts, dt)
+		}
+	}
+
+	assert.True(t, len(drawTexts) >= 2, "expected at least 2 wrapped lines, got %d", len(drawTexts))
+
+	// First text line should be red
+	r1, g1, b1, _ := drawTexts[0].Color.RGBA()
+	rr, gr, br, _ := red.RGBA()
+	assert.Equal(t, rr, r1, "first line red component")
+	assert.Equal(t, gr, g1, "first line green component")
+	assert.Equal(t, br, b1, "first line blue component")
+
+	// Second text line should NOT be red
+	r2, g2, b2, _ := drawTexts[1].Color.RGBA()
+	isRed := r2 == rr && g2 == gr && b2 == br
+	assert.False(t, isRed, "second line should not be red")
+}
+
+func TestFirstLineBackgroundEmitsDrawRect(t *testing.T) {
+	html := `<div style="width: 100px;"><p class="fl">word1 word2 word3 word4 word5 word6 word7 word8</p></div>`
+	cssText := `.fl::first-line { background-color: yellow; }`
+	yellow := color.RGBA{255, 255, 0, 255}
+
+	doc := dom.Parse(strings.NewReader(html))
+	sheet := css.Parse(cssText)
+	viewport := layout.Viewport{Width: 800, Height: 600}
+	layoutRoot := layout.BuildLayoutTree(doc, sheet, viewport, css.MatchContext{})
+	layout.ComputeLayout(layoutRoot, 800)
+
+	commands := BuildDisplayList(layoutRoot, InputState{}, LinkStyler{})
+
+	// Find the first DrawText and look for a yellow DrawRect before it
+	firstTextIdx := -1
+	for i, cmd := range commands {
+		if dt, ok := cmd.(DrawText); ok && dt.Text != "" {
+			firstTextIdx = i
+			break
+		}
+	}
+	assert.True(t, firstTextIdx > 0, "expected DrawText command")
+
+	// There should be a yellow DrawRect just before the first DrawText
+	foundYellowRect := false
+	for i := 0; i < firstTextIdx; i++ {
+		if dr, ok := commands[i].(DrawRect); ok {
+			yr, yg, yb, _ := yellow.RGBA()
+			cr, cg, cb, _ := dr.Color.RGBA()
+			if cr == yr && cg == yg && cb == yb {
+				foundYellowRect = true
+				break
+			}
+		}
+	}
+	assert.True(t, foundYellowRect, "expected yellow DrawRect for first-line background")
+}
+
+func TestFirstLineSingleLineText(t *testing.T) {
+	html := `<p class="fl">Short text</p>`
+	cssText := `.fl::first-line { color: red; }`
+	red := color.RGBA{255, 0, 0, 255}
+
+	doc := dom.Parse(strings.NewReader(html))
+	sheet := css.Parse(cssText)
+	viewport := layout.Viewport{Width: 800, Height: 600}
+	layoutRoot := layout.BuildLayoutTree(doc, sheet, viewport, css.MatchContext{})
+	layout.ComputeLayout(layoutRoot, 800)
+
+	commands := BuildDisplayList(layoutRoot, InputState{}, LinkStyler{})
+
+	found := false
+	for _, cmd := range commands {
+		if dt, ok := cmd.(DrawText); ok && dt.Text == "Short text" {
+			r, g, b, _ := dt.Color.RGBA()
+			rr, gr, br, _ := red.RGBA()
+			assert.Equal(t, rr, r, "single-line red component")
+			assert.Equal(t, gr, g, "single-line green component")
+			assert.Equal(t, br, b, "single-line blue component")
+			found = true
+		}
+	}
+	assert.True(t, found, "expected DrawText for 'Short text'")
+}

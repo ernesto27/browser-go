@@ -23,6 +23,12 @@
 
         .comment-test-5 /* comment between selector and brace */ { background-color: #ffe0e0; padding: 8px; }
 
+        /* === :first-line Pseudo-Element Tests === */
+        p.first-line-basic::first-line { color: red; font-weight: bold; }
+        p.first-line-bg::first-line { background-color: yellow; }
+        p.first-line-decor::first-line { text-decoration: underline; letter-spacing: 2px; }
+        div.first-line-inherit::first-line { color: green; font-style: italic; }
+
         /* === Child Selector Tests === */
         ul.child-test > li { color: green; font-weight: bold; }
         ol.child-test > li { color: blue; }
@@ -40,6 +46,77 @@
 <body>
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
+
+    <h2>::first-line Pseudo-Element (CSS1 §2.3)</h2>
+    <div style="border: 1px solid #999; padding: 10px; background-color: #f0f0ff;">
+        <p><b>Basic: first line should be red and bold:</b></p>
+        <p class="first-line-basic">This is the first line which should be red and bold.
+            This is the second line which should have normal default styling.
+            And this is a third line also with default styling.</p>
+
+        <p><b>Background: first line should have yellow background:</b></p>
+        <p class="first-line-bg">The first line of this paragraph gets a yellow background highlight.
+            The remaining lines should have no background color applied to them at all.</p>
+
+        <p><b>Decoration: first line underlined with letter-spacing:</b></p>
+        <p class="first-line-decor">This first line should be underlined with extra letter spacing.
+            Subsequent lines should have normal decoration and normal spacing.</p>
+
+        <p><b>On a div (block element): first line green and italic:</b></p>
+        <div class="first-line-inherit">This div has a first-line rule that makes the first line green and italic.
+            The rest of the text in the div should remain in the default color and style.
+            This tests that first-line works on block elements other than p.</div>
+
+        <p><b>Short paragraph (single line = entire text styled):</b></p>
+        <p class="first-line-basic">Only one line here — should be red and bold.</p>
+    </div>
+
+    <h2>List-Style Inheritance + UA Defaults (CSS1 §5.6.1)</h2>
+    <div style="border: 1px solid #999; padding: 10px; background-color: #f0fff4;">
+        <p><b>UA default nesting cycle (disc → circle → square):</b></p>
+        <ul>
+            <li>Level 1 — disc (default)</li>
+            <li>Level 1 — disc
+                <ul>
+                    <li>Level 2 — circle (UA override)</li>
+                    <li>Level 2 — circle
+                        <ul>
+                            <li>Level 3 — square (UA override)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <p><b>Explicit style on nested list overrides UA default:</b></p>
+        <ul style="list-style-type: square;">
+            <li>Direct child — square (explicit)</li>
+            <li>Direct child — square
+                <ul style="list-style-type: square;">
+                    <li>Nested — square (explicit on inner ul too)</li>
+                </ul>
+            </li>
+        </ul>
+        <p><b>Ordered nesting (UA resets nested ol to decimal):</b></p>
+        <ol style="list-style-type: upper-roman;">
+            <li>Direct — I, II (upper-roman)</li>
+            <li>Direct — I, II
+                <ol>
+                    <li>Nested — 1, 2 (UA resets to decimal)</li>
+                    <li>Nested — 1, 2</li>
+                </ol>
+            </li>
+        </ol>
+        <p><b>list-style-type: none on parent only:</b></p>
+        <ul style="list-style-type: none;">
+            <li>Direct child — no bullet</li>
+            <li>Direct child — no bullet
+                <ul>
+                    <li>Nested — circle (UA override wins over inherited none)</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+    <p><code>list-style-type</code> — inherits, but UA stylesheet rules for nested lists (ul ul, ol ol) override inherited values</p>
 
     <h2>Text Decoration: overline (CSS1 §5.4.3)</h2>
     <div style="border: 1px solid #999; padding: 10px; background-color: #f9f0ff;">

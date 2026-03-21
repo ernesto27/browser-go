@@ -22,11 +22,11 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `letter-spacing` - NOT in `currentStyle`; parsed and applied in render
 - [x] `word-spacing` - NOT in `currentStyle`
 - [ ] `list-style` inheritance - list-style properties should inherit to nested list items
-- [ ] `white-space` inheritance - white-space should inherit to children
+- [x] `white-space` inheritance - inherited in layout tree build (`layout/layout.go`), affects wrap decisions in `compute.go`
 
 ### §1.7 CSS Parsing
 - [x] CSS comments `/* */` - `skipWhitespace()` now skips `/* ... */` blocks (§1.7: "a comment is equivalent to whitespace")
-- [ ] Forward-compatible parsing (§7.1) - unknown at-rules should be skipped gracefully; unknown properties/values already ignored
+- [x] Forward-compatible parsing (§7.1) - unknown at-rules skipped via `skipAtRule()` (handles both statement and block forms); unknown properties/values silently ignored by switch fallthrough
 
 ### §2 Selectors
 - [x] Type selectors - `H1`, `P`, `DIV`
@@ -41,7 +41,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [ ] `A:active` - parsed but not matched; code says "not yet supported" (`css/css.go:569`)
 
 ### §2.3–§2.4 Pseudo-elements
-- [ ] `:first-line` (§2.3) - apply styles to first formatted line of a block element
+- [~] `:first-line` (§2.3) - apply styles to first formatted line of a block element (render-time only; font-size won't affect line breaking; no inheritance into nested inline elements)
 - [ ] `:first-letter` (§2.4) - apply styles to first letter (drop caps, initial caps)
 
 ### §3 At-Rules
@@ -79,7 +79,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `background` - shorthand (color and url)
 
 ### §5.4 Text Properties
-- [~] `word-spacing` - parsed into `Style.WordSpacing` but never read by layout or render (§5.4.1)
+- [x] `word-spacing` - extra spacing applied per word in render (§5.4.1)
 - [x] `letter-spacing` - character spacing (§5.4.2)
 - [x] `text-decoration` - `underline | line-through` (§5.4.3)
 - [x] `text-decoration: overline` - §5.4.3 specifies `overline` and `blink` in addition to `underline`/`line-through`
