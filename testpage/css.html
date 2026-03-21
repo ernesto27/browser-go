@@ -47,6 +47,33 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>transparent Keyword (CSS1 §5.3.2)</h2>
+    <div style="border: 1px solid #999; padding: 10px; background-color: #f9f0ff;">
+        <p><b>background-color: transparent (should show no background):</b></p>
+        <div style="background-color: transparent; padding: 8px;">
+            This div has <code>background-color: transparent</code>. No background should be drawn.
+        </div>
+
+        <p><b>Cascade override — transparent should remove parent's red background:</b></p>
+        <div style="background-color: red; padding: 8px;">
+            <div style="background-color: transparent; padding: 8px; color: white;">
+                Inner div says <code>background-color: transparent</code>. If working, this text sits on the red parent — not its own red fill. If broken, transparent is ignored and this div inherits/keeps no explicit override.
+            </div>
+        </div>
+
+        <p><b>background shorthand: transparent:</b></p>
+        <div style="background: transparent; padding: 8px; border: 1px dashed #999;">
+            This div has <code>background: transparent</code>. Should show no fill (dashed border visible).
+        </div>
+
+        <p><b>color: transparent (text should be invisible):</b></p>
+        <p style="color: transparent; background-color: #eee; padding: 8px;">
+            This text uses <code>color: transparent</code>. You should NOT be able to read this sentence.
+        </p>
+    </div>
+
+    <hr>
+
     <h2>Margin Collapsing Test (CSS2.1 §8.3.1)</h2>
     <p>
         Adjacent vertical margins should collapse to the larger one.

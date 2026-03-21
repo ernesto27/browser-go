@@ -71,7 +71,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 ### §5.3 Color & Background Properties
 - [x] `color` - text color
 - [x] `background-color` - background color
-- [ ] `transparent` keyword (§5.3.2) — not recognized by ParseColor; returns nil (no background drawn)
+- [x] `transparent` keyword (§5.3.2) — added as `RGBA{0,0,0,0}` in ParseColor named colors map
 - [x] `background-image` - url() images (remote + local files)
 - [ ] `background-repeat` - `repeat | repeat-x | repeat-y | no-repeat` (§5.3.4)
 - [ ] `background-attachment` - `scroll | fixed` (§5.3.5)

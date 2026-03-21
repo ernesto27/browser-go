@@ -421,6 +421,8 @@ func ParseColor(value string) color.Color {
 		"peachpuff":       color.RGBA{255, 218, 185, 255},
 		"darkkhaki":       color.RGBA{189, 183, 107, 255},
 		"palegoldenrod":   color.RGBA{238, 232, 170, 255},
+
+		"transparent": color.RGBA{0, 0, 0, 0},
 	}
 
 	if c, ok := colors[value]; ok {
