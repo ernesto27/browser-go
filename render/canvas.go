@@ -375,11 +375,13 @@ func RenderToCanvas(commands []DisplayCommand, baseURL string, pageURL string, u
 			}
 
 			// Draw text decoration lines
-			if c.Underline || c.DottedUnderline || c.Strikethrough {
+			if c.Underline || c.DottedUnderline || c.Strikethrough || c.Overline {
 				lineHeight := float32(1)
 				var lineY float32
 				if c.Underline || c.DottedUnderline {
 					lineY = float32(c.Y) + c.Size + 2
+				} else if c.Overline {
+					lineY = float32(c.Y) - 2
 				} else {
 					lineY = float32(c.Y) + c.Size*0.5
 				}

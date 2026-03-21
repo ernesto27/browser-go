@@ -82,7 +82,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [~] `word-spacing` - parsed into `Style.WordSpacing` but never read by layout or render (§5.4.1)
 - [x] `letter-spacing` - character spacing (§5.4.2)
 - [x] `text-decoration` - `underline | line-through` (§5.4.3)
-- [ ] `text-decoration: overline` - §5.4.3 specifies `overline` and `blink` in addition to `underline`/`line-through`
+- [x] `text-decoration: overline` - §5.4.3 specifies `overline` and `blink` in addition to `underline`/`line-through`
 - [~] `vertical-align` - parsed into `Style.VerticalAlign` but not used in inline layout (§5.4.4 — baseline/sub/super/top/text-top/middle/bottom/text-bottom/percentage)
 - [x] `text-transform` - `uppercase | lowercase | capitalize` (§5.4.5)
 - [x] `text-align` - `left | center | right` (§5.4.6)

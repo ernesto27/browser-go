@@ -36,6 +36,7 @@ const (
 	TextDecorationUnderline       = "underline"
 	TextDecorationDottedUnderline = "dotted-underline"
 	TextDecorationLineThrough     = "line-through"
+	TextDecorationOverline        = "overline"
 )
 
 // TextStyle holds inherited text styling
@@ -83,6 +84,7 @@ func (ts TextStyle) newDrawText(text string, x, y, width float64) DrawText {
 		Underline:       ts.TextDecoration == TextDecorationUnderline,
 		DottedUnderline: ts.TextDecoration == TextDecorationDottedUnderline,
 		Strikethrough:   ts.TextDecoration == TextDecorationLineThrough,
+		Overline:        ts.TextDecoration == TextDecorationOverline,
 		TextTransform:   ts.TextTransform,
 		TextOverflow:    ts.TextOverflow,
 		OverflowX:       ts.OverflowX,
@@ -241,6 +243,7 @@ type DrawText struct {
 	Underline       bool
 	DottedUnderline bool
 	Strikethrough   bool
+	Overline        bool
 	TextTransform   string
 	TextOverflow    string
 	OverflowX       string

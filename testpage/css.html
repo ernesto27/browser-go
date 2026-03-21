@@ -41,6 +41,16 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Text Decoration: overline (CSS1 §5.4.3)</h2>
+    <div style="border: 1px solid #999; padding: 10px; background-color: #f9f0ff;">
+        <p style="text-decoration: overline;">This text should have a line above it (overline).</p>
+        <p style="text-decoration: underline;">This text has an underline (for comparison).</p>
+        <p style="text-decoration: line-through;">This text has a line-through (for comparison).</p>
+        <p style="text-decoration: overline;">Overline on a longer paragraph to verify the line spans the full width of the text content, even when it wraps to multiple lines.</p>
+        <p>This paragraph has no text-decoration (normal baseline).</p>
+    </div>
+    <p><code>text-decoration: overline</code> — a line should appear above the text, analogous to underline below</p>
+
     <h2>Text Indent Test (CSS1 §5.4.7)</h2>
     <div style="width: 400px; border: 1px solid #999; padding: 10px; background-color: #f0f4ff;">
         <p style="text-indent: 40px;">
