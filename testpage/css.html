@@ -47,6 +47,27 @@
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 
+    <h2>Margin Collapsing Test (CSS2.1 §8.3.1)</h2>
+    <p>
+        Adjacent vertical margins should collapse to the larger one.
+        In this test, expected gap is <code>40px</code> (not <code>60px</code>).
+    </p>
+
+    <div style="border: 1px solid #999; padding: 10px; background-color: #fff7e6;">
+        <div style="background-color: #d9ecff; margin-bottom: 40px; padding: 8px;">
+            Box A: <code>margin-bottom: 40px</code>
+        </div>
+        <div style="background-color: #dff7df; margin-top: 20px; padding: 8px;">
+            Box B: <code>margin-top: 20px</code>
+        </div>
+    </div>
+    <p>
+        If margin collapsing is implemented, the space between Box A and Box B is 40px.
+        If not, the gap appears as 60px (40 + 20).
+    </p>
+
+    <hr>
+
     <h2>::first-line Pseudo-Element (CSS1 §2.3)</h2>
     <div style="border: 1px solid #999; padding: 10px; background-color: #f0f0ff;">
         <p><b>Basic: first line should be red and bold:</b></p>

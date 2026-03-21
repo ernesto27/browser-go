@@ -181,6 +181,7 @@ https://html.spec.whatwg.org/
 ## In Progress
 - [ ] Word wrapping for long text that exceeds container width
 - [x] Tooltip on hover for `title` attribute (partial - positioning needs fixes for scroll offset)
+- [~] CSS margin collapsing - sibling block positive margins implemented; edge cases pending
 
 ---
 
@@ -213,9 +214,9 @@ https://html.spec.whatwg.org/
   - Background colors and borders of positioned elements work
   - Text inside positioned elements is missing
   - Children of positioned elements are not being painted correctly
-- [ ] Margin collapsing not implemented
-  - Adjacent vertical margins should collapse (larger wins, not add up)
-  - Causes excessive spacing in nested block elements (e.g., `<p>` inside `<blockquote>`)
+- [~] Margin collapsing partially implemented
+  - Adjacent positive vertical margins between sibling block elements now collapse (larger wins)
+  - Remaining gaps: parent/first-child and last-child/parent collapsing, empty block collapsing, full negative margin rules
   - CSS spec: https://www.w3.org/TR/CSS2/box.html#collapsing-margins
 - [ ] Text decoration not inherited by nested inline elements
   - `<s>` strikethrough does not show on nested `<a>` links

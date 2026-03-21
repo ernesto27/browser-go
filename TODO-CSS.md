@@ -52,7 +52,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `!important` - override rules
 
 ### §4 Formatting Model
-- [ ] Margin collapsing (§4.1.1) - adjacent vertical margins should collapse to the maximum value
+- [~] Margin collapsing (§4.1.1) - adjacent positive vertical margins between sibling block elements now collapse to max; parent/child, empty-block, and full negative-margin behavior still pending
 - [ ] Horizontal formatting 7-property constraint (§4.1.2) - sum of margin-left + border-left + padding-left + width + padding-right + border-right + margin-right must equal parent width
 - [ ] `display: list-item` (§4.1.3/§5.6.1) - formatted as block with list-item marker
 - [ ] Replaced elements (§4.4) - images, form elements: intrinsic width/height, auto sizing
@@ -138,4 +138,3 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 ## CSS1 — User-Agent Defaults
 - [x] User-agent default styles (margins for p, h1-h6, ul, ol, blockquote, hr)
 - [x] Word wrapping for long text - text wraps within container width
-

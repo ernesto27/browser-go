@@ -79,6 +79,46 @@ type blockLayoutParams struct {
 	viewportWidth  float64
 }
 
+func collapsedPositiveMarginDelta(prevBottom, nextTop float64) float64 {
+	if prevBottom <= 0 || nextTop <= 0 {
+		return 0
+	}
+	if prevBottom < nextTop {
+		return prevBottom
+	}
+	return nextTop
+}
+
+func estimatedBlockTopMargin(box *LayoutBox) float64 {
+	tag := ""
+	if box.Node != nil {
+		tag = box.Node.TagName
+	}
+
+	top := 0.0
+	switch tag {
+	case dom.TagP:
+		top = 12
+	case dom.TagH1:
+		top = 6
+	case dom.TagH2:
+		top = 5
+	case dom.TagH3:
+		top = 4
+	case dom.TagH4, dom.TagH5, dom.TagH6:
+		top = 4
+	case dom.TagUL, dom.TagOL, dom.TagMenu:
+		top = 4
+	case dom.TagFigure:
+		top = 16
+	}
+
+	if box.Style.MarginTop > 0 {
+		top = box.Style.MarginTop
+	}
+	return top
+}
+
 func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 	containerWidth := p.containerWidth
 	startX := p.startX
@@ -377,6 +417,9 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		}
 	}
 
+	prevBlockMarginBottom := 0.0
+	hasPrevBlock := false
+
 	for _, child := range box.Children {
 		// Skip LegendBox - already positioned above
 		if child.Type == LegendBox {
@@ -512,6 +555,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			currentX = innerX
 			lineStartY = yOffset
 			lineHeight = 0
+			hasPrevBlock = false
 			continue
 
 		case BRBox:
@@ -535,6 +579,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			currentX = innerX
 			lineStartY = yOffset
 			lineHeight = 0
+			hasPrevBlock = false
 			continue
 
 		case TableBox:
@@ -551,6 +596,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			currentX = innerX
 			lineStartY = yOffset
 			lineHeight = 0
+			hasPrevBlock = false
 			continue
 
 		default:
@@ -585,6 +631,12 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			if child.Node != nil {
 				childTag = child.Node.TagName
 			}
+
+			if hasPrevBlock && child.Clear == "" {
+				nextTop := estimatedBlockTopMargin(child)
+				yOffset -= collapsedPositiveMarginDelta(prevBlockMarginBottom, nextTop)
+			}
+
 			computeBlockLayout(child, blockLayoutParams{
 				containerWidth: innerWidth,
 				startX:         innerX,
@@ -594,6 +646,8 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			})
 			yOffset += child.Rect.Height
 			lineStartY = yOffset
+			prevBlockMarginBottom = child.Margin.Bottom
+			hasPrevBlock = true
 			continue
 		}
 
@@ -639,6 +693,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 		if childHeight > lineHeight {
 			lineHeight = childHeight
 		}
+		hasPrevBlock = false
 	}
 
 	// Final line
@@ -1746,4 +1801,15 @@ func shiftBoxTree(box *LayoutBox, dy float64) {
 	for _, child := range box.Children {
 		shiftBoxTree(child, dy)
 	}
+}
+
+func collapsePositiveMarginDelta(preveBottom, nextTop float64) float64 {
+	if preveBottom <= 0 || nextTop <= 0 {
+		return 0
+	}
+
+	if preveBottom < nextTop {
+		return preveBottom
+	}
+	return nextTop
 }
