@@ -13,6 +13,23 @@ const (
 	DefaultViewportWidth  = 0.0
 	DefaultViewportHeight = 0.0
 
+	// Absolute length units (CSS §6.1)
+	pixelsPerInch = 96.0
+	pointsPerInch = 72.0
+	cmPerInch     = 2.54
+
+	// Unit strings
+	UnitPt = "pt"
+	UnitPc = "pc"
+	UnitIn = "in"
+	UnitCm = "cm"
+	UnitMm = "mm"
+	UnitPx = "px"
+	UnitEm = "em"
+	UnitEx = "ex"
+	UnitVh = "vh"
+	UnitVw = "vw"
+
 	ListStyleNone       = "none"
 	ListStyleDisc       = "disc"
 	ListStyleCircle     = "circle"
@@ -255,16 +272,16 @@ func ParseSize(value string) float64 {
 func ParseSizeWithContext(value string, baseFontSize float64, viewportWidth, viewportHeight float64) float64 {
 	value = strings.TrimSpace(strings.ToLower(value))
 
-	if strings.HasSuffix(value, "vh") {
-		num := strings.TrimSuffix(value, "vh")
+	if strings.HasSuffix(value, UnitVh) {
+		num := strings.TrimSuffix(value, UnitVh)
 		if percent, err := strconv.ParseFloat(num, 64); err == nil {
 			return (percent / 100.0) * viewportHeight
 		}
 		return 0
 	}
 
-	if strings.HasSuffix(value, "vw") {
-		num := strings.TrimSuffix(value, "vw")
+	if strings.HasSuffix(value, UnitVw) {
+		num := strings.TrimSuffix(value, UnitVw)
 		if percent, err := strconv.ParseFloat(num, 64); err == nil {
 			return (percent / 100.0) * viewportWidth
 		}
@@ -272,8 +289,8 @@ func ParseSizeWithContext(value string, baseFontSize float64, viewportWidth, vie
 	}
 
 	// Handle ex units (x-height, typically 0.5em per CSS1 §6.1)
-	if strings.HasSuffix(value, "ex") {
-		num := strings.TrimSuffix(value, "ex")
+	if strings.HasSuffix(value, UnitEx) {
+		num := strings.TrimSuffix(value, UnitEx)
 		if multiplier, err := strconv.ParseFloat(num, 64); err == nil {
 			return multiplier * (baseFontSize / 2)
 		}
@@ -281,8 +298,8 @@ func ParseSizeWithContext(value string, baseFontSize float64, viewportWidth, vie
 	}
 
 	// Handle em units
-	if strings.HasSuffix(value, "em") {
-		num := strings.TrimSuffix(value, "em")
+	if strings.HasSuffix(value, UnitEm) {
+		num := strings.TrimSuffix(value, UnitEm)
 		if multiplier, err := strconv.ParseFloat(num, 64); err == nil {
 			return multiplier * baseFontSize
 		}
@@ -290,10 +307,50 @@ func ParseSizeWithContext(value string, baseFontSize float64, viewportWidth, vie
 	}
 
 	// Handle px units
-	if strings.HasSuffix(value, "px") {
-		num := strings.TrimSuffix(value, "px")
+	if strings.HasSuffix(value, UnitPx) {
+		num := strings.TrimSuffix(value, UnitPx)
 		if size, err := strconv.ParseFloat(num, 64); err == nil {
 			return size
+		}
+	}
+
+	// Handle pt units (1pt = 1/72in = 96/72px)
+	if strings.HasSuffix(value, UnitPt) {
+		num := strings.TrimSuffix(value, UnitPt)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / pointsPerInch)
+		}
+	}
+
+	// Handle pc units (1pc = 12pt = 16px)
+	if strings.HasSuffix(value, UnitPc) {
+		num := strings.TrimSuffix(value, UnitPc)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / pointsPerInch * 12)
+		}
+	}
+
+	// Handle in units (1in = 96px)
+	if strings.HasSuffix(value, UnitIn) {
+		num := strings.TrimSuffix(value, UnitIn)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * pixelsPerInch
+		}
+	}
+
+	// Handle cm units (1cm = 96/2.54 px)
+	if strings.HasSuffix(value, UnitCm) {
+		num := strings.TrimSuffix(value, UnitCm)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / cmPerInch)
+		}
+	}
+
+	// Handle mm units (1mm = 96/25.4 px)
+	if strings.HasSuffix(value, UnitMm) {
+		num := strings.TrimSuffix(value, UnitMm)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / cmPerInch / 10)
 		}
 	}
 
@@ -779,8 +836,33 @@ func isValidFontLineHeightToken(token string) bool {
 	if v == "normal" {
 		return true
 	}
-	if strings.HasSuffix(v, "px") {
-		n := strings.TrimSuffix(v, "px")
+	if strings.HasSuffix(v, UnitPx) {
+		n := strings.TrimSuffix(v, UnitPx)
+		size, err := strconv.ParseFloat(n, 64)
+		return err == nil && size >= 0
+	}
+	if strings.HasSuffix(v, UnitPt) {
+		n := strings.TrimSuffix(v, UnitPt)
+		size, err := strconv.ParseFloat(n, 64)
+		return err == nil && size >= 0
+	}
+	if strings.HasSuffix(v, UnitPc) {
+		n := strings.TrimSuffix(v, UnitPc)
+		size, err := strconv.ParseFloat(n, 64)
+		return err == nil && size >= 0
+	}
+	if strings.HasSuffix(v, UnitIn) {
+		n := strings.TrimSuffix(v, UnitIn)
+		size, err := strconv.ParseFloat(n, 64)
+		return err == nil && size >= 0
+	}
+	if strings.HasSuffix(v, UnitCm) {
+		n := strings.TrimSuffix(v, UnitCm)
+		size, err := strconv.ParseFloat(n, 64)
+		return err == nil && size >= 0
+	}
+	if strings.HasSuffix(v, UnitMm) {
+		n := strings.TrimSuffix(v, UnitMm)
 		size, err := strconv.ParseFloat(n, 64)
 		return err == nil && size >= 0
 	}
@@ -973,7 +1055,7 @@ func parseMarginValue(value string, fontSize, vw, vh float64) (float64, bool) {
 }
 
 // parseSpacingWithContext parses spacing values for letter/word spacing.
-// Supports: normal, px, em, vh/vw, and unitless numeric values.
+// Supports: normal, px, em, ex, vh/vw, pt, and unitless numeric values.
 func parseSpacingWithContext(value string, fontSize, viewportWidth, viewportHeight float64) (float64, bool) {
 	v := strings.TrimSpace(strings.ToLower(value))
 	if v == "" {
@@ -984,16 +1066,26 @@ func parseSpacingWithContext(value string, fontSize, viewportWidth, viewportHeig
 	}
 	num := v
 	switch {
-	case strings.HasSuffix(v, "px"):
-		num = strings.TrimSuffix(v, "px")
-	case strings.HasSuffix(v, "ex"):
-		num = strings.TrimSuffix(v, "ex")
-	case strings.HasSuffix(v, "em"):
-		num = strings.TrimSuffix(v, "em")
-	case strings.HasSuffix(v, "vh"):
-		num = strings.TrimSuffix(v, "vh")
-	case strings.HasSuffix(v, "vw"):
-		num = strings.TrimSuffix(v, "vw")
+	case strings.HasSuffix(v, UnitPx):
+		num = strings.TrimSuffix(v, UnitPx)
+	case strings.HasSuffix(v, UnitEx):
+		num = strings.TrimSuffix(v, UnitEx)
+	case strings.HasSuffix(v, UnitEm):
+		num = strings.TrimSuffix(v, UnitEm)
+	case strings.HasSuffix(v, UnitVh):
+		num = strings.TrimSuffix(v, UnitVh)
+	case strings.HasSuffix(v, UnitVw):
+		num = strings.TrimSuffix(v, UnitVw)
+	case strings.HasSuffix(v, UnitPt):
+		num = strings.TrimSuffix(v, UnitPt)
+	case strings.HasSuffix(v, UnitPc):
+		num = strings.TrimSuffix(v, UnitPc)
+	case strings.HasSuffix(v, UnitIn):
+		num = strings.TrimSuffix(v, UnitIn)
+	case strings.HasSuffix(v, UnitCm):
+		num = strings.TrimSuffix(v, UnitCm)
+	case strings.HasSuffix(v, UnitMm):
+		num = strings.TrimSuffix(v, UnitMm)
 	}
 	if _, err := strconv.ParseFloat(num, 64); err != nil {
 		return 0, false
@@ -1607,7 +1699,7 @@ func applyUserAgentDefaults(style *Style, tagName string, fontSize float64, node
 	}
 }
 
-// parseLineHeight handles: unitless (1.5), px (24px), normal
+// parseLineHeight handles: unitless (1.5), px (24px), pt (12pt), normal
 func parseLineHeight(value string, fontSize float64) float64 {
 	value = strings.TrimSpace(strings.ToLower(value))
 
@@ -1617,10 +1709,55 @@ func parseLineHeight(value string, fontSize float64) float64 {
 	}
 
 	// Pixel value (e.g., "24px")
-	if strings.HasSuffix(value, "px") {
-		num := strings.TrimSuffix(value, "px")
+	if strings.HasSuffix(value, UnitPx) {
+		num := strings.TrimSuffix(value, UnitPx)
 		if size, err := strconv.ParseFloat(num, 64); err == nil {
 			return size
+		}
+		return 0
+	}
+
+	// Point value (e.g., "12pt")
+	if strings.HasSuffix(value, UnitPt) {
+		num := strings.TrimSuffix(value, UnitPt)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / pointsPerInch)
+		}
+		return 0
+	}
+
+	// Pica value (e.g., "1pc")
+	if strings.HasSuffix(value, UnitPc) {
+		num := strings.TrimSuffix(value, UnitPc)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / pointsPerInch * 12)
+		}
+		return 0
+	}
+
+	// Inch value (e.g., "1in")
+	if strings.HasSuffix(value, UnitIn) {
+		num := strings.TrimSuffix(value, UnitIn)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * pixelsPerInch
+		}
+		return 0
+	}
+
+	// Centimeter value (e.g., "1cm")
+	if strings.HasSuffix(value, UnitCm) {
+		num := strings.TrimSuffix(value, UnitCm)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / cmPerInch)
+		}
+		return 0
+	}
+
+	// Millimeter value (e.g., "1mm")
+	if strings.HasSuffix(value, UnitMm) {
+		num := strings.TrimSuffix(value, UnitMm)
+		if size, err := strconv.ParseFloat(num, 64); err == nil {
+			return size * (pixelsPerInch / cmPerInch / 10)
 		}
 		return 0
 	}

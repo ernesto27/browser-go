@@ -45,6 +45,89 @@
 </head>
 <body>
 
+    <h2>pt Unit Test (CSS1 §6.1)</h2>
+    <p><b>1pt = 1/72in = 96/72px ≈ 1.333px. Compare font sizes and spacing:</b></p>
+
+    <p style="font-size: 12pt;">This text is font-size: 12pt (should equal 16px)</p>
+    <p style="font-size: 16px;">This text is font-size: 16px (baseline)</p>
+
+    <p style="font-size: 24pt;">This text is font-size: 24pt (should equal 32px)</p>
+    <p style="font-size: 32px;">This text is font-size: 32px (baseline)</p>
+
+    <div style="background-color: #ffe5cc; padding: 10px; margin-top: 18pt;">
+        margin-top: 18pt (should equal 24px gap above)
+    </div>
+    <div style="background-color: #ffe5cc; padding: 10px; margin-top: 24px;">
+        margin-top: 24px (baseline gap above)
+    </div>
+
+    <p style="letter-spacing: 3pt;">letter-spacing: 3pt (should equal 4px spacing)</p>
+    <p style="letter-spacing: 4px;">letter-spacing: 4px (baseline spacing)</p>
+
+    <h2>pc Unit Test (CSS1 §6.1)</h2>
+    <p><b>1pc = 12pt = 16px (since 1pt = 4/3px). Compare font sizes:</b></p>
+
+    <p style="font-size: 1pc;">This text is font-size: 1pc (should equal 16px)</p>
+    <p style="font-size: 16px;">This text is font-size: 16px (baseline)</p>
+
+    <p style="font-size: 2pc;">This text is font-size: 2pc (should equal 32px)</p>
+    <p style="font-size: 32px;">This text is font-size: 32px (baseline)</p>
+
+    <div style="background-color: #e6ffe6; padding: 10px; margin-top: 1.5pc;">
+        margin-top: 1.5pc (should equal 24px gap above)
+    </div>
+    <div style="background-color: #e6ffe6; padding: 10px; margin-top: 24px;">
+        margin-top: 24px (baseline gap above)
+    </div>
+
+    <h2>in Unit Test (CSS1 §6.1)</h2>
+    <p><b>1in = 96px. Compare font sizes:</b></p>
+
+    <p style="font-size: 0.125in;">This text is font-size: 0.125in (should equal 12px)</p>
+    <p style="font-size: 12px;">This text is font-size: 12px (baseline)</p>
+
+    <p style="font-size: 0.25in;">This text is font-size: 0.25in (should equal 24px)</p>
+    <p style="font-size: 24px;">This text is font-size: 24px (baseline)</p>
+
+    <div style="background-color: #e6e6ff; padding: 10px; margin-top: 0.25in;">
+        margin-top: 0.25in (should equal 24px gap above)
+    </div>
+    <div style="background-color: #e6e6ff; padding: 10px; margin-top: 24px;">
+        margin-top: 24px (baseline gap above)
+    </div>
+
+    <h2>cm Unit Test (CSS1 §6.1)</h2>
+    <p><b>1cm = 96/2.54 px ≈ 37.8px. Compare font sizes:</b></p>
+
+    <p style="font-size: 0.317cm;">This text is font-size: 0.317cm (should equal 12px)</p>
+    <p style="font-size: 12px;">This text is font-size: 12px (baseline)</p>
+
+    <p style="font-size: 0.635cm;">This text is font-size: 0.635cm (should equal 24px)</p>
+    <p style="font-size: 24px;">This text is font-size: 24px (baseline)</p>
+
+    <div style="background-color: #ffe6ff; padding: 10px; margin-top: 0.635cm;">
+        margin-top: 0.635cm (should equal 24px gap above)
+    </div>
+    <div style="background-color: #ffe6ff; padding: 10px; margin-top: 24px;">
+        margin-top: 24px (baseline gap above)
+    </div>
+
+    <h2>mm Unit Test (CSS1 §6.1)</h2>
+    <p><b>1mm = 96/25.4 px ≈ 3.78px. Compare font sizes:</b></p>
+
+    <p style="font-size: 3.175mm;">This text is font-size: 3.175mm (should equal 12px)</p>
+    <p style="font-size: 12px;">This text is font-size: 12px (baseline)</p>
+
+    <p style="font-size: 6.35mm;">This text is font-size: 6.35mm (should equal 24px)</p>
+    <p style="font-size: 24px;">This text is font-size: 24px (baseline)</p>
+
+    <div style="background-color: #ffffe6; padding: 10px; margin-top: 6.35mm;">
+        margin-top: 6.35mm (should equal 24px gap above)
+    </div>
+    <div style="background-color: #ffffe6; padding: 10px; margin-top: 24px;">
+        margin-top: 24px (baseline gap above)
+    </div>
+
     <h2>ex Unit Test (CSS1 §6.1)</h2>
     <p><b>1ex = 0.5em (x-height of font). Compare heights and spacings below:</b></p>
 
@@ -63,6 +146,8 @@
 
     <p style="letter-spacing: 1ex;">letter-spacing: 1ex (wide gaps between letters)</p>
     <p style="letter-spacing: 0.5em;">letter-spacing: 0.5em (same width baseline)</p>
+
+
 
     <h2>display: list-item Test (CSS1 §5.6.1)</h2>
     <p>Elements with <code>display: list-item</code> should render as block boxes with a list marker, even if they are not <code>&lt;li&gt;</code> elements.</p>
