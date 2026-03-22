@@ -45,6 +45,25 @@
 </head>
 <body>
 
+    <h2>ex Unit Test (CSS1 §6.1)</h2>
+    <p><b>1ex = 0.5em (x-height of font). Compare heights and spacings below:</b></p>
+
+    <p style="font-size: 2ex;">This text is font-size: 2ex (should equal 1em / 16px)</p>
+    <p style="font-size: 1em;">This text is font-size: 1em (16px baseline)</p>
+
+    <p style="font-size: 4ex;">This text is font-size: 4ex (should equal 2em / 32px)</p>
+    <p style="font-size: 2em;">This text is font-size: 2em (32px baseline)</p>
+
+    <div style="background-color: #cce5ff; padding: 10px; margin-top: 3ex;">
+        margin-top: 3ex (should equal 1.5em / 24px gap above)
+    </div>
+    <div style="background-color: #cce5ff; padding: 10px; margin-top: 1.5em;">
+        margin-top: 1.5em (24px baseline gap above)
+    </div>
+
+    <p style="letter-spacing: 1ex;">letter-spacing: 1ex (wide gaps between letters)</p>
+    <p style="letter-spacing: 0.5em;">letter-spacing: 0.5em (same width baseline)</p>
+
     <h2>display: list-item Test (CSS1 §5.6.1)</h2>
     <p>Elements with <code>display: list-item</code> should render as block boxes with a list marker, even if they are not <code>&lt;li&gt;</code> elements.</p>
 

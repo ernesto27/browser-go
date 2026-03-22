@@ -271,6 +271,15 @@ func ParseSizeWithContext(value string, baseFontSize float64, viewportWidth, vie
 		return 0
 	}
 
+	// Handle ex units (x-height, typically 0.5em per CSS1 §6.1)
+	if strings.HasSuffix(value, "ex") {
+		num := strings.TrimSuffix(value, "ex")
+		if multiplier, err := strconv.ParseFloat(num, 64); err == nil {
+			return multiplier * (baseFontSize / 2)
+		}
+		return 0
+	}
+
 	// Handle em units
 	if strings.HasSuffix(value, "em") {
 		num := strings.TrimSuffix(value, "em")
@@ -977,6 +986,8 @@ func parseSpacingWithContext(value string, fontSize, viewportWidth, viewportHeig
 	switch {
 	case strings.HasSuffix(v, "px"):
 		num = strings.TrimSuffix(v, "px")
+	case strings.HasSuffix(v, "ex"):
+		num = strings.TrimSuffix(v, "ex")
 	case strings.HasSuffix(v, "em"):
 		num = strings.TrimSuffix(v, "em")
 	case strings.HasSuffix(v, "vh"):

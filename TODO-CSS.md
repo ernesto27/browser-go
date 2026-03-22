@@ -124,7 +124,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 
 - [x] `px` - pixels (§6.1)
 - [x] `em` - relative to font size (§6.1)
-- [ ] `ex` - relative to x-height of font (§6.1 — typically ~0.5em)
+- [x] `ex` - relative to x-height of font (§6.1 — typically ~0.5em)
 - [ ] `pt` - points, 1pt = 1/72in (§6.1)
 - [ ] `pc` - picas, 1pc = 12pt (§6.1)
 - [ ] `in` - inches (§6.1)
