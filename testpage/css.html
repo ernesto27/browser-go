@@ -44,6 +44,44 @@
     </style>
 </head>
 <body>
+
+    <h2>Border-Width Keywords Test (CSS2 §5.5.11)</h2>
+    <p>Testing <code>border-width</code> keyword values: <code>thin</code> (1px), <code>medium</code> (3px), <code>thick</code> (5px).</p>
+
+    <div style="border: 1px solid #999; padding: 10px; background-color: #f9f0ff;">
+
+        <p><b>Shorthand <code>border-width</code> with keywords:</b></p>
+        <div style="border-width: thin; border-style: solid; border-color: red; padding: 8px; margin-bottom: 8px;">
+            border-width: thin (should be ~1px)
+        </div>
+        <div style="border-width: medium; border-style: solid; border-color: green; padding: 8px; margin-bottom: 8px;">
+            border-width: medium (should be ~3px)
+        </div>
+        <div style="border-width: thick; border-style: solid; border-color: blue; padding: 8px; margin-bottom: 8px;">
+            border-width: thick (should be ~5px)
+        </div>
+
+        <p><b>Side-specific <code>border-*-width</code> with keywords:</b></p>
+        <div style="border-top-width: thin; border-right-width: medium; border-bottom-width: thick; border-left-width: medium; border-style: solid; border-color: purple; padding: 8px; margin-bottom: 8px;">
+            top=thin, right=medium, bottom=thick, left=medium
+        </div>
+
+        <p><b><code>border</code> shorthand with keyword width:</b></p>
+        <div style="border: thick solid orange; padding: 8px; margin-bottom: 8px;">
+            border: thick solid orange (should be ~5px)
+        </div>
+        <div style="border: thin dashed teal; padding: 8px; margin-bottom: 8px;">
+            border: thin dashed teal (should be ~1px)
+        </div>
+
+        <p><b>Side shorthand <code>border-top</code> etc. with keyword width:</b></p>
+        <div style="border-top: thick solid red; border-bottom: thin solid blue; padding: 8px;">
+            border-top: thick solid red / border-bottom: thin solid blue
+        </div>
+    </div>
+
+    <hr>
+
     <h1>CSS Test Page</h1>
     <p>This page tests CSS styling features.</p>
 

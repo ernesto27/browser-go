@@ -215,13 +215,13 @@ func ParseInlineStyle(styleAttr string) Style {
 }
 
 // parseBorderShorthand parses "1px solid black" into width, style, color
-func parseBorderShorthand(value string) (float64, string, color.Color) {
+func parseBorderShorthand(value string, fontSize, viewportWidth, viewportHeight float64) (float64, string, color.Color) {
 	parts := strings.Fields(value)
 	var width float64
 	var borderStyle string
 	var borderColor color.Color
 	for _, part := range parts {
-		if w := ParseSize(part); w > 0 {
+		if w := parseBorderWidthValue(part, fontSize, viewportWidth, viewportHeight); w > 0 {
 			width = w
 		} else if part == "solid" || part == "dashed" || part == "dotted" || part == "none" {
 			borderStyle = part
@@ -230,6 +230,22 @@ func parseBorderShorthand(value string) (float64, string, color.Color) {
 		}
 	}
 	return width, borderStyle, borderColor
+}
+
+// parseBorderWidthValue resolves a single border-width value, supporting
+// CSS keywords thin (1px), medium (3px), thick (5px) in addition to
+// length values handled by ParseSizeWithContext.
+func parseBorderWidthValue(value string, baseFontSize, viewportWidth, viewportHeight float64) float64 {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "thin":
+		return 1.0
+	case "medium":
+		return 3.0
+	case "thick":
+		return 5.0
+	default:
+		return ParseSizeWithContext(value, baseFontSize, viewportWidth, viewportHeight)
+	}
 }
 
 func ParseSize(value string) float64 {
@@ -1196,7 +1212,7 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 	case "cursor":
 		style.Cursor = value
 	case "border":
-		w, s, c := parseBorderShorthand(value)
+		w, s, c := parseBorderShorthand(value, style.FontSize, viewportWidth, viewportHeight)
 		style.BorderTopWidth = w
 		style.BorderRightWidth = w
 		style.BorderBottomWidth = w
@@ -1210,11 +1226,35 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 		style.BorderBottomColor = c
 		style.BorderLeftColor = c
 	case "border-width":
-		w := ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
-		style.BorderTopWidth = w
-		style.BorderRightWidth = w
-		style.BorderBottomWidth = w
-		style.BorderLeftWidth = w
+		parts := strings.Fields(value)
+		parse := func(v string) float64 {
+			return parseBorderWidthValue(v, style.FontSize, viewportWidth, viewportHeight)
+		}
+		var top, right, bottom, left float64
+		switch len(parts) {
+		case 1:
+			top = parse(parts[0])
+			right, bottom, left = top, top, top
+		case 2:
+			top = parse(parts[0])
+			bottom = top
+			right = parse(parts[1])
+			left = right
+		case 3:
+			top = parse(parts[0])
+			right = parse(parts[1])
+			bottom = parse(parts[2])
+			left = right
+		case 4:
+			top = parse(parts[0])
+			right = parse(parts[1])
+			bottom = parse(parts[2])
+			left = parse(parts[3])
+		}
+		style.BorderTopWidth = top
+		style.BorderRightWidth = right
+		style.BorderBottomWidth = bottom
+		style.BorderLeftWidth = left
 	case "border-color":
 		if c := ParseColor(value); c != nil {
 			style.BorderTopColor = c
@@ -1227,23 +1267,31 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 		style.BorderRightStyle = value
 		style.BorderBottomStyle = value
 		style.BorderLeftStyle = value
+	case "border-top-width":
+		style.BorderTopWidth = parseBorderWidthValue(value, style.FontSize, viewportWidth, viewportHeight)
+	case "border-right-width":
+		style.BorderRightWidth = parseBorderWidthValue(value, style.FontSize, viewportWidth, viewportHeight)
+	case "border-bottom-width":
+		style.BorderBottomWidth = parseBorderWidthValue(value, style.FontSize, viewportWidth, viewportHeight)
+	case "border-left-width":
+		style.BorderLeftWidth = parseBorderWidthValue(value, style.FontSize, viewportWidth, viewportHeight)
 	case "border-top":
-		w, s, c := parseBorderShorthand(value)
+		w, s, c := parseBorderShorthand(value, style.FontSize, viewportWidth, viewportHeight)
 		style.BorderTopWidth = w
 		style.BorderTopStyle = s
 		style.BorderTopColor = c
 	case "border-right":
-		w, s, c := parseBorderShorthand(value)
+		w, s, c := parseBorderShorthand(value, style.FontSize, viewportWidth, viewportHeight)
 		style.BorderRightWidth = w
 		style.BorderRightStyle = s
 		style.BorderRightColor = c
 	case "border-bottom":
-		w, s, c := parseBorderShorthand(value)
+		w, s, c := parseBorderShorthand(value, style.FontSize, viewportWidth, viewportHeight)
 		style.BorderBottomWidth = w
 		style.BorderBottomStyle = s
 		style.BorderBottomColor = c
 	case "border-left":
-		w, s, c := parseBorderShorthand(value)
+		w, s, c := parseBorderShorthand(value, style.FontSize, viewportWidth, viewportHeight)
 		style.BorderLeftWidth = w
 		style.BorderLeftStyle = s
 		style.BorderLeftColor = c

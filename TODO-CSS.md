@@ -101,7 +101,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `border-color` (§5.5.16)
 - [x] `border-style` - parsed (§5.5.17)
 - [ ] `border-style` rendering variations (§5.5.17) - `dotted`, `dashed`, `double`, `groove`, `ridge`, `inset`, `outset` all parsed but rendered as solid (`render/paint.go`)
-- [ ] `border-width` keywords (§5.5.11) - `thin | medium | thick` (may need verification)
+- [x] `border-width` keywords (§5.5.11) - `thin | medium | thick`
 - [x] `border-top/right/bottom/left` - individual borders (§5.5.18–§5.5.21)
 - [x] `border` - shorthand (§5.5.22)
 - [x] `width` (§5.5.23)

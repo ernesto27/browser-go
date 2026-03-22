@@ -833,6 +833,150 @@ func TestParseInlineStyle(t *testing.T) {
 	}
 }
 
+func TestBorderWidthKeywords(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		verify func(t *testing.T, s Style)
+	}{
+		{
+			name:  "border-width shorthand thin",
+			input: "border-width: thin",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 1.0, s.BorderTopWidth)
+				assert.Equal(t, 1.0, s.BorderRightWidth)
+				assert.Equal(t, 1.0, s.BorderBottomWidth)
+				assert.Equal(t, 1.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border-width shorthand medium",
+			input: "border-width: medium",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 3.0, s.BorderTopWidth)
+				assert.Equal(t, 3.0, s.BorderRightWidth)
+				assert.Equal(t, 3.0, s.BorderBottomWidth)
+				assert.Equal(t, 3.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border-width shorthand thick",
+			input: "border-width: thick",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.BorderTopWidth)
+				assert.Equal(t, 5.0, s.BorderRightWidth)
+				assert.Equal(t, 5.0, s.BorderBottomWidth)
+				assert.Equal(t, 5.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border-width shorthand 2 values",
+			input: "border-width: thick thin",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.BorderTopWidth)
+				assert.Equal(t, 1.0, s.BorderRightWidth)
+				assert.Equal(t, 5.0, s.BorderBottomWidth)
+				assert.Equal(t, 1.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border-width shorthand 3 values",
+			input: "border-width: thin medium thick",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 1.0, s.BorderTopWidth)
+				assert.Equal(t, 3.0, s.BorderRightWidth)
+				assert.Equal(t, 5.0, s.BorderBottomWidth)
+				assert.Equal(t, 3.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border-width shorthand 4 values mixed",
+			input: "border-width: thin medium thick 2px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 1.0, s.BorderTopWidth)
+				assert.Equal(t, 3.0, s.BorderRightWidth)
+				assert.Equal(t, 5.0, s.BorderBottomWidth)
+				assert.Equal(t, 2.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border-width numeric fallback still works",
+			input: "border-width: 2px",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 2.0, s.BorderTopWidth)
+				assert.Equal(t, 2.0, s.BorderRightWidth)
+				assert.Equal(t, 2.0, s.BorderBottomWidth)
+				assert.Equal(t, 2.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border shorthand with thin keyword",
+			input: "border: thin solid red",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 1.0, s.BorderTopWidth)
+				assert.Equal(t, 1.0, s.BorderRightWidth)
+				assert.Equal(t, 1.0, s.BorderBottomWidth)
+				assert.Equal(t, 1.0, s.BorderLeftWidth)
+				assert.Equal(t, "solid", s.BorderTopStyle)
+				assert.True(t, colorsEqual(s.BorderTopColor, color.RGBA{255, 0, 0, 255}))
+			},
+		},
+		{
+			name:  "border shorthand with thick keyword",
+			input: "border: thick dashed blue",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.BorderTopWidth)
+				assert.Equal(t, "dashed", s.BorderTopStyle)
+				assert.True(t, colorsEqual(s.BorderTopColor, color.RGBA{0, 0, 255, 255}))
+			},
+		},
+		{
+			name:  "border-top-width keyword",
+			input: "border-top-width: thick",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.BorderTopWidth)
+			},
+		},
+		{
+			name:  "border-right-width keyword",
+			input: "border-right-width: thin",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 1.0, s.BorderRightWidth)
+			},
+		},
+		{
+			name:  "border-bottom-width keyword",
+			input: "border-bottom-width: medium",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 3.0, s.BorderBottomWidth)
+			},
+		},
+		{
+			name:  "border-left-width keyword",
+			input: "border-left-width: thick",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.BorderLeftWidth)
+			},
+		},
+		{
+			name:  "border-top shorthand with keyword",
+			input: "border-top: thick solid green",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, 5.0, s.BorderTopWidth)
+				assert.Equal(t, "solid", s.BorderTopStyle)
+				assert.True(t, colorsEqual(s.BorderTopColor, color.RGBA{0, 128, 0, 255}))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ParseInlineStyle(tt.input)
+			tt.verify(t, result)
+		})
+	}
+}
+
 // TestImportantOverride tests that !important declarations win in the cascade
 func TestImportantOverride(t *testing.T) {
 	tests := []struct {
@@ -1437,14 +1581,14 @@ func TestFirstLineStyleCollection(t *testing.T) {
 	ctx := MatchContext{}
 
 	tests := []struct {
-		name           string
-		cssText        string
-		tagName        string
-		classes        string
-		expectStyle    bool
-		checkColor     color.Color
-		checkBold      bool
-		checkBgColor   color.Color
+		name         string
+		cssText      string
+		tagName      string
+		classes      string
+		expectStyle  bool
+		checkColor   color.Color
+		checkBold    bool
+		checkBgColor color.Color
 	}{
 		{
 			name:        "p::first-line with color sets FirstLineStyle",
@@ -1488,10 +1632,10 @@ func TestFirstLineStyleCollection(t *testing.T) {
 			checkColor:  color.RGBA{255, 0, 0, 255},
 		},
 		{
-			name:        "first-line with background-color",
-			cssText:     `p::first-line { background-color: yellow; }`,
-			tagName:     "p",
-			expectStyle: true,
+			name:         "first-line with background-color",
+			cssText:      `p::first-line { background-color: yellow; }`,
+			tagName:      "p",
+			expectStyle:  true,
 			checkBgColor: color.RGBA{255, 255, 0, 255},
 		},
 	}
