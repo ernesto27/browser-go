@@ -212,7 +212,7 @@ func BuildBox(node *dom.Node, parent *LayoutBox, stylesheet css.Stylesheet, view
 	}
 
 	// CSS display property overrides the default box type
-	if box.Type == InlineBox && box.Style.Display == "block" {
+	if box.Type == InlineBox && (box.Style.Display == "block" || box.Style.Display == "list-item") {
 		box.Type = BlockBox
 	}
 

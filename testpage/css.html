@@ -45,6 +45,39 @@
 </head>
 <body>
 
+    <h2>display: list-item Test (CSS1 §5.6.1)</h2>
+    <p>Elements with <code>display: list-item</code> should render as block boxes with a list marker, even if they are not <code>&lt;li&gt;</code> elements.</p>
+
+    <p><b>Normal &lt;li&gt; inside &lt;ul&gt; (baseline):</b></p>
+    <ul>
+        <li>Regular li item 1</li>
+        <li>Regular li item 2</li>
+    </ul>
+
+    <p><b>DIVs with display: list-item inside a &lt;ul&gt;:</b></p>
+    <ul>
+        <div style="display: list-item;">Div as list-item A</div>
+        <div style="display: list-item;">Div as list-item B</div>
+    </ul>
+
+    <p><b>SPANs with display: list-item (inline→block promotion + marker):</b></p>
+    <ul>
+        <span style="display: list-item;">Span as list-item 1</span>
+        <span style="display: list-item;">Span as list-item 2</span>
+    </ul>
+
+    <p><b>display: list-item with list-style-type on parent:</b></p>
+    <ul style="list-style-type: square;">
+        <div style="display: list-item;">Square marker via parent</div>
+    </ul>
+    <ol style="list-style-type: upper-roman;">
+        <div style="display: list-item;">Should show I.</div>
+        <div style="display: list-item;">Should show II.</div>
+    </ol>
+
+    <p><b>Standalone display: list-item (no list parent):</b></p>
+    <div style="display: list-item; margin-left: 40px;">Standalone list-item div (default disc)</div>
+
     <h2>Border-Width Keywords Test (CSS2 §5.5.11)</h2>
     <p>Testing <code>border-width</code> keyword values: <code>thin</code> (1px), <code>medium</code> (3px), <code>thick</code> (5px).</p>
 

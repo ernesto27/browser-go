@@ -112,10 +112,10 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 ### §5.6 Classification Properties
 - [x] `display: block | inline | none` (§5.6.1)
 - [~] `display: block/inline` - only `none` actually works; block/inline parsed but not enforced (§5.6.1)
-- [ ] `display: list-item` (§5.6.1)
+- [x] `display: list-item` (§5.6.1)
 - [~] `white-space` - `normal` and `nowrap` supported; `pre` not yet implemented (§5.6.2)
 - [x] `list-style-type` - disc/circle/square/decimal/none (§5.6.3)
-- [ ] `list-style-type` extended values (§5.6.3) - `lower-roman`, `upper-roman`, `lower-alpha`, `upper-alpha`
+- [x] `list-style-type` extended values (§5.6.3) - `lower-roman`, `upper-roman`, `lower-alpha`, `upper-alpha`
 - [ ] `list-style-image` - custom marker (§5.6.4)
 - [ ] `list-style-position` - inside/outside (§5.6.5)
 - [x] `list-style` - shorthand (§5.6.6)

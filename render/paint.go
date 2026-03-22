@@ -1030,68 +1030,74 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	drawVerticalScrollbar(box, commands, currentStyle, state)
 }
 
-// getListInfo returns (isListItem, isOrdered, itemIndex)
+// isListItemBox checks whether a layout box is a list item,
+// either by tag name (<li>) or by CSS display: list-item.
+func isListItemBox(box *layout.LayoutBox) bool {
+	if box.Node == nil {
+		return false
+	}
+	if box.Node.TagName == dom.TagLI {
+		return true
+	}
+	return box.Style.Display == "list-item"
+}
+
+// getListInfo returns (isListItem, isOrdered, itemIndex, listType)
 func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
-	// Check if parent is <li>
 	if box.Parent == nil || box.Parent.Node == nil {
 		return false, false, 0, ""
 	}
-	if box.Parent.Node.TagName != dom.TagLI {
+	if !isListItemBox(box.Parent) {
 		return false, false, 0, ""
 	}
 
 	li := box.Parent
 
-	// Check if grandparent is <ul> or <ol>
-	if li.Parent == nil || li.Parent.Node == nil {
-		return false, false, 0, ""
+	// Find list container (ul/ol/menu) — may be direct parent or grandparent
+	var listContainer *layout.LayoutBox
+	if li.Parent != nil && li.Parent.Node != nil {
+		listTag := li.Parent.Node.TagName
+		if listTag == dom.TagUL || listTag == dom.TagOL || listTag == dom.TagMenu {
+			listContainer = li.Parent
+		}
 	}
 
-	listTag := li.Parent.Node.TagName
-	if listTag != dom.TagUL && listTag != dom.TagOL && listTag != dom.TagMenu {
-		return false, false, 0, ""
+	// Standalone display: list-item with no list container — default disc marker
+	if listContainer == nil {
+		if li.Style.ListStyleType != "" {
+			return true, false, 1, resolveListStyleType(li.Style.ListStyleType)
+		}
+		return true, false, 1, css.ListStyleDisc
 	}
 
-	isOrdered := listTag == dom.TagOL
+	isOrdered := listContainer.Node.TagName == dom.TagOL
 
 	listType := "1"
-	if typeAttr, ok := li.Parent.Node.Attributes["type"]; ok {
+	if typeAttr, ok := listContainer.Node.Attributes["type"]; ok {
 		listType = typeAttr
 	}
 
-	if li.Parent.Style.ListStyleType != "" {
-		switch li.Parent.Style.ListStyleType {
-		case css.ListStyleNone:
-			return false, false, 0, ""
-		case css.ListStyleDisc, css.ListStyleCircle, css.ListStyleSquare:
-			listType = li.Parent.Style.ListStyleType
-		case css.ListStyleDecimal:
-			listType = css.ListMarkerNumeric
-		case css.ListStyleLowerAlpha, css.ListStyleLowerLatin:
-			listType = css.ListMarkerLowerAlpha
-		case css.ListStyleUpperAlpha, css.ListStyleUpperLatin:
-			listType = css.ListMarkerUpperAlpha
-		case css.ListStyleLowerRoman:
-			listType = css.ListMarkerLowerRoman
-		case css.ListStyleUpperRoman:
-			listType = css.ListMarkerUpperRoman
+	if listContainer.Style.ListStyleType != "" {
+		resolved := resolveListStyleType(listContainer.Style.ListStyleType)
+		if resolved == "" {
+			return false, false, 0, "" // list-style-type: none
 		}
-
+		listType = resolved
 	}
 
-	_, isReversed := li.Parent.Node.Attributes["reversed"]
+	_, isReversed := listContainer.Node.Attributes["reversed"]
 
-	// Count total items first (needed for reversed default start)
+	// Count total list items (needed for reversed default start)
 	totalItems := 0
-	for _, sibling := range li.Parent.Children {
-		if sibling.Node != nil && sibling.Node.TagName == dom.TagLI {
+	for _, sibling := range listContainer.Children {
+		if isListItemBox(sibling) {
 			totalItems++
 		}
 	}
 
 	// Determine starting ordinal per WHATWG spec
 	ordinal := 1
-	if startAttr, ok := li.Parent.Node.Attributes["start"]; ok {
+	if startAttr, ok := listContainer.Node.Attributes["start"]; ok {
 		if parsed, err := strconv.Atoi(startAttr); err == nil {
 			ordinal = parsed
 		}
@@ -1099,32 +1105,56 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 		ordinal = totalItems
 	}
 
-	// Calculate ordinal for current li, respecting value attrs and reversed
+	// Calculate ordinal for current item, respecting value attrs and reversed
 	currentOrdinal := ordinal
-	for _, sibling := range li.Parent.Children {
-		if sibling.Node != nil && sibling.Node.TagName == dom.TagLI {
-			// Check if this li has a value attribute
+	for _, sibling := range listContainer.Children {
+		if !isListItemBox(sibling) {
+			continue
+		}
+		if sibling.Node != nil {
 			if valAttr, ok := sibling.Node.Attributes["value"]; ok {
 				if parsed, err := strconv.Atoi(valAttr); err == nil {
 					ordinal = parsed
 				}
 			}
+		}
 
-			if sibling == li {
-				currentOrdinal = ordinal
-				break
-			}
+		if sibling == li {
+			currentOrdinal = ordinal
+			break
+		}
 
-			// Move to next ordinal
-			if isReversed {
-				ordinal--
-			} else {
-				ordinal++
-			}
+		if isReversed {
+			ordinal--
+		} else {
+			ordinal++
 		}
 	}
 
 	return true, isOrdered, currentOrdinal, listType
+}
+
+// resolveListStyleType maps a CSS list-style-type value to the internal marker type.
+// Returns "" for "none".
+func resolveListStyleType(lst string) string {
+	switch lst {
+	case css.ListStyleNone:
+		return ""
+	case css.ListStyleDisc, css.ListStyleCircle, css.ListStyleSquare:
+		return lst
+	case css.ListStyleDecimal:
+		return css.ListMarkerNumeric
+	case css.ListStyleLowerAlpha, css.ListStyleLowerLatin:
+		return css.ListMarkerLowerAlpha
+	case css.ListStyleUpperAlpha, css.ListStyleUpperLatin:
+		return css.ListMarkerUpperAlpha
+	case css.ListStyleLowerRoman:
+		return css.ListMarkerLowerRoman
+	case css.ListStyleUpperRoman:
+		return css.ListMarkerUpperRoman
+	default:
+		return lst
+	}
 }
 
 func formatListMarker(index int, listType string) string {
