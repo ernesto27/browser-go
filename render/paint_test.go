@@ -1172,3 +1172,24 @@ func TestFirstLineSingleLineText(t *testing.T) {
 	}
 	assert.True(t, found, "expected DrawText for 'Short text'")
 }
+
+func TestDarkenColor(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    color.RGBA
+		expected color.RGBA
+	}{
+		{"white", color.RGBA{255, 255, 255, 255}, color.RGBA{153, 153, 153, 255}},
+		{"red", color.RGBA{255, 0, 0, 255}, color.RGBA{153, 0, 0, 255}},
+		{"gray", color.RGBA{128, 128, 128, 255}, color.RGBA{76, 76, 76, 255}},
+		{"black stays black", color.RGBA{0, 0, 0, 255}, color.RGBA{0, 0, 0, 255}},
+		{"preserves alpha", color.RGBA{200, 100, 50, 128}, color.RGBA{120, 60, 30, 128}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := darkenColor(tt.input).(color.RGBA)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

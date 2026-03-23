@@ -45,6 +45,25 @@
 </head>
 <body>
 
+    <h2>border-style Rendering Test (CSS1 §5.5.17)</h2>
+    <p><b>All styles are parsed but currently rendered as solid. Compare each style visually:</b></p>
+
+    <h3>Supported styles (parsed in shorthand)</h3>
+    <div style="border: 3px solid black; padding: 8px; margin-bottom: 8px;">border: 3px solid black</div>
+    <div style="border: 3px dashed black; padding: 8px; margin-bottom: 8px;">border: 3px dashed black (renders as solid)</div>
+    <div style="border: 3px dotted black; padding: 8px; margin-bottom: 8px;">border: 3px dotted black (renders as solid)</div>
+    <div style="border: 3px none black; padding: 8px; margin-bottom: 8px;">border: 3px none black (should be invisible)</div>
+
+    <h3>Styles via border-style property</h3>
+    <div style="border-width: 3px; border-style: double; border-color: black; padding: 8px; margin-bottom: 8px;">border-style: double (renders as solid)</div>
+    <div style="border-width: 3px; border-style: groove; border-color: gray; padding: 8px; margin-bottom: 8px;">border-style: groove (renders as solid)</div>
+    <div style="border-width: 3px; border-style: ridge; border-color: gray; padding: 8px; margin-bottom: 8px;">border-style: ridge (renders as solid)</div>
+    <div style="border-width: 3px; border-style: inset; border-color: gray; padding: 8px; margin-bottom: 8px;">border-style: inset (renders as solid)</div>
+    <div style="border-width: 3px; border-style: outset; border-color: gray; padding: 8px; margin-bottom: 8px;">border-style: outset (renders as solid)</div>
+
+    <h3>Mixed border styles per side</h3>
+    <div style="border-width: 3px; border-top-style: solid; border-right-style: dashed; border-bottom-style: dotted; border-left-style: double; border-color: black; padding: 8px; margin-bottom: 8px;">top: solid, right: dashed, bottom: dotted, left: double (all render as solid)</div>
+
     <h2>rgb() Color Function Test (CSS1 §6.3) — NOT YET SUPPORTED</h2>
     <p><b>rgb() accepts integer (0-255) or percentage (0%-100%) values. Currently ParseColor handles named colors and hex only.</b></p>
 

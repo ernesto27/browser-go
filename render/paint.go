@@ -6,6 +6,7 @@ import (
 	"browser/layout"
 	"fmt"
 	"image/color"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -215,6 +216,148 @@ func applyOpacity(c color.Color, opacity float64) color.Color {
 	r, g, b, a := c.RGBA()
 	newAlpha := uint8(float64(a>>8) * opacity)
 	return color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), newAlpha}
+}
+
+// darkenColor multiplies each RGB channel by 0.6 to produce a darker shade.
+func darkenColor(c color.Color) color.Color {
+	r, g, b, a := c.RGBA()
+	return color.RGBA{
+		R: uint8(float64(r>>8) * 0.6),
+		G: uint8(float64(g>>8) * 0.6),
+		B: uint8(float64(b>>8) * 0.6),
+		A: uint8(a >> 8),
+	}
+}
+
+// lightenColor blends each RGB channel 40% toward white.
+func lightenColor(c color.Color) color.Color {
+	r, g, b, a := c.RGBA()
+	blend := func(v uint32) uint8 {
+		return uint8(float64(v>>8)*0.6 + 255*0.4)
+	}
+	return color.RGBA{R: blend(r), G: blend(g), B: blend(b), A: uint8(a >> 8)}
+}
+
+// insetOutsetColor resolves color for inset/outset border sides.
+// wantDark=true for top/left (inset) or bottom/right (outset).
+func insetOutsetColor(style string, col color.Color, wantDark bool) color.Color {
+	switch style {
+	case "inset":
+		if wantDark {
+			return darkenColor(col)
+		}
+		return lightenColor(col)
+	case "outset":
+		if wantDark {
+			return lightenColor(col)
+		}
+		return darkenColor(col)
+	}
+	return col
+}
+
+// emitBorderSide appends DrawRect commands for one border side based on style.
+// horizontal=true for top/bottom borders; false for left/right.
+func emitBorderSide(commands *[]DisplayCommand, x, y, length, thickness float64,
+	horizontal bool, style string, col color.Color) {
+	if thickness <= 0 || col == nil {
+		return
+	}
+
+	makeRect := func(px, py, pw, ph float64) DrawRect {
+		return DrawRect{Rect: layout.Rect{X: px, Y: py, Width: pw, Height: ph}, Color: col}
+	}
+
+	switch style {
+	case "", "solid":
+		if horizontal {
+			*commands = append(*commands, makeRect(x, y, length, thickness))
+		} else {
+			*commands = append(*commands, makeRect(x, y, thickness, length))
+		}
+
+	case "dotted":
+		dotSize := thickness
+		step := dotSize * 2
+		pos := 0.0
+		for pos+dotSize <= length {
+			if horizontal {
+				*commands = append(*commands, makeRect(x+pos, y, dotSize, dotSize))
+			} else {
+				*commands = append(*commands, makeRect(x, y+pos, dotSize, dotSize))
+			}
+			pos += step
+		}
+
+	case "dashed":
+		dashLen := thickness * 3
+		gapLen := thickness
+		step := dashLen + gapLen
+		pos := 0.0
+		for pos+dashLen <= length {
+			if horizontal {
+				*commands = append(*commands, makeRect(x+pos, y, dashLen, thickness))
+			} else {
+				*commands = append(*commands, makeRect(x, y+pos, thickness, dashLen))
+			}
+			pos += step
+		}
+
+	case "double":
+		lineW := math.Max(1, math.Floor(thickness/3))
+		if horizontal {
+			*commands = append(*commands, makeRect(x, y, length, lineW))
+			*commands = append(*commands, makeRect(x, y+thickness-lineW, length, lineW))
+		} else {
+			*commands = append(*commands, makeRect(x, y, lineW, length))
+			*commands = append(*commands, makeRect(x+thickness-lineW, y, lineW, length))
+		}
+
+	case "groove":
+		half := thickness / 2
+		dark := darkenColor(col)
+		light := lightenColor(col)
+		if horizontal {
+			*commands = append(*commands,
+				DrawRect{Rect: layout.Rect{X: x, Y: y, Width: length, Height: half}, Color: dark},
+				DrawRect{Rect: layout.Rect{X: x, Y: y + half, Width: length, Height: half}, Color: light})
+		} else {
+			*commands = append(*commands,
+				DrawRect{Rect: layout.Rect{X: x, Y: y, Width: half, Height: length}, Color: dark},
+				DrawRect{Rect: layout.Rect{X: x + half, Y: y, Width: half, Height: length}, Color: light})
+		}
+
+	case "ridge":
+		half := thickness / 2
+		light := lightenColor(col)
+		dark := darkenColor(col)
+		if horizontal {
+			*commands = append(*commands,
+				DrawRect{Rect: layout.Rect{X: x, Y: y, Width: length, Height: half}, Color: light},
+				DrawRect{Rect: layout.Rect{X: x, Y: y + half, Width: length, Height: half}, Color: dark})
+		} else {
+			*commands = append(*commands,
+				DrawRect{Rect: layout.Rect{X: x, Y: y, Width: half, Height: length}, Color: light},
+				DrawRect{Rect: layout.Rect{X: x + half, Y: y, Width: half, Height: length}, Color: dark})
+		}
+
+	case "inset", "outset":
+		half := thickness / 2
+		// col is already pre-resolved by insetOutsetColor in the caller
+		inner := lightenColor(col)
+		if style == "outset" {
+			inner = darkenColor(col)
+		}
+		if horizontal {
+			*commands = append(*commands,
+				DrawRect{Rect: layout.Rect{X: x, Y: y, Width: length, Height: half}, Color: col},
+				DrawRect{Rect: layout.Rect{X: x, Y: y + half, Width: length, Height: half}, Color: inner})
+		} else {
+			*commands = append(*commands,
+				DrawRect{Rect: layout.Rect{X: x, Y: y, Width: half, Height: length}, Color: col},
+				DrawRect{Rect: layout.Rect{X: x + half, Y: y, Width: half, Height: length}, Color: inner})
+		}
+	}
 }
 
 type DisplayCommand any
@@ -542,28 +685,32 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	// Draw borders if set
 	if !isHidden {
 		if box.Style.BorderTopWidth > 0 && box.Style.BorderTopStyle != "none" && box.Style.BorderTopColor != nil {
-			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: boxRect.X, Y: boxRect.Y, Width: boxRect.Width, Height: box.Style.BorderTopWidth},
-				Color: applyOpacity(box.Style.BorderTopColor, currentStyle.Opacity),
-			})
+			col := insetOutsetColor(box.Style.BorderTopStyle,
+				applyOpacity(box.Style.BorderTopColor, currentStyle.Opacity), true)
+			emitBorderSide(commands, boxRect.X, boxRect.Y,
+				boxRect.Width, box.Style.BorderTopWidth,
+				true, box.Style.BorderTopStyle, col)
 		}
 		if box.Style.BorderBottomWidth > 0 && box.Style.BorderBottomStyle != "none" && box.Style.BorderBottomColor != nil {
-			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: boxRect.X, Y: boxRect.Y + boxRect.Height - box.Style.BorderBottomWidth, Width: boxRect.Width, Height: box.Style.BorderBottomWidth},
-				Color: applyOpacity(box.Style.BorderBottomColor, currentStyle.Opacity),
-			})
+			col := insetOutsetColor(box.Style.BorderBottomStyle,
+				applyOpacity(box.Style.BorderBottomColor, currentStyle.Opacity), false)
+			emitBorderSide(commands, boxRect.X, boxRect.Y+boxRect.Height-box.Style.BorderBottomWidth,
+				boxRect.Width, box.Style.BorderBottomWidth,
+				true, box.Style.BorderBottomStyle, col)
 		}
 		if box.Style.BorderLeftWidth > 0 && box.Style.BorderLeftStyle != "none" && box.Style.BorderLeftColor != nil {
-			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: boxRect.X, Y: boxRect.Y, Width: box.Style.BorderLeftWidth, Height: boxRect.Height},
-				Color: applyOpacity(box.Style.BorderLeftColor, currentStyle.Opacity),
-			})
+			col := insetOutsetColor(box.Style.BorderLeftStyle,
+				applyOpacity(box.Style.BorderLeftColor, currentStyle.Opacity), true)
+			emitBorderSide(commands, boxRect.X, boxRect.Y,
+				boxRect.Height, box.Style.BorderLeftWidth,
+				false, box.Style.BorderLeftStyle, col)
 		}
 		if box.Style.BorderRightWidth > 0 && box.Style.BorderRightStyle != "none" && box.Style.BorderRightColor != nil {
-			*commands = append(*commands, DrawRect{
-				Rect:  layout.Rect{X: boxRect.X + boxRect.Width - box.Style.BorderRightWidth, Y: boxRect.Y, Width: box.Style.BorderRightWidth, Height: boxRect.Height},
-				Color: applyOpacity(box.Style.BorderRightColor, currentStyle.Opacity),
-			})
+			col := insetOutsetColor(box.Style.BorderRightStyle,
+				applyOpacity(box.Style.BorderRightColor, currentStyle.Opacity), false)
+			emitBorderSide(commands, boxRect.X+boxRect.Width-box.Style.BorderRightWidth, boxRect.Y,
+				boxRect.Height, box.Style.BorderRightWidth,
+				false, box.Style.BorderRightStyle, col)
 		}
 	}
 

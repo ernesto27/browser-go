@@ -240,7 +240,8 @@ func parseBorderShorthand(value string, fontSize, viewportWidth, viewportHeight 
 	for _, part := range parts {
 		if w := parseBorderWidthValue(part, fontSize, viewportWidth, viewportHeight); w > 0 {
 			width = w
-		} else if part == "solid" || part == "dashed" || part == "dotted" || part == "none" {
+		} else if part == "solid" || part == "dashed" || part == "dotted" || part == "none" ||
+			part == "double" || part == "groove" || part == "ridge" || part == "inset" || part == "outset" {
 			borderStyle = part
 		} else if c := ParseColor(part); c != nil {
 			borderColor = c
