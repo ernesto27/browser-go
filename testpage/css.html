@@ -45,6 +45,39 @@
 </head>
 <body>
 
+    <h2>% Unit Test (CSS1 §6.2)</h2>
+    <p><b>Percentage values resolve relative to the container width. Currently supported on table/td width and text-indent.</b></p>
+
+    <h3>Table width: 50% vs 75%</h3>
+    <table style="width: 50%; border: 1px solid black;">
+        <tr><td style="background-color: #cce5ff;">Table at width: 50% of page</td></tr>
+    </table>
+    <table style="width: 75%; border: 1px solid black;">
+        <tr><td style="background-color: #cce5ff;">Table at width: 75% of page</td></tr>
+    </table>
+
+    <h3>Table cell width: 25% / 50% / 25%</h3>
+    <table style="width: 100%; border: 1px solid black;">
+        <tr>
+            <td style="width: 25%; background-color: #d4edda;">25%</td>
+            <td style="width: 50%; background-color: #fff3cd;">50%</td>
+            <td style="width: 25%; background-color: #f8d7da;">25%</td>
+        </tr>
+    </table>
+
+    <h3>HTML width attribute: 85%</h3>
+    <table width="85%" style="border: 1px solid black;">
+        <tr><td style="background-color: #e2d5f1;">Table with width="85%" attribute</td></tr>
+    </table>
+
+    <h3>text-indent: 10%</h3>
+    <p style="text-indent: 10%; background-color: #f0f0f0;">This paragraph has text-indent: 10% — the first line should be indented by 10% of the container width.</p>
+
+    <h3>Block width: 50%</h3>
+    <div style="width: 50%; background-color: #ffe0e0; padding: 8px;">This div has width: 50% — should be half the page width.</div>
+    <div style="width: 50%; background-color: #e0ffe0; padding: 8px;">Compare: this px-width div below should match this one.</div>
+    <div style="width: 400px; background-color: #e0ffe0; padding: 8px;">This div has width: 400px (explicit pixel equivalent).</div>
+
     <h2>pt Unit Test (CSS1 §6.1)</h2>
     <p><b>1pt = 1/72in = 96/72px ≈ 1.333px. Compare font sizes and spacing:</b></p>
 

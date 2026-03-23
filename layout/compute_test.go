@@ -1658,3 +1658,61 @@ func TestClearFloat(t *testing.T) {
 			"cleared float should reset to left edge, same X as first float")
 	})
 }
+
+func TestBlockPercentageWidth(t *testing.T) {
+	tests := []struct {
+		name           string
+		html           string
+		containerWidth float64
+		verify         func(t *testing.T, tree *LayoutBox)
+	}{
+		{
+			// body has 8px margin each side, so content width = 800 - 16 = 784
+			name:           "div width 50%",
+			html:           `<div style="width: 50%;">Hello</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				assert.InDelta(t, 392.0, div.Rect.Width, 1.0) // 50% of 784
+			},
+		},
+		{
+			name:           "div width 25%",
+			html:           `<div style="width: 25%;">Hello</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				assert.InDelta(t, 196.0, div.Rect.Width, 1.0) // 25% of 784
+			},
+		},
+		{
+			name:           "div width 100%",
+			html:           `<div style="width: 100%;">Hello</div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				div := findBoxByTag(tree, "div")
+				assert.InDelta(t, 784.0, div.Rect.Width, 1.0) // 100% of 784
+			},
+		},
+		{
+			name:           "nested percentage widths",
+			html:           `<div style="width: 50%;"><div style="width: 50%;">Inner</div></div>`,
+			containerWidth: 800,
+			verify: func(t *testing.T, tree *LayoutBox) {
+				outer := findBoxByTag(tree, "div")
+				assert.InDelta(t, 392.0, outer.Rect.Width, 1.0) // 50% of 784
+				// Inner div is 50% of the outer's 392px = 196px
+				inner := outer.Children[0]
+				assert.InDelta(t, 196.0, inner.Rect.Width, 1.0)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tree := buildTree(tt.html)
+			ComputeLayout(tree, tt.containerWidth)
+			tt.verify(t, tree)
+		})
+	}
+}

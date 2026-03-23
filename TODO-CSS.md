@@ -130,7 +130,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [x] `in` - inches (§6.1)
 - [x] `cm` - centimeters (§6.1)
 - [x] `mm` - millimeters (§6.1)
-- [ ] `%` - percentage (§6.2 — partial: works for table cell width only)
+- [~] `%` - percentage (§6.2 — partial: works for width on blocks, floats, positioned elements, tables, and table cells; not yet for height, margin, padding, font-size)
 - [ ] `rgb()` - color function (§6.3 — `css/css.go` ParseColor handles named colors and hex only)
 - [x] Named colors - standard CSS1 color keywords (§6.3)
 - [x] `#hex` colors - 3 and 6 digit hex notation (§6.3)

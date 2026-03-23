@@ -119,6 +119,18 @@ func estimatedBlockTopMargin(box *LayoutBox) float64 {
 	return top
 }
 
+// resolveWidth returns the effective width for a box given its style and container width.
+// Checks Style.Width first (absolute px), then Style.WidthPercent (relative to container).
+func resolveWidth(style css.Style, containerWidth float64) float64 {
+	if style.Width > 0 {
+		return style.Width
+	}
+	if style.WidthPercent > 0 {
+		return containerWidth * style.WidthPercent / 100.0
+	}
+	return 0
+}
+
 func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 	containerWidth := p.containerWidth
 	startX := p.startX
@@ -146,8 +158,8 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 	box.Rect.Y = startY
 	box.Rect.Width = containerWidth
 
-	if box.Style.Width > 0 {
-		box.Rect.Width = box.Style.Width
+	if w := resolveWidth(box.Style, containerWidth); w > 0 {
+		box.Rect.Width = w
 	}
 
 	if box.Style.MinWidth > 0 && box.Rect.Width < box.Style.MinWidth {
@@ -238,7 +250,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 	}
 
 	// Handle auto margins for horizontal centering
-	if box.Style.MarginLeftAuto && box.Style.MarginRightAuto && box.Style.Width > 0 {
+	if box.Style.MarginLeftAuto && box.Style.MarginRightAuto && (box.Style.Width > 0 || box.Style.WidthPercent > 0) {
 		// Both auto = center horizontally
 		leftover := containerWidth - box.Rect.Width
 		if leftover > 0 {
@@ -295,8 +307,9 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 	yOffset := startY + box.Margin.Top + box.Padding.Top + box.Style.BorderTopWidth
 
-	if box.Style.Width > 0 && box.Style.BoxSizing != "border-box" {
-		box.Rect.Width = box.Style.Width + box.Style.PaddingLeft + box.Style.PaddingRight + box.Style.BorderLeftWidth +
+	if (box.Style.Width > 0 || box.Style.WidthPercent > 0) && box.Style.BoxSizing != "border-box" {
+		w := resolveWidth(box.Style, containerWidth)
+		box.Rect.Width = w + box.Style.PaddingLeft + box.Style.PaddingRight + box.Style.BorderLeftWidth +
 			box.Style.BorderRightWidth
 	}
 
@@ -380,7 +393,7 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 			rightFloatX = innerX + innerWidth
 		}
 
-		childWidth := child.Style.Width
+		childWidth := resolveWidth(child.Style, innerWidth)
 		if childWidth <= 0 {
 			childWidth = 100 // Default width for floats without explicit width
 		}
@@ -739,13 +752,13 @@ func computeBlockLayout(box *LayoutBox, p blockLayoutParams) {
 
 	// Position absolute children
 	for _, child := range positionedChildren {
-		childWidth := child.Style.Width
+		containingW := containerWidth
+		if child.Position == "fixed" {
+			containingW = viewportWidth
+		}
+		childWidth := resolveWidth(child.Style, containingW)
 		if childWidth <= 0 {
-			if child.Position == "fixed" {
-				childWidth = viewportWidth
-			} else {
-				childWidth = containerWidth
-			}
+			childWidth = containingW
 		}
 
 		// First, compute layout to determine child dimensions
