@@ -67,6 +67,32 @@ func TestParseColor(t *testing.T) {
 	}
 }
 
+func TestParseColorComponent(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int
+	}{
+		{"integer zero", "0", 0},
+		{"integer mid", "128", 128},
+		{"integer max", "255", 255},
+		{"integer overflow clamped", "300", 255},
+		{"integer negative clamped", "-10", 0},
+		{"percentage zero", "0%", 0},
+		{"percentage full", "100%", 255},
+		{"percentage half", "50%", 127},
+		{"percentage overflow clamped", "150%", 255},
+		{"empty string", "", 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseColorComponent(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestParseSize(t *testing.T) {
 	tests := []struct {
 		name     string

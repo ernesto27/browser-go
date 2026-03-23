@@ -388,6 +388,17 @@ func parseFontSizeWithContext(value string, parentFontSize, viewportWidth, viewp
 	}
 }
 
+// parseColorComponent parses an rgb() component value.
+// Handles both integer (0-255) and percentage (0%-100%) forms, clamped to [0,255].
+func parseColorComponent(s string) int {
+	if before, ok := strings.CutSuffix(s, "%"); ok {
+		pct, _ := strconv.ParseFloat(before, 64)
+		return max(0, min(255, int(pct*255.0/100.0)))
+	}
+	v, _ := strconv.Atoi(s)
+	return max(0, min(255, v))
+}
+
 // ParseColor converts color names or hex to color.Color
 func ParseColor(value string) color.Color {
 	value = strings.ToLower(value)
@@ -523,6 +534,21 @@ func ParseColor(value string) color.Color {
 			g, _ := strconv.ParseUint(hex[2:4], 16, 8)
 			b, _ := strconv.ParseUint(hex[4:6], 16, 8)
 			return color.RGBA{uint8(r), uint8(g), uint8(b), 255}
+		}
+	}
+
+	if strings.HasPrefix(value, "rgb") {
+		start := strings.Index(value, "(")
+		end := strings.Index(value, ")")
+		if start != -1 && end != -1 && end > start {
+			params := value[start+1 : end]
+			parts := strings.Split(params, ",")
+			if len(parts) == 3 {
+				r := parseColorComponent(strings.TrimSpace(parts[0]))
+				g := parseColorComponent(strings.TrimSpace(parts[1]))
+				b := parseColorComponent(strings.TrimSpace(parts[2]))
+				return color.RGBA{uint8(r), uint8(g), uint8(b), 255}
+			}
 		}
 	}
 

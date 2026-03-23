@@ -45,6 +45,25 @@
 </head>
 <body>
 
+    <h2>rgb() Color Function Test (CSS1 §6.3) — NOT YET SUPPORTED</h2>
+    <p><b>rgb() accepts integer (0-255) or percentage (0%-100%) values. Currently ParseColor handles named colors and hex only.</b></p>
+
+    <h3>rgb() with integers</h3>
+    <p style="color: rgb(255, 0, 0);">This text should be red: rgb(255, 0, 0)</p>
+    <p style="color: rgb(0, 128, 0);">This text should be green: rgb(0, 128, 0)</p>
+    <p style="color: rgb(0, 0, 255);">This text should be blue: rgb(0, 0, 255)</p>
+
+    <h3>rgb() with percentages</h3>
+    <p style="color: rgb(100%, 0%, 0%);">This text should be red: rgb(100%, 0%, 0%)</p>
+    <p style="color: rgb(0%, 50%, 0%);">This text should be green: rgb(0%, 50%, 0%)</p>
+
+    <h3>rgb() in background-color</h3>
+    <div style="background-color: rgb(255, 200, 100); padding: 8px;">background-color: rgb(255, 200, 100)</div>
+    <div style="background-color: #ffc864; padding: 8px;">Compare: background-color: #ffc864 (same color in hex)</div>
+
+    <h3>rgb() with whitespace</h3>
+    <p style="color: rgb( 255 , 165 , 0 );">This text should be orange: rgb( 255 , 165 , 0 )</p>
+
     <h2>% Unit Test (CSS1 §6.2)</h2>
     <p><b>Percentage values resolve relative to the container width. Currently supported on table/td width and text-indent.</b></p>
 

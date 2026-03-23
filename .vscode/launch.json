@@ -8,9 +8,10 @@
             "name": "Debug Browser (Localhost)",
             "type": "go",
             "request": "launch",
-            "mode": "auto",
-            "program": "${workspaceFolder}",
-            "args": ["http://localhost:8080/index.html"],
+            "mode": "exec",
+            "program": "${workspaceFolder}/browser",
+            "buildFlags": "-gcflags=all=-N -l",
+            "args": ["http://localhost:8080/css.html"],
             "env": {
                 "FYNE_RENDER": "software"
             }
@@ -21,7 +22,8 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": ["testpage/index.html"],
+            "buildFlags": "-gcflags=all=-N -l",
+            "args": ["testpage/css.html"],
             "env": {
                 "FYNE_RENDER": "software"
             }
