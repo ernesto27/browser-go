@@ -814,17 +814,41 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 		if info := getListInfo(box); info.IsListItem {
 			if info.ImageURL != "" {
 				markerSize := float64(currentStyle.Size)
-				*commands = append(*commands, DrawImage{
-					Rect: layout.Rect{
-						X:      boxRect.X - markerSize - 8,
-						Y:      boxRect.Y,
-						Width:  markerSize,
-						Height: markerSize,
-					},
-					URL: info.ImageURL,
-				})
+				if info.Position == css.ListStylePositionInside {
+					*commands = append(*commands, DrawImage{
+						Rect: layout.Rect{
+							X:      boxRect.X,
+							Y:      boxRect.Y,
+							Width:  markerSize,
+							Height: markerSize,
+						},
+						URL: info.ImageURL,
+					})
+					boxRect.X += markerSize + 4
+					boxRect.Width -= markerSize + 4
+				} else {
+					*commands = append(*commands, DrawImage{
+						Rect: layout.Rect{
+							X:      boxRect.X - markerSize - 8,
+							Y:      boxRect.Y,
+							Width:  markerSize,
+							Height: markerSize,
+						},
+						URL: info.ImageURL,
+					})
+				}
 			} else if info.ListType != "" {
-				text = formatListMarker(info.Index, info.ListType) + " " + text
+				marker := formatListMarker(info.Index, info.ListType)
+				if info.Position == css.ListStylePositionInside {
+					text = marker + " " + text
+					if len(box.WrappedLines) > 1 {
+						box.WrappedLines[0] = marker + " " + box.WrappedLines[0]
+					}
+				} else {
+					markerText := marker + " "
+					markerWidth := layout.MeasureTextWithSpacing(markerText, float64(currentStyle.Size), currentStyle.LetterSpacing)
+					*commands = append(*commands, currentStyle.newDrawText(markerText, boxRect.X-markerWidth, boxRect.Y, markerWidth))
+				}
 			}
 		}
 
@@ -1207,6 +1231,7 @@ type ListInfo struct {
 	Index      int
 	ListType   string
 	ImageURL   string
+	Position   string
 }
 
 func getListInfo(box *layout.LayoutBox) ListInfo {
@@ -1228,13 +1253,24 @@ func getListInfo(box *layout.LayoutBox) ListInfo {
 		}
 	}
 
+	// Resolve list-style-position: li overrides container, default outside
+	resolvePosition := func(container *layout.LayoutBox) string {
+		if li.Style.ListStylePosition != "" {
+			return li.Style.ListStylePosition
+		}
+		if container != nil && container.Style.ListStylePosition != "" {
+			return container.Style.ListStylePosition
+		}
+		return css.ListStylePositionOutside
+	}
+
 	// Standalone display: list-item with no list container — default disc marker
 	if listContainer == nil {
 		listType := css.ListStyleDisc
 		if li.Style.ListStyleType != "" {
 			listType = resolveListStyleType(li.Style.ListStyleType)
 		}
-		return ListInfo{IsListItem: true, Index: 1, ListType: listType}
+		return ListInfo{IsListItem: true, Index: 1, ListType: listType, Position: resolvePosition(nil)}
 	}
 
 	isOrdered := listContainer.Node.TagName == dom.TagOL
@@ -1245,7 +1281,7 @@ func getListInfo(box *layout.LayoutBox) ListInfo {
 	}
 
 	if listContainer.Style.ListStyleImage != "" {
-		return ListInfo{IsListItem: true, ImageURL: listContainer.Style.ListStyleImage}
+		return ListInfo{IsListItem: true, ImageURL: listContainer.Style.ListStyleImage, Position: resolvePosition(listContainer)}
 	}
 
 	if listContainer.Style.ListStyleType != "" {
@@ -1302,7 +1338,7 @@ func getListInfo(box *layout.LayoutBox) ListInfo {
 		}
 	}
 
-	return ListInfo{IsListItem: true, IsOrdered: isOrdered, Index: currentOrdinal, ListType: listType}
+	return ListInfo{IsListItem: true, IsOrdered: isOrdered, Index: currentOrdinal, ListType: listType, Position: resolvePosition(listContainer)}
 }
 
 // resolveListStyleType maps a CSS list-style-type value to the internal marker type.

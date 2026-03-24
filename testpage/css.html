@@ -45,6 +45,27 @@
 </head>
 <body>
 
+    <h2>list-style-position Test (CSS1 §5.6.5)</h2>
+    <p>Testing <code>list-style-position</code>: <b>outside</b> (default) places marker in margin; <b>inside</b> places marker inline with text.</p>
+    <ul style="list-style-position: outside;">
+        <li>Outside position (default) — marker hangs in the margin area, wrapped text aligns under first line</li>
+        <li>Second item with outside position</li>
+    </ul>
+    <ul style="list-style-position: inside;">
+        <li>Inside position — marker is part of text flow, wrapped text aligns under the marker</li>
+        <li>Second item with inside position</li>
+    </ul>
+    <ol style="list-style-position: inside;">
+        <li>Ordered list with inside position</li>
+        <li>Second item</li>
+    </ol>
+    <ul style="list-style-position: outside; list-style-type: square;">
+        <li>Square marker with outside position</li>
+        <li>Second item</li>
+    </ul>
+
+    <hr>
+
     <h2>list-style-image Test (CSS1 §5.6.4)</h2>
     <p>Testing <code>list-style-image</code> to replace the default marker with a custom image.</p>
     <ul style="list-style-image: url(https://picsum.photos/16/16)">

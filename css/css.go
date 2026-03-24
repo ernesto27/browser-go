@@ -42,6 +42,9 @@ const (
 	ListStyleLowerRoman = "lower-roman"
 	ListStyleUpperRoman = "upper-roman"
 
+	ListStylePositionOutside = "outside"
+	ListStylePositionInside  = "inside"
+
 	ListMarkerNumeric    = "1"
 	ListMarkerLowerAlpha = "a"
 	ListMarkerUpperAlpha = "A"
@@ -128,8 +131,9 @@ type Style struct {
 	RightSet  bool
 	BottomSet bool
 
-	ListStyleType  string
-	ListStyleImage string
+	ListStyleType     string
+	ListStyleImage    string
+	ListStylePosition string
 
 	FirstLineStyle *Style // styles from ::first-line pseudo-element rules
 }
@@ -1429,13 +1433,22 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 	case "border-bottom-right-radius":
 		style.BorderBottomRightRadius = ParseSizeWithContext(value, style.FontSize, viewportWidth, viewportHeight)
 	case "list-style":
-		if listType, ok := parseListStyleShorthand(value); ok {
+		listType, position := parseListStyleShorthand(value)
+		if listType != "" {
 			style.ListStyleType = listType
+		}
+		if position != "" {
+			style.ListStylePosition = position
 		}
 	case "list-style-type":
 		style.ListStyleType = value
 	case "list-style-image":
 		style.ListStyleImage = parseURLValue(value)
+	case "list-style-position":
+		v := strings.ToLower(strings.TrimSpace(value))
+		if v == ListStylePositionInside || v == ListStylePositionOutside {
+			style.ListStylePosition = v
+		}
 	case "width":
 		if strings.HasSuffix(strings.TrimSpace(value), "%") {
 			num := strings.TrimSuffix(strings.TrimSpace(value), "%")
@@ -1844,7 +1857,8 @@ func parseBackgroundShorthand(value string) (color.Color, string) {
 	return bgColor, bgImage
 }
 
-func parseListStyleShorthand(value string) (string, bool) {
+func parseListStyleShorthand(value string) (string, string) {
+	var listType, position string
 	for _, token := range strings.Fields(value) {
 		token = strings.ToLower(token)
 		switch token {
@@ -1859,11 +1873,12 @@ func parseListStyleShorthand(value string) (string, bool) {
 			ListStyleUpperLatin,
 			ListStyleLowerRoman,
 			ListStyleUpperRoman:
-			return token, true
+			listType = token
+		case ListStylePositionInside, ListStylePositionOutside:
+			position = token
 		}
 	}
-
-	return "", false
+	return listType, position
 }
 
 func splitBackgroundValue(value string) []string {

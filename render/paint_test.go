@@ -20,6 +20,7 @@ func TestGetListInfo(t *testing.T) {
 		wantIsOrdered bool
 		wantOrdinal   int
 		wantListType  string
+		wantPosition  string // defaults to "outside" if empty
 	}{
 		{
 			name:          "basic ol",
@@ -192,6 +193,46 @@ func TestGetListInfo(t *testing.T) {
 			wantOrdinal:   6,
 			wantListType:  "1",
 		},
+		{
+			name:          "list-style-position default is outside",
+			html:          `<ul><li>A</li></ul>`,
+			targetIndex:   0,
+			wantIsItem:    true,
+			wantIsOrdered: false,
+			wantOrdinal:   1,
+			wantListType:  "1",
+			wantPosition:  "outside",
+		},
+		{
+			name:          "list-style-position inside on container",
+			html:          `<ul style="list-style-position: inside;"><li>A</li></ul>`,
+			targetIndex:   0,
+			wantIsItem:    true,
+			wantIsOrdered: false,
+			wantOrdinal:   1,
+			wantListType:  "1",
+			wantPosition:  "inside",
+		},
+		{
+			name:          "list-style-position outside on container",
+			html:          `<ul style="list-style-position: outside;"><li>A</li></ul>`,
+			targetIndex:   0,
+			wantIsItem:    true,
+			wantIsOrdered: false,
+			wantOrdinal:   1,
+			wantListType:  "1",
+			wantPosition:  "outside",
+		},
+		{
+			name:          "list-style-position li overrides container",
+			html:          `<ul style="list-style-position: outside;"><li style="list-style-position: inside;">A</li></ul>`,
+			targetIndex:   0,
+			wantIsItem:    true,
+			wantIsOrdered: false,
+			wantOrdinal:   1,
+			wantListType:  "1",
+			wantPosition:  "inside",
+		},
 	}
 
 	for _, tt := range tests {
@@ -214,6 +255,9 @@ func TestGetListInfo(t *testing.T) {
 			assert.Equal(t, tt.wantIsOrdered, info.IsOrdered, "isOrdered")
 			assert.Equal(t, tt.wantOrdinal, info.Index, "ordinal")
 			assert.Equal(t, tt.wantListType, info.ListType, "listType")
+			if tt.wantPosition != "" {
+				assert.Equal(t, tt.wantPosition, info.Position, "position")
+			}
 		})
 	}
 }

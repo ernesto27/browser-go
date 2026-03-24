@@ -774,10 +774,48 @@ func TestParseInlineStyle(t *testing.T) {
 			},
 		},
 		{
-			name:  "list-style shorthand ignores position",
+			name:  "list-style shorthand with position inside",
 			input: "list-style: circle inside",
 			verify: func(t *testing.T, s Style) {
 				assert.Equal(t, ListStyleCircle, s.ListStyleType)
+				assert.Equal(t, ListStylePositionInside, s.ListStylePosition)
+			},
+		},
+		{
+			name:  "list-style shorthand with position outside",
+			input: "list-style: square outside",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, ListStyleSquare, s.ListStyleType)
+				assert.Equal(t, ListStylePositionOutside, s.ListStylePosition)
+			},
+		},
+		{
+			name:  "list-style shorthand position only",
+			input: "list-style: inside",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "", s.ListStyleType)
+				assert.Equal(t, ListStylePositionInside, s.ListStylePosition)
+			},
+		},
+		{
+			name:  "list-style-position inside",
+			input: "list-style-position: inside",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, ListStylePositionInside, s.ListStylePosition)
+			},
+		},
+		{
+			name:  "list-style-position outside",
+			input: "list-style-position: outside",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, ListStylePositionOutside, s.ListStylePosition)
+			},
+		},
+		{
+			name:  "list-style-position invalid",
+			input: "list-style-position: middle",
+			verify: func(t *testing.T, s Style) {
+				assert.Equal(t, "", s.ListStylePosition)
 			},
 		},
 		{
