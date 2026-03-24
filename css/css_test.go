@@ -1718,3 +1718,27 @@ func TestFirstLineStyleFiltersMarginPadding(t *testing.T) {
 	// color should be applied
 	assert.True(t, colorsEqual(color.RGBA{0, 128, 0, 255}, style.FirstLineStyle.Color))
 }
+
+func TestParseURLValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"url with double quotes", `url("https://example.com/img.png")`, "https://example.com/img.png"},
+		{"url with single quotes", `url('https://example.com/img.png')`, "https://example.com/img.png"},
+		{"url without quotes", `url(https://example.com/img.png)`, "https://example.com/img.png"},
+		{"url with spaces", `  url( image.png )  `, "image.png"},
+		{"none keyword", "none", ""},
+		{"empty string", "", ""},
+		{"invalid value", "something", ""},
+		{"url with local path", `url(sample-bg.png)`, "sample-bg.png"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseURLValue(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

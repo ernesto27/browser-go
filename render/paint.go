@@ -60,13 +60,13 @@ type TextStyle struct {
 	OverflowX     string
 	OverflowY     string
 	OverFlow      string
-	ClipLeft       float64
-	ClipRight      float64
-	ClipTop        float64
-	ClipBottom     float64
-	LineHeight     float64
-	ScrollOffsetX  float64 // Horizontal scroll offset applied to children
-	ScrollOffsetY  float64 // Vertical scroll offset applied to children
+	ClipLeft      float64
+	ClipRight     float64
+	ClipTop       float64
+	ClipBottom    float64
+	LineHeight    float64
+	ScrollOffsetX float64 // Horizontal scroll offset applied to children
+	ScrollOffsetY float64 // Vertical scroll offset applied to children
 }
 
 func (ts TextStyle) newDrawText(text string, x, y, width float64) DrawText {
@@ -650,7 +650,6 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 	boxRect := scrolledRect(box.Rect, currentStyle.ScrollOffsetX)
 	boxRect = scrolledRectY(boxRect, currentStyle.ScrollOffsetY)
 
-
 	// Draw background if set
 	if box.Style.BackgroundColor != nil && !isHidden {
 		tl := box.Style.BorderTopLeftRadius
@@ -812,8 +811,21 @@ func paintLayoutBox(box *layout.LayoutBox, commands *[]DisplayCommand, style Tex
 
 		text := css.ApplyTextTransform(box.Text, currentStyle.TextTransform, currentStyle.FontVariant)
 
-		if isListItem, _, index, listType := getListInfo(box); isListItem {
-			text = formatListMarker(index, listType) + " " + text
+		if info := getListInfo(box); info.IsListItem {
+			if info.ImageURL != "" {
+				markerSize := float64(currentStyle.Size)
+				*commands = append(*commands, DrawImage{
+					Rect: layout.Rect{
+						X:      boxRect.X - markerSize - 8,
+						Y:      boxRect.Y,
+						Width:  markerSize,
+						Height: markerSize,
+					},
+					URL: info.ImageURL,
+				})
+			} else if info.ListType != "" {
+				text = formatListMarker(info.Index, info.ListType) + " " + text
+			}
 		}
 
 		if currentStyle.Monospace && strings.Contains(text, "\n") {
@@ -1189,13 +1201,20 @@ func isListItemBox(box *layout.LayoutBox) bool {
 	return box.Style.Display == "list-item"
 }
 
-// getListInfo returns (isListItem, isOrdered, itemIndex, listType)
-func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
+type ListInfo struct {
+	IsListItem bool
+	IsOrdered  bool
+	Index      int
+	ListType   string
+	ImageURL   string
+}
+
+func getListInfo(box *layout.LayoutBox) ListInfo {
 	if box.Parent == nil || box.Parent.Node == nil {
-		return false, false, 0, ""
+		return ListInfo{}
 	}
 	if !isListItemBox(box.Parent) {
-		return false, false, 0, ""
+		return ListInfo{}
 	}
 
 	li := box.Parent
@@ -1211,10 +1230,11 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 
 	// Standalone display: list-item with no list container — default disc marker
 	if listContainer == nil {
+		listType := css.ListStyleDisc
 		if li.Style.ListStyleType != "" {
-			return true, false, 1, resolveListStyleType(li.Style.ListStyleType)
+			listType = resolveListStyleType(li.Style.ListStyleType)
 		}
-		return true, false, 1, css.ListStyleDisc
+		return ListInfo{IsListItem: true, Index: 1, ListType: listType}
 	}
 
 	isOrdered := listContainer.Node.TagName == dom.TagOL
@@ -1224,10 +1244,14 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 		listType = typeAttr
 	}
 
+	if listContainer.Style.ListStyleImage != "" {
+		return ListInfo{IsListItem: true, ImageURL: listContainer.Style.ListStyleImage}
+	}
+
 	if listContainer.Style.ListStyleType != "" {
 		resolved := resolveListStyleType(listContainer.Style.ListStyleType)
 		if resolved == "" {
-			return false, false, 0, "" // list-style-type: none
+			return ListInfo{} // list-style-type: none
 		}
 		listType = resolved
 	}
@@ -1278,7 +1302,7 @@ func getListInfo(box *layout.LayoutBox) (bool, bool, int, string) {
 		}
 	}
 
-	return true, isOrdered, currentOrdinal, listType
+	return ListInfo{IsListItem: true, IsOrdered: isOrdered, Index: currentOrdinal, ListType: listType}
 }
 
 // resolveListStyleType maps a CSS list-style-type value to the internal marker type.

@@ -208,12 +208,12 @@ func TestGetListInfo(t *testing.T) {
 				t.Fatalf("could not find text box at index %d", tt.targetIndex)
 			}
 
-			isItem, isOrdered, ordinal, listType := getListInfo(textBox)
+			info := getListInfo(textBox)
 
-			assert.Equal(t, tt.wantIsItem, isItem, "isItem")
-			assert.Equal(t, tt.wantIsOrdered, isOrdered, "isOrdered")
-			assert.Equal(t, tt.wantOrdinal, ordinal, "ordinal")
-			assert.Equal(t, tt.wantListType, listType, "listType")
+			assert.Equal(t, tt.wantIsItem, info.IsListItem, "isItem")
+			assert.Equal(t, tt.wantIsOrdered, info.IsOrdered, "isOrdered")
+			assert.Equal(t, tt.wantOrdinal, info.Index, "ordinal")
+			assert.Equal(t, tt.wantListType, info.ListType, "listType")
 		})
 	}
 }
@@ -651,13 +651,13 @@ func TestScrollClipLeft(t *testing.T) {
 
 func TestComputeClipStart(t *testing.T) {
 	tests := []struct {
-		name       string
-		overflow   string
-		boxType    layout.BoxType
-		pos        float64
-		border     float64
-		current    float64
-		expected   float64
+		name     string
+		overflow string
+		boxType  layout.BoxType
+		pos      float64
+		border   float64
+		current  float64
+		expected float64
 	}{
 		{"visible no clip", "visible", layout.BlockBox, 100, 2, 0, 0},
 		{"empty no clip", "", layout.BlockBox, 100, 2, 0, 0},

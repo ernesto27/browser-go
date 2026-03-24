@@ -128,7 +128,8 @@ type Style struct {
 	RightSet  bool
 	BottomSet bool
 
-	ListStyleType string
+	ListStyleType  string
+	ListStyleImage string
 
 	FirstLineStyle *Style // styles from ::first-line pseudo-element rules
 }
@@ -1131,14 +1132,8 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 			style.BackgroundColor = c
 		}
 	case "background-image":
-		if strings.HasPrefix(value, "url(") && strings.HasSuffix(value, ")") {
-			url := value[4 : len(value)-1]
-			url = strings.Trim(url, `"'`)
-			url = strings.TrimSpace(url)
-			style.BackgroundImage = url
-		} else if value == "none" {
-			style.BackgroundImage = ""
-		}
+		style.BackgroundImage = parseURLValue(value)
+
 	case "background":
 		bgColor, bgImage := parseBackgroundShorthand(value)
 		if bgColor != nil {
@@ -1439,6 +1434,8 @@ func applyDeclarationWithContext(style *Style, property, value string, baseFontS
 		}
 	case "list-style-type":
 		style.ListStyleType = value
+	case "list-style-image":
+		style.ListStyleImage = parseURLValue(value)
 	case "width":
 		if strings.HasSuffix(strings.TrimSpace(value), "%") {
 			num := strings.TrimSuffix(strings.TrimSpace(value), "%")
@@ -1795,6 +1792,19 @@ func parseLineHeight(value string, fontSize float64) float64 {
 	}
 
 	return 0
+}
+
+func parseURLValue(value string) string {
+	value = strings.TrimSpace(value)
+	if strings.HasPrefix(value, "url(") && strings.HasSuffix(value, ")") {
+		url := value[4 : len(value)-1]
+		url = strings.Trim(url, `"'`)
+		return strings.TrimSpace(url)
+	}
+	if value == "none" {
+		return ""
+	}
+	return ""
 }
 
 func parseBackgroundShorthand(value string) (color.Color, string) {

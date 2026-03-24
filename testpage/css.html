@@ -45,6 +45,23 @@
 </head>
 <body>
 
+    <h2>list-style-image Test (CSS1 §5.6.4)</h2>
+    <p>Testing <code>list-style-image</code> to replace the default marker with a custom image.</p>
+    <ul style="list-style-image: url(https://picsum.photos/16/16)">
+        <li>Custom image marker via url()</li>
+        <li>Second item</li>
+    </ul>
+    <ul style="list-style-image: url(sample-bg.png)">
+        <li>Local file marker</li>
+        <li>Second item</li>
+    </ul>
+    <ul style="list-style-image: none; list-style-type: square;">
+        <li>list-style-image: none falls back to list-style-type</li>
+        <li>Second item</li>
+    </ul>
+
+    <hr>
+
     <h2>border-style Rendering Test (CSS1 §5.5.17)</h2>
     <p><b>All styles are parsed but currently rendered as solid. Compare each style visually:</b></p>
 

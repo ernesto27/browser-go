@@ -116,7 +116,7 @@ Works via **render-level inheritance**: `paintLayoutBox` passes `currentStyle Te
 - [~] `white-space` - `normal` and `nowrap` supported; `pre` not yet implemented (§5.6.2)
 - [x] `list-style-type` - disc/circle/square/decimal/none (§5.6.3)
 - [x] `list-style-type` extended values (§5.6.3) - `lower-roman`, `upper-roman`, `lower-alpha`, `upper-alpha`
-- [ ] `list-style-image` - custom marker (§5.6.4)
+- [x] `list-style-image` - custom marker via `url()` and `none` (§5.6.4)
 - [ ] `list-style-position` - inside/outside (§5.6.5)
 - [x] `list-style` - shorthand (§5.6.6)
 
